@@ -30,7 +30,7 @@ fi
 
 LAST=$1
 
-for f in /etc/serverspec/arch.cyml /etc/puppet/manifests/site.cpp /etc/puppet/config.cpp; do
+for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/manifests/site.pp.tmpl /etc/puppet/config.yaml /etc/puppet/config.tmpl; do
     if [ ! -r $f ]; then
 	echo "$f doesn't exist" 1>&2
 	exit 1
@@ -39,8 +39,6 @@ done
 
 TRY=3
 PARALLELSTEPS='none'
-
-cpp -nostdinc -x c --include /etc/puppet/manifests/hosts.cpp /etc/puppet/config.cpp | sed -e 's/\(.*\) \(.*\)=/\1\2=/' -e 's/#.*//' -e "s/'//g" -e 's/HOSTS=\(.*\)/HOSTS="\1"/' | egrep -v '^$|^#.*' > /etc/puppet/config
 
 ORIG=$(cd $(dirname $0); pwd)
 
@@ -53,6 +51,11 @@ PUPPETOPTS="--onetime --verbose --no-daemonize --no-usecacheonfailure \
     --no-splay --show_diff"
 
 PUPPETOPTS2="--ignorecache --waitforcert 240"
+
+PATH=/usr/share/config-tools:$PATH
+export PATH
+
+generate.py 0 /etc/puppet/config.yaml /etc/puppet/config.tmpl|grep -v '^$' > /etc/puppet/config
 
 . /etc/puppet/config
 
@@ -72,7 +75,7 @@ else
 fi
 
 if [ -z "$LAST" ]; then
-    LAST=$(fgrep 'STEP >=' /etc/puppet/manifests/site.cpp|cut -d ' ' -f 4|sort -rn|head -1)
+    LAST=$(fgrep 'step:' /etc/puppet/config.yaml|cut -d ':' -f 2|sort -rn|head -1)
 fi
 
 if [ -z "$LAST" ]; then
@@ -231,7 +234,7 @@ EOF
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
 if [ $STEP -eq 0 ]; then
-    cpp -DSTEP=0 -nostdinc -x c -I/etc/puppet/manifests /etc/puppet/manifests/site.cpp  > /etc/puppet/manifests/site.pp
+    generate.py 0 /etc/puppet/config.yaml /etc/puppet/manifests/site.pp.tmpl|grep -v '^$' > /etc/puppet/manifests/site.pp
     configure_hostname
     detect_os
     configure_puppet | tee /tmp/puppet-master.step0.log
@@ -281,7 +284,7 @@ fi
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > /etc/puppet/step
-    cpp -DSTEP=$step -nostdinc -x c -I/etc/puppet/manifests /etc/puppet/manifests/site.cpp > /etc/puppet/manifests/site.pp
+    generate.py $step /etc/puppet/config.yaml /etc/puppet/manifests/site.pp.tmpl|grep -v '^$' > /etc/puppet/manifests/site.pp
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
 	n=0

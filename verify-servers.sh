@@ -20,6 +20,9 @@ ORIG=$(cd $(dirname $0); pwd)
 
 SERVERSPECJOBS=10
 
+PATH=/usr/share/config-tools:$PATH
+export PATH
+
 . /etc/puppet/config
 
 if [ "$1" = -x ]; then
@@ -51,7 +54,7 @@ else
     OPT2=
 fi
 
-cpp -DSTEP=$step $OPT $OPT2 -nostdinc -x c --include /etc/puppet/manifests/hosts.cpp /etc/serverspec/arch.cyml | egrep -v '^$|^#.*' | sed -e 's/server_ip: \([^ ]*\) \([^ ]*\)/server_ip: \1\2/' -e "s/'//g" > /etc/serverspec/arch.yml
+generate.py $step /etc/puppet/config.yaml /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/serverspec/arch.yml
 
 cd /etc/serverspec
 
