@@ -23,7 +23,10 @@ SERVERSPECJOBS=10
 PATH=/usr/share/config-tools:$PATH
 export PATH
 
-. /etc/puppet/config
+CDIR=/etc/config-tools
+CFG=$CDIR/global.yaml
+
+. $CDIR/config
 
 if [ "$1" = -x ]; then
     XMLOUTPUT=1
@@ -35,26 +38,14 @@ fi
 step=$1
 
 if [ -z "$step" ]; then
-    step=$(cat /etc/puppet/step)
+    step=$(cat $CDIR/step)
 fi
 
 if [ -z "$step" ]; then
     step=100
 fi
 
-if [ -n "$PREFIX" ]; then
-    OPT=-DPREFIX="$PREFIX"
-else
-    OPT=
-fi
-
-if [ -n "$DOMAIN" ]; then
-    OPT2=-DDOMAIN="$DOMAIN"
-else
-    OPT2=
-fi
-
-generate.py $step /etc/puppet/config.yaml /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/serverspec/arch.yml
+generate.py $step $CFG /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/serverspec/arch.yml
 
 cd /etc/serverspec
 

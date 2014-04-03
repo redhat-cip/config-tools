@@ -30,14 +30,17 @@ fi
 
 LAST=$1
 
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/manifests/site.pp.tmpl /etc/puppet/config.yaml /etc/puppet/config.tmpl; do
+CDIR=/etc/config-tools
+CFG=$CDIR/global.yaml
+
+for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/manifests/site.pp.tmpl /etc/puppet/manifests/params.pp.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
 	echo "$f doesn't exist" 1>&2
 	exit 1
     fi
 done
 
-TRY=3
+TRY=5
 PARALLELSTEPS='none'
 
 ORIG=$(cd $(dirname $0); pwd)
@@ -55,27 +58,30 @@ PUPPETOPTS2="--ignorecache --waitforcert 240"
 PATH=/usr/share/config-tools:$PATH
 export PATH
 
-generate.py 0 /etc/puppet/config.yaml /etc/puppet/config.tmpl|grep -v '^$' > /etc/puppet/config
+generate() {
+    step=$1
+    file=$2
 
-. /etc/puppet/config
+    generate.py $step $CFG ${file}.tmpl|grep -v '^$' > $file
+}
 
-# exported for verify-servers.sh
-export PREFIX
-export DOMAIN
+generate 0 /etc/config-tools/config
+
+. /etc/config-tools/config
 
 # use extglob form to have a variable in a case clause
 PARALLELSTEPS="@(${PARALLELSTEPS})"
 
 shopt -s extglob
 
-if [ -r /etc/puppet/step ]; then
-    STEP=$(cat /etc/puppet/step)
+if [ -r $CDIR/step ]; then
+    STEP=$(cat $CDIR/step)
 else
     STEP=0
 fi
 
 if [ -z "$LAST" ]; then
-    LAST=$(fgrep 'step:' /etc/puppet/config.yaml|cut -d ':' -f 2|sort -rn|head -1)
+    LAST=$(fgrep 'step:' $CFG|cut -d ':' -f 2|sort -rn|head -1)
 fi
 
 if [ -z "$LAST" ]; then
@@ -234,13 +240,14 @@ EOF
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
 if [ $STEP -eq 0 ]; then
-    generate.py 0 /etc/puppet/config.yaml /etc/puppet/manifests/site.pp.tmpl|grep -v '^$' > /etc/puppet/manifests/site.pp
+    generate 0 /etc/puppet/manifests/site.pp
+    generate 0 /etc/puppet/manifests/params.pp
     configure_hostname
     detect_os
     configure_puppet | tee /tmp/puppet-master.step0.log
     if [ $RC -eq 0 ]; then
 	STEP=1
-	echo $STEP > /etc/puppet/step
+	echo $STEP > $CDIR/step
     else
 	exit $RC
     fi
@@ -283,8 +290,9 @@ fi
 ######################################################################
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
-    echo $step > /etc/puppet/step
-    generate.py $step /etc/puppet/config.yaml /etc/puppet/manifests/site.pp.tmpl|grep -v '^$' > /etc/puppet/manifests/site.pp
+    echo $step > $CDIR/step
+    generate $step /etc/puppet/manifests/site.pp
+    generate $step /etc/puppet/manifests/params.pp
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
 	n=0
