@@ -35,12 +35,13 @@ def get_vars(yaml_string):
 
 def reinject(variables):
     for pname in variables['profiles']:
-        if variables['profiles'][pname] and \
-                'steps' in variables['profiles'][pname] and \
+        if not variables['profiles'][pname]:
+            variables['profiles'][pname] = {}
+        if 'steps' in variables['profiles'][pname] and \
                 variables['profiles'][pname]['steps']:
             min_step = min([x['step'] for x in variables['profiles'][pname]['steps']])
             variables['profiles'][pname]['min_step'] = min_step
-            variables['profiles'][pname]['hosts'] = [x for x in variables['hosts'] if x['profile'] == pname]
+        variables['profiles'][pname]['hosts'] = [x for x in variables['hosts'] if x['profile'] == pname]
 
 
 def validate(variables):
