@@ -31,8 +31,25 @@ class TestGenerate(unittest.TestCase):
         self.assertEqual(generate.get_vars(YAML1),
                          {'key': 'value'})
 
+    def test_validate(self):
+        variables = generate.get_vars('')
+        self.assertFalse(generate.validate(variables)[0])
+
+    def test_invalid_profile(self):
+        variables = generate.get_vars(YAML2)
+        self.assertTrue(generate.validate(variables)[0])
+
 YAML1 = '''
 key: value
+'''
+
+YAML2 = '''
+profiles:
+  management:
+hosts:
+  -
+    name: master
+    profile: puppetmaster
 '''
 
 if __name__ == "__main__":

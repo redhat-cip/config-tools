@@ -32,6 +32,29 @@ def get_vars(yaml_string):
     # load entries yaml
     return load(yaml_string, Loader=Loader)
 
+
+def reinject(variables):
+    for pname in variables['profiles']:
+        if variables['profiles'][pname] and \
+                'steps' in variables['profiles'][pname] and \
+                variables['profiles'][pname]['steps']:
+            min_step = min([x['step'] for x in variables['profiles'][pname]['steps']])
+            variables['profiles'][pname]['min_step'] = min_step
+            variables['profiles'][pname]['hosts'] = [x for x in variables['hosts'] if x['profile'] == pname]
+
+
+def validate(variables):
+    if not variables or 'hosts' not in variables or 'profiles' not in variables:
+        return False, 'No hosts or profiles section'
+
+    for host in variables['hosts']:
+        if 'name' not in host:
+            return False, 'host with no name'
+        if 'profile' not in host:
+            return False, 'host %s has no profile section' % host['name']
+
+    return (True, '')
+
 if __name__ == "__main__":
     import sys
     #import pprint
@@ -41,14 +64,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     variables = get_vars(open(sys.argv[2]).read())
+    if not validate(variables)[0]:
+        print validate(variables)[1]
+        sys.exit(1)
     variables['step'] = int(sys.argv[1])
-    for pname in variables['profiles']:
-        if variables['profiles'][pname] and \
-                'steps' in variables['profiles'][pname] and \
-                variables['profiles'][pname]['steps']:
-            min_step = min([x['step'] for x in variables['profiles'][pname]['steps']])
-            variables['profiles'][pname]['min_step'] = min_step
-            variables['profiles'][pname]['hosts'] = [x for x in variables['hosts'] if x['profile'] == pname]
+    reinject(variables)
     #pprint.pprint(variables['profiles'])
     print(expand(open(sys.argv[3]).read(),
                  variables))
