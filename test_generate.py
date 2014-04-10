@@ -31,13 +31,31 @@ class TestGenerate(unittest.TestCase):
         self.assertEqual(generate.get_vars(YAML1),
                          {'key': 'value'})
 
-    def test_validate(self):
-        variables = generate.get_vars('')
-        self.assertFalse(generate.validate(variables)[0])
-
     def test_invalid_profile(self):
+        variables = generate.get_vars('')
+        try:
+            generate.validate(variables)
+        except Exception:
+            self.assertTrue(True)
+
+    def test_validate(self):
         variables = generate.get_vars(YAML2)
-        self.assertTrue(generate.validate(variables)[0])
+        self.assertTrue(generate.validate(variables))
+
+    def test_reinject(self):
+        variables = generate.get_vars(YAML2)
+        generate.reinject(variables)
+        self.assertTrue(variables['profiles']['management'], variables)
+        self.assertTrue(variables['profiles']['management']['hosts'],
+                        variables)
+        self.assertEqual(variables['profiles']['management']['min_step'], 1,
+                         variables)
+
+    def test_expand_template(self):
+        self.assertEqual(generate.expand_template(
+                1,
+                YAML2,
+                '{% if step >= 1 %}a{% endif %}'), 'a')
 
 YAML1 = '''
 key: value
@@ -45,11 +63,17 @@ key: value
 
 YAML2 = '''
 profiles:
+  management2:
   management:
+    steps:
+      -
+        step: 1
+      -
+        step: 3
 hosts:
   -
     name: master
-    profile: puppetmaster
+    profile: management
 '''
 
 if __name__ == "__main__":
