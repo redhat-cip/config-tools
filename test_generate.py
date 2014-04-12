@@ -33,10 +33,8 @@ class TestGenerate(unittest.TestCase):
 
     def test_invalid_profile(self):
         variables = generate.get_vars('')
-        try:
+        with self.assertRaises(generate.Invalid):
             generate.validate(variables)
-        except Exception:
-            self.assertTrue(True)
 
     def test_validate(self):
         variables = generate.get_vars(YAML2)
