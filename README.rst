@@ -17,8 +17,9 @@ master without interaction.
 On the puppet master, you need to have the following installed:
 
 - make
+- python with the jinja2 and yaml modules
+- rake
 - serverspec
-- cpp (The C pre-processor)
 
 Config files
 ++++++++++++
@@ -27,31 +28,9 @@ Serverspec tests must be under ``/etc/serverspec``.
 
 Puppet files are under ``/etc/puppet``.
 
-The puppet manifest and the YAML file describing the tests must be
-augmented with C pre-processor blocks in
-``/etc/puppet/manifest/site.cpp`` and
-``/etc/serverspec/arch.cyml``. Steps are defined with pre-processor
-blocks like this::
+The puppet manifests and the YAML file describing the tests must be
+Jinja2 templates in ``/etc/puppet/manifest/site.pp.tmpl``,
+``/etc/puppet/manifest/params.pp.tmpl`` and
+``/etc/serverspec/arch.yml.tmpl``.
 
-  # if STEP >= 2
-    <my block>
-  # endif
-
-The steps must be in synchro between ``site.cpp`` and ``arch.cyml``.
-
-A file defining the nodes and various config options needs to be put
-in ``/etc/puppet/manifests/hosts.cpp``. For example::
-
-  #define PUPPETMASTER 'master'
-  #define LB 'lb'
-  #define MGT1 'mgt1'
-  #define MGT2 'mgt2'
-  #define MGT3 'mgt3'
-  #define COMPUTE1 'cmpt1'
-  #define COMPUTE2 'cmpt2'
-  #define COMPUTE3 'cmpt3'
-  #define PREFIX '192.168.122'
-  #define DOMAIN 'lab.net'
-  #define USER 'jenkins'
-  #define HOSTS LB MGT1 MGT2 MGT3 COMPUTE1 COMPUTE2 COMPUTE3
-  #define PARALLELSTEPS "2|4|5"
+Configuration is centralized in ``/etc/config-tools/global.yaml``.
