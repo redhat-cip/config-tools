@@ -31,7 +31,7 @@ fi
 LAST=$1
 
 CDIR=/etc/config-tools
-CFG=$CDIR/global.yaml
+CFG=$CDIR/global.yml
 
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/manifests/site.pp.tmpl /etc/puppet/manifests/params.pp.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
