@@ -24,7 +24,7 @@ PATH=/usr/share/config-tools:$PATH
 export PATH
 
 CDIR=/etc/config-tools
-CFG=$CDIR/global.yaml
+CFG=$CDIR/global.yml
 
 . $CDIR/config
 
