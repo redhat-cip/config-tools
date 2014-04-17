@@ -150,6 +150,7 @@ rundir=/var/run/puppet
 factpath=\$vardir/lib/facter
 templatedir=\$confdir/templates
 configtimeout=10m
+pluginsync=true
 
 [master]
 ssl_client_header = SSL_CLIENT_S_DN
