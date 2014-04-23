@@ -34,3 +34,25 @@ Jinja2 templates in ``/etc/puppet/manifest/site.pp.tmpl``,
 ``/etc/serverspec/arch.yml.tmpl``.
 
 Configuration is centralized in ``/etc/config-tools/global.yaml``.
+
+Provisionning
++++++++++++++
+
+To provision the needed files, you can use the ``provision.sh`` script
+like this::
+
+  $ ./provision.sh H.1.2.0 deployment.yml
+
+with a ``deployment.yml`` like this::
+
+  module:
+    git@github.com:enovance/puppet-openstack-cloud
+  serverspec:
+    git@github.com:enovance/puppet-cloud-serverspec.git
+  environment:
+    repository:
+      git@github.com:enovance/ci-env
+    name:
+      env.yml
+  infrastructure:
+    git@github.com:enovance/os-ref-arch

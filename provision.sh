@@ -16,9 +16,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-set -e
-set -x
-
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey \
       -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
@@ -26,20 +23,24 @@ SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
 
 ORIG=$(cd $(dirname $0); pwd)
 
-if [ $# != 5 ]; then
-    echo "Usage: $0 <tag> <puppet module git> <serverspec git> <env git> <infra git>" 1>&2
+if [ $# != 2 ]; then
+    echo "Usage: $0 <tag> <deployment yaml>" 1>&2
     exit 1
 fi
 
+set -e
+set -x
+
 tag="$1"
-puppetgit="$2"
-serverspecgit="$3"
-envgit="$4"
-infragit="$5"
+puppetgit=$($ORIG/extract.py module "$2")
+serverspecgit=$($ORIG/extract.py serverspec "$2")
+envgit=$($ORIG/extract.py environment.repository "$2")
+envyml=$($ORIG/extract.py environment.name "$2")
+infragit=envgit=$($ORIG/extract.py infrastructure "$2")
 
 checkout_tag() {
     cd $1
-    if [ -n "$tag" ] && git tag | grep $tag; then
+    if [ -n "$tag" ] && (git tag; git branch -r) | grep $tag; then
 	git checkout $tag
 	tagged=1
     else
@@ -73,9 +74,19 @@ update_or_clone() {
 update_or_clone "$infragit" infra
 update_or_clone "$envgit" env
 
-cat infra/infra.yml env/env.yml > global.yml
+if [ ! -f infra/infra.yml ]; then
+    echo "infra.yml not found in $infragit" 1>&2
+    exit 1
+fi
 
-./generate.py 0 global.yml config.tmpl > config
+if [ ! -f env/$envyml ]; then
+    echo "$envyml not found in $envgit" 1>&2
+    exit 1
+fi
+
+cat infra/infra.yml env/$envyml > global.yml
+
+$ORIG/generate.py 0 global.yml $ORIG/config.tmpl > config
 . config
 
 if [ -z "$USER" ]; then
