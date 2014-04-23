@@ -36,7 +36,7 @@ puppetgit=$($ORIG/extract.py module "$2")
 serverspecgit=$($ORIG/extract.py serverspec "$2")
 envgit=$($ORIG/extract.py environment.repository "$2")
 envyml=$($ORIG/extract.py environment.name "$2")
-infragit=envgit=$($ORIG/extract.py infrastructure "$2")
+infragit=$($ORIG/extract.py infrastructure "$2")
 
 checkout_tag() {
     cd $1
