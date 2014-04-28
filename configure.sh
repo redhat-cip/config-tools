@@ -58,7 +58,7 @@ generate() {
     generate.py $step $CFG ${file}.tmpl|grep -v '^$' > $file
 }
 
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl $CFG $CDIR/config.tmpl; do
+for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
 	echo "$f doesn't exist" 1>&2
 	exit 1
@@ -183,6 +183,7 @@ EOF
   :datadir: /etc/puppet/data
 :hierarchy:
   - "%{::type}/%{::fqdn}"
+  - "%{::type}/common"
   - common
 EOF
 
@@ -272,7 +273,6 @@ if [ $STEP -eq 0 ]; then
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
 	 cat > /tmp/environment.txt <<EOF
-environment=$ENVIRONMENT
 type=$PROF_BY_HOST[$h]
 EOF
 	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
@@ -310,8 +310,13 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     generate $step /etc/puppet/data/common.yaml
     for h in $HOSTS; do
 	generate $step /etc/puppet/data/fqdn.yaml host=$h
-	mkdir -p /etc/puppet/data/$PROF_BY_HOST[$h]
-	mv /etc/puppet/data/fqdn.yaml /etc/puppet/data/$PROF_BY_HOST[$h]/$h.yaml
+	mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+	mv /etc/puppet/data/fqdn.yaml /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+    done
+    for p in $PROFILES; do
+	generate $step /etc/puppet/data/type.yaml profile=$p
+	mkdir -p /etc/puppet/data/$p
+	mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
     done
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism

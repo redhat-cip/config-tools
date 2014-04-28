@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (C) 2014 eNovance SAS <licensing@enovance.com>
 #
@@ -101,7 +101,7 @@ fi
 
 # /etc/puppet/data
 
-for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl; do
+for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl infra/data/type.yaml.tmpl; do
     if [ ! -f  ]; then
 	echo "$f not found in $infragit" 1>&2
 	exit 1
