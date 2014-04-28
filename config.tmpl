@@ -3,3 +3,8 @@ HOSTS="{% for profile in ordered_profiles %}{% for host in hosts%}{% if host.pro
 USER={{ config.user }}
 MASTER={{ config.puppet_master }}.{{ config.domain }}
 PARALLELSTEPS="{{ config.parallel_steps }}"
+PROFILES="{% for profile in ordered_profiles %}{{ profile }} {% endfor %}"
+declare -A PROF_BY_HOST
+{% for profile in ordered_profiles %}{% for host in hosts%}{% if host.profile == profile %}PROF_BY_HOST["{{ host.name }}"]="{{ profile }}"
+{% endif %}{% endfor %}{% endfor %}
+ENVIRONMENT={{ environment }}
