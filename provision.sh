@@ -99,12 +99,18 @@ if [ -z "$MASTER" ]; then
     exit 1
 fi
 
-# Manifests
+# /etc/puppet/data
 
-rm -rf manifests.tgz manifests
-mkdir manifests
-cp -p infra/*.pp.tmpl manifests/
-tar zcf manifests.tgz --exclude=".git*" manifests
+for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl; do
+    if [ ! -f  ]; then
+	echo "$f not found in $infragit" 1>&2
+	exit 1
+    fi
+done
+
+rm -rf data.tgz data
+mkdir data
+tar zcf data.tgz -C infra data
 
 # Serverspec
 
@@ -144,12 +150,12 @@ fi
 
 # Copy files and put them at the right places on $MASTER
 
-scp $SSHOPTS $HOSTS serverspec.tgz modules.tgz manifests.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $USER@$MASTER:/tmp/
-ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/manifests
+scp $SSHOPTS $HOSTS serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $USER@$MASTER:/tmp/
+ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/data
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /etc/config-tools
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/serverspec.tgz -C /etc
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/modules.tgz -C /etc/puppet
-ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/manifests.tgz -C /etc/puppet
+ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/data.tgz -C /etc/puppet
 if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/
 fi

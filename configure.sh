@@ -33,13 +33,6 @@ LAST=$1
 CDIR=/etc/config-tools
 CFG=$CDIR/global.yml
 
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/manifests/site.pp.tmpl /etc/puppet/manifests/params.pp.tmpl $CFG $CDIR/config.tmpl; do
-    if [ ! -r $f ]; then
-	echo "$f doesn't exist" 1>&2
-	exit 1
-    fi
-done
-
 TRY=5
 PARALLELSTEPS='none'
 
@@ -65,9 +58,16 @@ generate() {
     generate.py $step $CFG ${file}.tmpl|grep -v '^$' > $file
 }
 
+for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl $CFG $CDIR/config.tmpl; do
+    if [ ! -r $f ]; then
+	echo "$f doesn't exist" 1>&2
+	exit 1
+    fi
+done
+
 generate 0 /etc/config-tools/config
 
-. /etc/config-tools/config
+. $CDIR/config
 
 # use extglob form to have a variable in a case clause
 PARALLELSTEPS="@(${PARALLELSTEPS})"
@@ -175,6 +175,17 @@ certname=${FQDN}
 server=${FQDN}
 EOF
 
+    cat > /etc/puppet/hiera.yaml <<EOF
+---
+:backends:
+  - yaml
+:yaml:
+  :datadir: /etc/puppet/data
+:hierarchy:
+  - "%{::type}/%{::fqdn}"
+  - common
+EOF
+
     cat > /etc/puppet/routes.yaml <<EOF
 ---
 master:
@@ -241,8 +252,6 @@ EOF
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
 if [ $STEP -eq 0 ]; then
-    generate 0 /etc/puppet/manifests/site.pp
-    generate 0 /etc/puppet/manifests/params.pp
     configure_hostname
     detect_os
     configure_puppet | tee /tmp/puppet-master.step0.log
@@ -262,21 +271,27 @@ if [ $STEP -eq 0 ]; then
     n=0
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
-	scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
-	ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
-	ssh $SSHOPTS $USER@$h sudo augtool << EOT
+	 cat > /tmp/environment.txt <<EOF
+environment=$ENVIRONMENT
+type=$PROF_BY_HOST[$h]
+EOF
+	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
+	 ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
+	 ssh $SSHOPTS $USER@$h sudo mkdir -p /etc/facter/facts.d
+	 ssh $SSHOPTS $USER@$h sudo cp /tmp/environment.txt /etc/facter/facts.d
+	 ssh $SSHOPTS $USER@$h sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
-        ssh $SSHOPTS $USER@$h sudo rm -rf /var/lib/puppet/ssl/* || :
-
-	ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp stop || :
-	ssh $SSHOPTS $USER@$h sudo ntpdate 0.europe.pool.ntp.org || :
-	ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp start || :
-
-    ssh $SSHOPTS $USER@$h sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+         ssh $SSHOPTS $USER@$h sudo rm -rf /var/lib/puppet/ssl/* || :
+	 
+	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp stop || :
+	 ssh $SSHOPTS $USER@$h sudo ntpdate 0.europe.pool.ntp.org || :
+	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp start || :
+	 
+	 ssh $SSHOPTS $USER@$h sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
 	n=$(($n + 1))
     done
 
@@ -292,8 +307,12 @@ fi
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > $CDIR/step
-    generate $step /etc/puppet/manifests/site.pp
-    generate $step /etc/puppet/manifests/params.pp
+    generate $step /etc/puppet/data/common.yaml
+    for h in $HOSTS; do
+	generate $step /etc/puppet/data/fqdn.yaml host=$h
+	mkdir -p /etc/puppet/data/$PROF_BY_HOST[$h]
+	mv /etc/puppet/data/fqdn.yaml /etc/puppet/data/$PROF_BY_HOST[$h]/$h.yaml
+    done
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
 	n=0
