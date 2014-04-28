@@ -46,17 +46,18 @@ def reinject(variables):
             variables['profiles'][pname] = {}
         if 'steps' in variables['profiles'][pname] and \
                 variables['profiles'][pname]['steps']:
-            min_step = min([x['step'] \
-                                for x in variables['profiles'][pname]['steps']])
+            min_step = min([x['step']
+                            for x in variables['profiles'][pname]['steps']])
             variables['profiles'][pname]['min_step'] = min_step
-        variables['profiles'][pname]['hosts'] = [x for x \
-                                                     in variables['hosts'] \
-                                                     if x['profile'] == pname]
+        variables['profiles'][pname]['hosts'] = [x for x
+                                                 in variables['hosts']
+                                                 if x['profile'] == pname]
 
 
 def validate(variables):
     'Validate variables.'
-    if not variables or 'hosts' not in variables or 'profiles' not in variables:
+    if not variables or 'hosts' not in variables or \
+       'profiles' not in variables:
         raise(Invalid('No hosts or profiles section'))
 
     for host in variables['hosts']:
@@ -68,10 +69,11 @@ def validate(variables):
     return True
 
 
-def expand_template(step, yamlstr, tmpl):
+def expand_template(step, yamlstr, tmpl, ovrwt={}):
     '''Expand a template string according to the yaml variables augmented with
 information with steps.'''
     variables = get_vars(yamlstr)
+    variables.update(ovrwt)
     validate(variables)
     variables['step'] = step
     reinject(variables)
@@ -82,17 +84,24 @@ if __name__ == "__main__":
     import sys
     #import pprint
 
-    if len(sys.argv) != 4:
-        sys.stderr.write('Usage: %s <step> <yaml file> <template file>\n'
+    if len(sys.argv) < 4:
+        sys.stderr.write('Usage: %s <step> <yaml file> <template file>'
+                         ' [var=val...]\n'
                          % sys.argv[0])
         sys.exit(1)
+
+    overwrite = {}
+    for arg in sys.argv[4:]:
+        key, value = arg.split('=')
+        overwrite[key] = value
 
     try:
         print expand_template(int(sys.argv[1]),
                               open(sys.argv[2]).read(),
-                              open(sys.argv[3]).read())
+                              open(sys.argv[3]).read(),
+                              overwrite)
     except Invalid, excpt:
         print excpt
         sys.exit(1)
-        
+
 # generate.py ends here

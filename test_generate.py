@@ -51,9 +51,17 @@ class TestGenerate(unittest.TestCase):
 
     def test_expand_template(self):
         self.assertEqual(generate.expand_template(
-                1,
-                YAML2,
-                '{% if step >= 1 %}a{% endif %}'), 'a')
+            1,
+            YAML2,
+            '{% if step >= 1 %}a{% endif %}'), 'a')
+
+    def test_expand_template_overwrite(self):
+        self.assertEqual(generate.expand_template(
+            1,
+            YAML2,
+            '{{ key }}',
+            {'key': 'other'}
+        ), 'other')
 
 YAML1 = '''
 key: value
@@ -72,6 +80,7 @@ hosts:
   -
     name: master
     profile: management
+key: value
 '''
 
 if __name__ == "__main__":
