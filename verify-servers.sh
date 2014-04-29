@@ -20,7 +20,13 @@ ORIG=$(cd $(dirname $0); pwd)
 
 SERVERSPECJOBS=10
 
-. /etc/puppet/config
+PATH=/usr/share/config-tools:$PATH
+export PATH
+
+CDIR=/etc/config-tools
+CFG=$CDIR/global.yml
+
+. $CDIR/config
 
 if [ "$1" = -x ]; then
     XMLOUTPUT=1
@@ -32,26 +38,14 @@ fi
 step=$1
 
 if [ -z "$step" ]; then
-    step=$(cat /etc/puppet/step)
+    step=$(cat $CDIR/step)
 fi
 
 if [ -z "$step" ]; then
     step=100
 fi
 
-if [ -n "$PREFIX" ]; then
-    OPT=-DPREFIX="$PREFIX"
-else
-    OPT=
-fi
-
-if [ -n "$DOMAIN" ]; then
-    OPT2=-DDOMAIN="$DOMAIN"
-else
-    OPT2=
-fi
-
-cpp -DSTEP=$step $OPT $OPT2 -nostdinc -x c --include /etc/puppet/manifests/hosts.cpp /etc/serverspec/arch.cyml | egrep -v '^$|^#.*' | sed -e 's/server_ip: \([^ ]*\) \([^ ]*\)/server_ip: \1\2/' -e "s/'//g" > /etc/serverspec/arch.yml
+generate.py $step $CFG /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/serverspec/arch.yml
 
 cd /etc/serverspec
 
