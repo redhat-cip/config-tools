@@ -273,7 +273,7 @@ if [ $STEP -eq 0 ]; then
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
 	 cat > /tmp/environment.txt <<EOF
-type=$PROF_BY_HOST[$h]
+type=${PROF_BY_HOST[$h]}
 EOF
 	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
 	 ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
