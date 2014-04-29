@@ -30,11 +30,20 @@ fi
 
 LAST=$1
 
-CDIR=/etc/config-tools
-CFG=$CDIR/global.yml
+for f in /etc/serverspec/arch.cyml /etc/puppet/data/ci/common.yaml; do
+    if [ ! -r $f ]; then
+	echo "$f doesn't exist" 1>&2
+	exit 1
+    fi
+done
 
-TRY=5
-PARALLELSTEPS='none'
+TRY=3
+PARALLELSTEPS='2|4|5'
+
+if [ ! -r /etc/puppet/config ]; then
+    echo "No config file /etc/puppet/config"
+    exit 1
+fi
 
 ORIG=$(cd $(dirname $0); pwd)
 
@@ -48,40 +57,24 @@ PUPPETOPTS="--onetime --verbose --no-daemonize --no-usecacheonfailure \
 
 PUPPETOPTS2="--ignorecache --waitforcert 240"
 
-PATH=/usr/share/config-tools:$PATH
-export PATH
+set -x
+set -e
 
-generate() {
-    step=$1
-    file=$2
-
-    generate.py $step $CFG ${file}.tmpl|grep -v '^$' > $file
-}
-
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
-    if [ ! -r $f ]; then
-	echo "$f doesn't exist" 1>&2
-	exit 1
-    fi
-done
-
-generate 0 /etc/config-tools/config
-
-. $CDIR/config
+. /etc/puppet/config
 
 # use extglob form to have a variable in a case clause
 PARALLELSTEPS="@(${PARALLELSTEPS})"
 
 shopt -s extglob
 
-if [ -r $CDIR/step ]; then
-    STEP=$(cat $CDIR/step)
+if [ -r /etc/puppet/step ]; then
+    STEP=$(cat /etc/puppet/step)
 else
     STEP=0
 fi
 
 if [ -z "$LAST" ]; then
-    LAST=$(fgrep 'step:' $CFG|cut -d ':' -f 2|sort -rn|head -1)
+    LAST=$(fgrep 'STEP >=' /etc/puppet/data/ci/all/common.cyaml|cut -d ' ' -f 4|sort -rn|head -1)
 fi
 
 if [ -z "$LAST" ]; then
@@ -182,9 +175,18 @@ EOF
 :yaml:
   :datadir: /etc/puppet/data
 :hierarchy:
-  - "%{::type}/%{::fqdn}"
-  - "%{::type}/common"
+  - "%{::environment}/%{::type}/%{::osfamily}-%{::fqdn}"
+  - "%{::environment}/%{::type}/%{::osfamily}"
+  - "%{::environment}/%{::type}/%{::fqdn}"
+  - "%{::environment}/%{::type}/common"
+  - "%{::environment}/common"
   - common
+EOF
+
+    mkdir -p /etc/facter/facts.d
+    cat > /etc/facter/facts.d/environment.txt <<EOF
+environment=ci
+type=all
 EOF
 
     cat > /etc/puppet/routes.yaml <<EOF
@@ -258,7 +260,7 @@ if [ $STEP -eq 0 ]; then
     configure_puppet | tee /tmp/puppet-master.step0.log
     if [ $RC -eq 0 ]; then
 	STEP=1
-	echo $STEP > $CDIR/step
+	echo $STEP > /etc/puppet/step
     else
 	exit $RC
     fi
@@ -272,26 +274,23 @@ if [ $STEP -eq 0 ]; then
     n=0
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
-	 cat > /tmp/environment.txt <<EOF
-type=$PROF_BY_HOST[$h]
-EOF
-	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
-	 ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
-	 ssh $SSHOPTS $USER@$h sudo mkdir -p /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h sudo cp /tmp/environment.txt /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h sudo augtool << EOT
+	scp $SSHOPTS /etc/facter/facts.d/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
+	ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
+	ssh $SSHOPTS $USER@$h sudo mkdir -p /etc/facter/facts.d
+	ssh $SSHOPTS $USER@$h sudo cp /tmp/environment.txt /etc/facter/facts.d
+	ssh $SSHOPTS $USER@$h sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
-         ssh $SSHOPTS $USER@$h sudo rm -rf /var/lib/puppet/ssl/* || :
-	 
-	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp stop || :
-	 ssh $SSHOPTS $USER@$h sudo ntpdate 0.europe.pool.ntp.org || :
-	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp start || :
-	 
-	 ssh $SSHOPTS $USER@$h sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+        ssh $SSHOPTS $USER@$h sudo rm -rf /var/lib/puppet/ssl/* || :
+
+	ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp stop || :
+	ssh $SSHOPTS $USER@$h sudo ntpdate 0.europe.pool.ntp.org || :
+	ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp start || :
+
+    ssh $SSHOPTS $USER@$h sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
 	n=$(($n + 1))
     done
 
@@ -306,17 +305,11 @@ fi
 ######################################################################
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
-    echo $step > $CDIR/step
-    generate $step /etc/puppet/data/common.yaml
-    for h in $HOSTS; do
-	generate $step /etc/puppet/data/fqdn.yaml host=$h
-	mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-	mv /etc/puppet/data/fqdn.yaml /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-    done
-    for p in $PROFILES; do
-	generate $step /etc/puppet/data/type.yaml profile=$p
-	mkdir -p /etc/puppet/data/$p
-	mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+    echo $step > /etc/puppet/step
+
+    for i in $(cd /etc/puppet/data/ci/all; ls *.cyaml); do
+        file=$(echo $i | sed -e 's/.cyaml//')
+        cpp -DSTEP=$step -nostdinc -x c -I/etc/puppet/data/ci/all /etc/puppet/data/ci/all/$file.cyaml> /etc/puppet/data/ci/all/$file.yaml
     done
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
