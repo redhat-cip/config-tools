@@ -139,8 +139,8 @@ PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 
 
 rm -f modules.tgz
 tar zcf modules.tgz --exclude=".git*" modules
-
 # hosts
+
 
 if [ -r $ORIG/hosts ]; then
     HOSTS=$ORIG/hosts
@@ -148,14 +148,23 @@ else
     HOSTS=
 fi
 
+cat > site.pp <<EOF
+Exec {
+  path => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+}
+
+hiera_include('classes')
+EOF
+
 # Copy files and put them at the right places on $MASTER
 
-scp $SSHOPTS $HOSTS serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $USER@$MASTER:/tmp/
+scp $SSHOPTS $HOSTS site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $USER@$MASTER:/tmp/
 ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/data
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /etc/config-tools
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/serverspec.tgz -C /etc
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/modules.tgz -C /etc/puppet
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/data.tgz -C /etc/puppet
+ssh $SSHOPTS $USER@$MASTER sudo mv /tmp/site.pp /etc/puppet/manifests
 if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/
 fi
