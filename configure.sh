@@ -275,10 +275,11 @@ if [ $STEP -eq 0 ]; then
     n=0
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
-	 tee /tmp/environment.txt <<EOF
+	 tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
+	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
+	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h:/tmp/environment.txt
 	 ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
 	 ssh $SSHOPTS $USER@$h sudo mkdir -p /etc/facter/facts.d
 	 ssh $SSHOPTS $USER@$h sudo cp /tmp/environment.txt /etc/facter/facts.d
@@ -314,7 +315,9 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     for h in $HOSTS; do
 	generate $step /etc/puppet/data/fqdn.yaml host=$h
 	mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-	mv /etc/puppet/data/fqdn.yaml /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+	# hack to fix %{hiera} without ""
+	sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+	rm /etc/puppet/data/fqdn.yaml
     done
     for p in $PROFILES; do
 	generate $step /etc/puppet/data/type.yaml profile=$p
