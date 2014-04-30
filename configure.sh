@@ -54,8 +54,10 @@ export PATH
 generate() {
     step=$1
     file=$2
-
-    generate.py $step $CFG ${file}.tmpl|grep -v '^$' > $file
+    shift 2
+    args="$@"
+    
+    generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
 }
 
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
@@ -255,6 +257,7 @@ EOF
 if [ $STEP -eq 0 ]; then
     configure_hostname
     detect_os
+    generate 0 /etc/puppet/data/common.yaml
     configure_puppet | tee /tmp/puppet-master.step0.log
     if [ $RC -eq 0 ]; then
 	STEP=1
@@ -272,7 +275,7 @@ if [ $STEP -eq 0 ]; then
     n=0
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
-	 cat > /tmp/environment.txt <<EOF
+	 tee /tmp/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
 	 scp $SSHOPTS /tmp/environment.txt /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
