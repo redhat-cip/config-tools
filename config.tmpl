@@ -1,7 +1,7 @@
 DOMAIN={{ config.domain }}
 HOSTS="{% for profile in ordered_profiles %}{% for host in hosts%}{% if host.profile == profile %}{{ host.name }} {% endif %}{% endfor %}{% endfor %}"
 USER={{ config.user }}
-MASTER={{ config.puppet_master }}.{{ config.domain }}
+MASTER={{ config.puppet_master }}
 PARALLELSTEPS="{{ config.parallel_steps }}"
 PROFILES="{% for profile in ordered_profiles %}{{ profile }} {% endfor %}"
 declare -A PROF_BY_HOST
