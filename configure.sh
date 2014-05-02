@@ -278,24 +278,24 @@ if [ $STEP -eq 0 ]; then
 	 tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h:/tmp/
-	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h:/tmp/environment.txt
-	 ssh $SSHOPTS $USER@$h sudo cp /tmp/hosts /tmp/resolv.conf /etc/
-	 ssh $SSHOPTS $USER@$h sudo mkdir -p /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h sudo cp /tmp/environment.txt /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h sudo augtool << EOT
+	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
+	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hosts /tmp/resolv.conf /etc/
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
-         ssh $SSHOPTS $USER@$h sudo rm -rf /var/lib/puppet/ssl/* || :
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
 	 
-	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp stop || :
-	 ssh $SSHOPTS $USER@$h sudo ntpdate 0.europe.pool.ntp.org || :
-	 ssh $SSHOPTS $USER@$h sudo /etc/init.d/ntp start || :
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
 	 
-	 ssh $SSHOPTS $USER@$h sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
 	n=$(($n + 1))
     done
 
