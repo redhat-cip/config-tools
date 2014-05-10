@@ -60,6 +60,13 @@ def validate(variables):
        'profiles' not in variables:
         raise(Invalid('No hosts or profiles section'))
 
+    if not 'infra' in variables or not 'name' in variables:
+        raise(Invalid('No infra or name field'))
+
+    if variables['infra'] != variables['name']:
+        raise(Invalid('Incoherent infra(%s) and env(%s)' %
+                      (variables['name'], variables['infra'])))
+
     for host in variables['hosts']:
         if 'name' not in host:
             raise(Invalid('host with no name'))
