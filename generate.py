@@ -54,6 +54,33 @@ def reinject(variables):
                                                  if x['profile'] == pname]
 
 
+def validate_arity(arity_def, value):
+    try:
+        arity = int(arity_def)
+        return arity == value
+    except ValueError:
+        pass
+    arity_def = arity_def.replace(' ', '')
+    # pattern like 1+2n
+    if '+' in arity_def:
+        num, pattern = arity_def.split('+')
+        num = int(num)
+    # pattern like 2n
+    else:
+        pattern = arity_def
+        num = 0
+    if not 'n' in pattern:
+        raise(Invalid('Invalid arity pattern %s' % arity_def))
+    pattern = pattern[:-1]
+    if len(pattern) == 0:
+        time = 1
+    else:
+        time = int(pattern)
+    if value < num:
+        return False
+    return (value - num) % time == 0
+
+
 def validate(variables):
     'Validate variables.'
     if not variables or 'hosts' not in variables or \
@@ -66,6 +93,25 @@ def validate(variables):
     if variables['infra'] != variables['name']:
         raise(Invalid('Incoherent infra(%s) and env(%s)' %
                       (variables['name'], variables['infra'])))
+
+    for profile_name in variables['profiles']:
+        profile = variables['profiles'][profile_name]
+        if profile and not 'arity' in profile:
+            if 'name' in profile:
+                raise(Invalid('No arity field in profile %s' %
+                              profile['name']))
+            else:
+                raise(Invalid('No arity field in profile'))
+        count = 0
+        for host in variables['hosts']:
+            if host['profile'] == profile_name:
+                count += 1
+        if not profile:
+            raise(Invalid('Profile %s has no arity definition' %
+                          profile_name))
+        if not validate_arity(profile['arity'], count):
+            raise(Invalid('Not the expected arity (%s) for %s: %d' %
+                          (profile['arity'], profile_name, count)))
 
     for host in variables['hosts']:
         if 'name' not in host:

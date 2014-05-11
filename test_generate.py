@@ -40,6 +40,10 @@ class TestGenerate(unittest.TestCase):
         variables = generate.get_vars(YAML2)
         self.assertTrue(generate.validate(variables))
 
+    def test_validate2(self):
+        variables = generate.get_vars(YAML3)
+        self.assertTrue(generate.validate(variables))
+
     def test_reinject(self):
         variables = generate.get_vars(YAML2)
         generate.reinject(variables)
@@ -63,23 +67,57 @@ class TestGenerate(unittest.TestCase):
             {'key': 'other'}
         ), 'other')
 
+    def test_validate_arity(self):
+        self.assertTrue(generate.validate_arity('1', 1))
+
+    def test_validate_arity2(self):
+        self.assertFalse(generate.validate_arity('2', 1))
+
+    def test_validate_arity3(self):
+        self.assertFalse(generate.validate_arity(' 2 + n ', 1))
+
+    def test_validate_arity4(self):
+        self.assertTrue(generate.validate_arity(' 2 + 2n ', 8))
+
+    def test_validate_arity5(self):
+        self.assertTrue(generate.validate_arity('n', 0))
+
 YAML1 = '''
 key: value
 '''
 
 YAML2 = '''
+name: 2
 profiles:
   management2:
+    arity: 0
   management:
+    arity: 1
     steps:
       -
         step: 1
       -
         step: 3
+infra: 2
 hosts:
   -
     name: master
     profile: management
+key: value
+'''
+
+YAML3 = '''
+name: 3
+profiles:
+  management:
+    arity: n
+  management2:
+    arity: 1+2n
+infra: 3
+hosts:
+  -
+    name: master
+    profile: management2
 key: value
 '''
 
