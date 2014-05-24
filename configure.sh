@@ -245,6 +245,10 @@ EOF
 	NUM=$(($NUM - 1))
 	sleep 10
     done
+    # check puppet result
+    if [ $RC = 1]; then
+        exit 1
+    fi
     # Some issues have been found when running puppet the first time.
     # It seems that restarting web server solves the issue.
     service $WEB_SERVER restart
@@ -258,11 +262,11 @@ if [ $STEP -eq 0 ]; then
     detect_os
     generate 0 /etc/puppet/data/common.yaml
     configure_puppet | tee /tmp/puppet-master.step0.log
-    if [ $RC -eq 0 ]; then
+    if [ ${PIPESTATUS[0]} -eq 0 ]; then
 	STEP=1
 	echo $STEP > $CDIR/step
     else
-	exit $RC
+	exit 1
     fi
 
     # clean known_hosts
