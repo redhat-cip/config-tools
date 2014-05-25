@@ -246,7 +246,7 @@ EOF
 	sleep 10
     done
     # check puppet result
-    if [ $RC = 1]; then
+    if [ $RC = 1 ]; then
         exit 1
     fi
     # Some issues have been found when running puppet the first time.
