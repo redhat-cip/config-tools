@@ -49,17 +49,29 @@ def reinject(variables):
             min_step = min([x['step']
                             for x in variables['profiles'][pname]['steps']])
             variables['profiles'][pname]['min_step'] = min_step
-        variables['profiles'][pname]['hosts'] = [x for x
-                                                 in variables['hosts']
-                                                 if x['profile'] == pname]
+        variables['profiles'][pname]['hosts'] = \
+            [x for x
+             in variables['hosts']
+             if variables['hosts'][x]['profile'] == pname]
 
 
 def validate_arity(arity_def, value):
+    '''Validate a value against an arity definition of a profile entry.
+
+The arity field can have these forms:
+
+    arity: 2                    # only 2 instances
+    arity: 3n                   # only instances by group of 3
+    arity: 1+2n                 # only odd number of instances
+
+    '''
+    # strict number
     try:
         arity = int(arity_def)
         return arity == value
     except ValueError:
         pass
+    # remove spaces
     arity_def = arity_def.replace(' ', '')
     # pattern like 1+2n
     if '+' in arity_def:
@@ -94,6 +106,10 @@ def validate(variables):
         raise(Invalid('Incoherent infra(%s) and env(%s)' %
                       (variables['name'], variables['infra'])))
 
+    for host in variables['hosts']:
+        if 'profile' not in variables['hosts'][host]:
+            raise(Invalid('host %s has no profile section' % host))
+
     for profile_name in variables['profiles']:
         profile = variables['profiles'][profile_name]
         if profile and not 'arity' in profile:
@@ -104,7 +120,7 @@ def validate(variables):
                 raise(Invalid('No arity field in profile'))
         count = 0
         for host in variables['hosts']:
-            if host['profile'] == profile_name:
+            if variables['hosts'][host]['profile'] == profile_name:
                 count += 1
         if not profile:
             raise(Invalid('Profile %s has no arity definition' %
@@ -112,12 +128,6 @@ def validate(variables):
         if not validate_arity(profile['arity'], count):
             raise(Invalid('Not the expected arity (%s) for %s: %d' %
                           (profile['arity'], profile_name, count)))
-
-    for host in variables['hosts']:
-        if 'name' not in host:
-            raise(Invalid('host with no name'))
-        if 'profile' not in host:
-            raise(Invalid('host %s has no profile section' % host['name']))
 
     return True
 

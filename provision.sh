@@ -139,10 +139,11 @@ PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 
 
 rm -f modules.tgz
 tar zcf modules.tgz --exclude=".git*" modules
+
 # hosts
 
-
-if [ -r $ORIG/hosts ]; then
+if [ -r $ORIG/infra/hosts.tmpl ]; then
+    $ORIG/generate.py 0 $ORIG/global.yml $ORIG/infra/hosts.tmpl > $ORIG/hosts
     HOSTS=$ORIG/hosts
 else
     HOSTS=

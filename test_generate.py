@@ -100,8 +100,7 @@ profiles:
         step: 3
 infra: 2
 hosts:
-  -
-    name: master
+  master:
     profile: management
 key: value
 '''
@@ -115,8 +114,7 @@ profiles:
     arity: 1+2n
 infra: 3
 hosts:
-  -
-    name: master
+  master:
     profile: management2
 key: value
 '''
