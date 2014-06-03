@@ -37,7 +37,6 @@ serverspecgit=$($ORIG/extract.py serverspec "$2")
 envgit=$($ORIG/extract.py environment.repository "$2")
 envyml=$($ORIG/extract.py environment.name "$2")
 infragit=$($ORIG/extract.py infrastructure "$2")
-shift 2
 
 checkout_tag() {
     cd $1
@@ -87,7 +86,7 @@ fi
 
 cat infra/infra.yml env/$envyml > global.yml
 
-$ORIG/generate.py 0 global.yml $ORIG/config.tmpl "$@" > config
+$ORIG/generate.py 0 global.yml $ORIG/config.tmpl > config
 . config
 
 if [ -z "$USER" ]; then
