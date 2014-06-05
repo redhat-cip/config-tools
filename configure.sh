@@ -254,6 +254,17 @@ EOF
     service $WEB_SERVER restart
 }
 
+    for h in $HOSTS; do
+	(echo "Configure Puppet environment on ${h} node:"
+	 tee /tmp/environment.txt.$h <<EOF
+type=${PROF_BY_HOST[$h]}
+EOF
+	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+         n=$(($n + 1)))
+    done
+
 ######################################################################
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
@@ -278,15 +289,8 @@ if [ $STEP -eq 0 ]; then
     n=0
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
-	 tee /tmp/environment.txt.$h <<EOF
-type=${PROF_BY_HOST[$h]}
-EOF
 	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
 	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hosts /tmp/resolv.conf /etc/
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
