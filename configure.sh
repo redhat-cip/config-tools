@@ -290,7 +290,7 @@ if [ $STEP -eq 0 ]; then
     for h in $HOSTS; do
 	(echo "Provisioning Puppet agent on ${h} node:"
 	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
-	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
