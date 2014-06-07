@@ -231,6 +231,12 @@ EOF
     service puppetdb start
     puppet resource service puppetdb ensure=running enable=true
     a2ensite puppetmaster
+
+    # if puppetboard is present, enable it
+    if [ -r /var/www/puppetboard/wsgi.py ]; then
+        a2ensite puppetboard
+    fi
+
     service $WEB_SERVER start
 
     # puppetdb is slow to start so try multiple times to reach it
