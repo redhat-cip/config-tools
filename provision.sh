@@ -159,7 +159,9 @@ EOF
 
 # Copy files and put them at the right places on $MASTER
 
-scp $SSHOPTS $HOSTS site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $USER@$MASTER:/tmp/
+scp $SSHOPTS $HOSTS site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $USER@$MASTER:/tmp/
+rsync -e "ssh $SSHOPTS" -a infra env $USER@$MASTER:/tmp/
+
 ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/data
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /etc/config-tools
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/serverspec.tgz -C /etc
@@ -170,7 +172,8 @@ if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/
 fi
 ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/config.tmpl /tmp/global.yml /etc/config-tools/
-ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/configure.sh /tmp/verify-servers.sh /tmp/generate.py /usr/sbin/
+ssh $SSHOPTS $USER@$MASTER sudo mv /tmp/infra /tmp/env /etc/config-tools/
+ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/configure.sh /tmp/verify-servers.sh /tmp/generate.py /tmp/extract.py /usr/sbin/
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /root/.ssh
 ssh $SSHOPTS $USER@$MASTER sudo cp \~/.ssh/authorized_keys /root/.ssh/
 scp $SSHOPTS $HOME/.ssh/id_rsa root@$MASTER:.ssh/
