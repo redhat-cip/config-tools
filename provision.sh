@@ -172,7 +172,7 @@ if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/
 fi
 ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/config.tmpl /tmp/global.yml /etc/config-tools/
-ssh $SSHOPTS $USER@$MASTER sudo mv /tmp/infra /tmp/env /etc/config-tools/
+ssh $SSHOPTS $USER@$MASTER sudo rsync -a --delete /tmp/infra /tmp/env /etc/config-tools/
 ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/configure.sh /tmp/verify-servers.sh /tmp/generate.py /tmp/extract.py /usr/sbin/
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /root/.ssh
 ssh $SSHOPTS $USER@$MASTER sudo cp \~/.ssh/authorized_keys /root/.ssh/
