@@ -178,8 +178,4 @@ ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /root/.ssh
 ssh $SSHOPTS $USER@$MASTER sudo cp \~/.ssh/authorized_keys /root/.ssh/
 scp $SSHOPTS $HOME/.ssh/id_rsa root@$MASTER:.ssh/
 
-if [ -n "$VIP_NODE" ]; then
-    $ORIG/configure-vip.sh $USER $VIP_NODE eth0 $PREFIX.253 || :
-fi
-
 # provision.sh ends here
