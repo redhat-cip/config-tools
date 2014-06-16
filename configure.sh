@@ -274,9 +274,11 @@ EOF
 ######################################################################
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
+
+detect_os
+
 if [ $STEP -eq 0 ]; then
     configure_hostname
-    detect_os
     generate 0 /etc/puppet/data/common.yaml
     configure_puppet | tee /tmp/puppet-master.step0.log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
@@ -321,6 +323,10 @@ fi
 ######################################################################
 # Step 1+: regular puppet runs (without certificate creation)
 ######################################################################
+
+# useful after an upgrade
+service $WEB_SERVER restart
+
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > $CDIR/step
