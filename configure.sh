@@ -62,8 +62,8 @@ generate() {
 
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
-	echo "$f doesn't exist" 1>&2
-	exit 1
+        echo "$f doesn't exist" 1>&2
+        exit 1
     fi
 done
 
@@ -94,54 +94,54 @@ RC=0
 
 run_parallel() {
     case $1 in
-	$PARALLELSTEPS)
-	    return 0
-	    ;;
-	*)
-	    return 1
-	    ;;
+        $PARALLELSTEPS)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
     esac
 }
 
 configure_hostname() {
     if hostname -f; then
-	FQDN=$(hostname -f)
+        FQDN=$(hostname -f)
     else
-	HOSTNAME=$(hostname)
+        HOSTNAME=$(hostname)
 
-	case $HOSTNAME in
-	    *.*)
-		SHORT=$(sed 's/\..*//' <<< $HOSTNAME)
-		;;
-	    *)
-		SHORT=$HOSTNAME
-		HOSTNAME=$HOSTNAME.local
-		;;
-	esac
+        case $HOSTNAME in
+            *.*)
+                SHORT=$(sed 's/\..*//' <<< $HOSTNAME)
+                ;;
+            *)
+                SHORT=$HOSTNAME
+                HOSTNAME=$HOSTNAME.local
+                ;;
+        esac
 
-	eval "$(facter |fgrep 'ipaddress =>' | sed 's/ => /=/')"
+        eval "$(facter |fgrep 'ipaddress =>' | sed 's/ => /=/')"
 
-	if ! grep -q $ipaddress /etc/hosts; then
-	    echo "$ipaddress	$SHORT" >> /etc/hosts
-	fi
+        if ! grep -q $ipaddress /etc/hosts; then
+            echo "$ipaddress    $SHORT" >> /etc/hosts
+        fi
 
-	FQDN=$SHORT
+        FQDN=$SHORT
     fi
 }
 
 detect_os() {
     OS=$(lsb_release -i -s)
     case $OS in
-	Debian|Ubuntu)
-	    WEB_SERVER="apache2"
-	    ;;
-	CentOS|RedHatEnterpriseServer)
-	    WEB_SERVER="httpd"
-	    ;;
-	*)
-	    echo "Operating System not supported."
-	    exit 1
-	    ;;
+        Debian|Ubuntu)
+            WEB_SERVER="apache2"
+            ;;
+        CentOS|RedHatEnterpriseServer)
+            WEB_SERVER="httpd"
+            ;;
+        *)
+            echo "Operating System not supported."
+            exit 1
+            ;;
     esac
     RELEASE=$(lsb_release -c -s)
     DIST_RELEASE=$(lsb_release -s -r)
@@ -222,7 +222,7 @@ EOF
     cp /var/lib/puppet/ssl/certs/ca.pem /etc/puppetdb/ssl/ca.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/ca.pem
 
     if [ $OS == "Debian" ] || [ $OS == "Ubuntu" ]; then
-	echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
+        echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
     fi
 
     tee -a /etc/puppet/autosign.conf <<< '*'
@@ -243,13 +243,13 @@ EOF
     NUM=10
     RC=1
     while [ $NUM -gt 0 ]; do
-	if puppet agent $PUPPETOPTS  $PUPPETOPTS2; then
-	    RC=0
-	    echo "Puppet Server UP and RUNNING!"
-	    break
-	fi
-	NUM=$(($NUM - 1))
-	sleep 10
+        if puppet agent $PUPPETOPTS  $PUPPETOPTS2; then
+            RC=0
+            echo "Puppet Server UP and RUNNING!"
+            break
+        fi
+        NUM=$(($NUM - 1))
+        sleep 10
     done
     # check puppet result
     if [ $RC = 1 ]; then
@@ -261,13 +261,13 @@ EOF
 }
 
     for h in $HOSTS; do
-	(echo "Configure Puppet environment on ${h} node:"
-	 tee /tmp/environment.txt.$h <<EOF
+        (echo "Configure Puppet environment on ${h} node:"
+         tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-	 scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+         scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
          n=$(($n + 1)))
     done
 
@@ -282,22 +282,22 @@ if [ $STEP -eq 0 ]; then
     generate 0 /etc/puppet/data/common.yaml
     configure_puppet | tee /tmp/puppet-master.step0.log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
-	STEP=1
-	echo $STEP > $CDIR/step
+        STEP=1
+        echo $STEP > $CDIR/step
     else
-	exit 1
+        exit 1
     fi
 
     # clean known_hosts
     for h in $HOSTS; do
-	ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h} || :
-	ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h}.$DOMAIN || :
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h} || :
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h}.$DOMAIN || :
     done
 
     n=0
     for h in $HOSTS; do
-	(echo "Provisioning Puppet agent on ${h} node:"
-	 scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
+        (echo "Provisioning Puppet agent on ${h} node:"
+         scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
@@ -305,18 +305,18 @@ set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
-	 
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
-	 
-	 ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
-	n=$(($n + 1))
+         
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
+         
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+        n=$(($n + 1))
     done
 
     while [ $n -ne 0 ]; do
-	wait
-	n=$(($n - 1))
+        wait
+        n=$(($n - 1))
     done
 fi
 
@@ -332,44 +332,44 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     echo $step > $CDIR/step
     generate $step /etc/puppet/data/common.yaml
     for h in $HOSTS; do
-	generate $step /etc/puppet/data/fqdn.yaml host=$h
-	mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-	# hack to fix %{hiera} without ""
-	sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-	rm /etc/puppet/data/fqdn.yaml
+        generate $step /etc/puppet/data/fqdn.yaml host=$h
+        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+        # hack to fix %{hiera} without ""
+        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        rm /etc/puppet/data/fqdn.yaml
     done
     for p in $PROFILES; do
-	generate $step /etc/puppet/data/type.yaml profile=$p
-	mkdir -p /etc/puppet/data/$p
-	mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+        generate $step /etc/puppet/data/type.yaml profile=$p
+        mkdir -p /etc/puppet/data/$p
+        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
     done
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
-	n=0
-	for h in $HOSTS; do
-	    n=$(($n + 1))
-	    echo "Run Puppet on $h node (step ${step}, try $loop):"
-	    if run_parallel $step; then
-		ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
-	    else
-		ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
-	    fi
-	done
+        n=0
+        for h in $HOSTS; do
+            n=$(($n + 1))
+            echo "Run Puppet on $h node (step ${step}, try $loop):"
+            if run_parallel $step; then
+                ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+            else
+                ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+            fi
+        done
 
-	if run_parallel $step; then
-	    while [ $n -ne 0 ]; do
-		wait
-		n=$(($n - 1))
-	    done
-	fi
+        if run_parallel $step; then
+            while [ $n -ne 0 ]; do
+                wait
+                n=$(($n - 1))
+            done
+        fi
 
-	if verify-servers.sh $step; then
-	    RC=0
-	    break
-	else
-	    RC=1
-	    echo "Still errors, launching puppet again (step $step, try $loop)..."
-	fi
+        if verify-servers.sh $step; then
+            RC=0
+            break
+        else
+            RC=1
+            echo "Still errors, launching puppet again (step $step, try $loop)..."
+        fi
     done
 
     elapsed=$(($(date '+%s') - $start))
@@ -377,7 +377,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     echo "step $step took $(($elapsed / 60)) mn"
 
     if [ $RC -eq 1 ]; then
-	break
+        break
     fi
 done
 
