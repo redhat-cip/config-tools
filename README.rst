@@ -41,7 +41,7 @@ Provisionning
 To provision the needed files, you can use the ``provision.sh`` script
 like this::
 
-  $ ./provision.sh H.1.2.0 deployment.yml
+  $ ./provision.sh H.1.2.0 git://myserver/mydeployment/deployment.yml
 
 with a ``deployment.yml`` like this::
 
@@ -50,9 +50,6 @@ with a ``deployment.yml`` like this::
   serverspec:
     git@github.com:enovance/openstack-serverspec.git
   environment:
-    repository:
-      git@github.com:enovance/ci-env
-    name:
-      env.yml
+    env.yml
   infrastructure:
     git@github.com:enovance/os-ref-arch

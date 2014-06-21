@@ -27,11 +27,7 @@ set -e
 set -x
 
 tag="$1"
-puppetgit=$($ORIG/extract.py module "$2")
-serverspecgit=$($ORIG/extract.py serverspec "$2")
-envgit=$($ORIG/extract.py environment.repository "$2")
-envyml=$($ORIG/extract.py environment.name "$2")
-infragit=$($ORIG/extract.py infrastructure "$2")
+yaml="$2"
 
 checkout_tag() {
     cd $1
@@ -48,7 +44,13 @@ checkout_tag() {
 update_or_clone() {
     giturl=$1
     dir=$2
-    
+
+    if [ -r $dir/.git/config ]; then
+        if ! grep -q "url = $giturl\$" $dir/.git/config; then
+            rm -rf $dir
+        fi
+    fi
+
     if [ -d $dir ]; then
 	cd $dir
 	git reset --hard
@@ -64,10 +66,19 @@ update_or_clone() {
     checkout_tag $dir
 }
 
+envgit=$(dirname $yaml)
+yamlfile=env/$(basename $yaml)
+
+update_or_clone "$envgit" env
+
+puppetgit=$($ORIG/extract.py module "$yamlfile")
+serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
+envyml=$($ORIG/extract.py environment "$yamlfile")
+infragit=$($ORIG/extract.py infrastructure "$yamlfile")
+
 # infra and env
 
 update_or_clone "$infragit" infra
-update_or_clone "$envgit" env
 
 if [ ! -f infra/infra.yml ]; then
     echo "infra.yml not found in $infragit" 1>&2
