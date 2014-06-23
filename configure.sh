@@ -83,7 +83,7 @@ else
 fi
 
 if [ -z "$LAST" ]; then
-    LAST=$(fgrep 'step:' $CFG|cut -d ':' -f 2|sort -rn|head -1)
+    LAST=$(egrep '^\s*[0-9]+:' $CFG|cut -d ':' -f 1|sort -rn|head -1)
 fi
 
 if [ -z "$LAST" ]; then
