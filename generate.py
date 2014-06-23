@@ -46,7 +46,7 @@ def reinject(variables):
             variables['profiles'][pname] = {}
         if 'steps' in variables['profiles'][pname] and \
                 variables['profiles'][pname]['steps']:
-            min_step = min([x['step']
+            min_step = min([x
                             for x in variables['profiles'][pname]['steps']])
             variables['profiles'][pname]['min_step'] = min_step
         variables['profiles'][pname]['hosts'] = \

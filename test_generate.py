@@ -94,10 +94,12 @@ profiles:
   management:
     arity: 1
     steps:
-      -
-        step: 1
-      -
-        step: 3
+      1:
+        role:
+          - role1
+      3:
+        role:
+          - role3
 infra: 2
 hosts:
   master:

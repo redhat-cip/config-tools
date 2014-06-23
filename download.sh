@@ -73,7 +73,7 @@ update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
-envyml=$($ORIG/extract.py environment "$yamlfile")
+envyml=$($ORIG/extract.py environment "$yamlfile").yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
 
 # infra and env
@@ -90,18 +90,18 @@ if [ ! -f env/$envyml ]; then
     exit 1
 fi
 
-cat infra/infra.yml env/$envyml > global.yml
+$ORIG/merge.py infra/infra.yml env/$envyml > global.yml
 
 $ORIG/generate.py 0 global.yml $ORIG/config.tmpl > config
 . config
 
 if [ -z "$USER" ]; then
-    echo "USER not defined in env/env.yml" 1>&2
+    echo "config.user not defined in env/$envyml" 1>&2
     exit 1
 fi
 
 if [ -z "$MASTER" ]; then
-    echo "MASTER not defined in env/env.yml" 1>&2
+    echo "config.puppet_master not defined in env/$envyml" 1>&2
     exit 1
 fi
 

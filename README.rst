@@ -50,6 +50,6 @@ with a ``deployment.yml`` like this::
   serverspec:
     git@github.com:enovance/openstack-serverspec.git
   environment:
-    env.yml
+    env
   infrastructure:
     git@github.com:enovance/os-ref-arch
