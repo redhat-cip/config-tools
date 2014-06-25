@@ -53,7 +53,7 @@ Exec {
 hiera_include('classes')
 EOF
 
-scp $SSHOPTS $HOSTS site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $USER@$MASTER:/tmp/
+scp $SSHOPTS $HOSTS openrc.sh site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $USER@$MASTER:/tmp/
 rsync -e "ssh $SSHOPTS" -a infra env $USER@$MASTER:/tmp/
 
 ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/data
@@ -66,6 +66,7 @@ if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/
 fi
 ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/config.tmpl /tmp/global.yml /etc/config-tools/
+ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/openrc.sh /etc/config-tools/
 ssh $SSHOPTS $USER@$MASTER sudo rsync -a --delete /tmp/infra /tmp/env /etc/config-tools/
 ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/configure.sh /tmp/verify-servers.sh /tmp/generate.py /tmp/extract.py /usr/sbin/
 ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /root/.ssh
