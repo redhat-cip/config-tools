@@ -95,6 +95,8 @@ $ORIG/merge.py infra/infra.yml env/$envyml > global.yml
 $ORIG/generate.py 0 global.yml $ORIG/config.tmpl > config
 . config
 
+$ORIG/generate.py 0 global.yml infra/openrc.sh.tmpl > openrc.sh
+
 if [ -z "$USER" ]; then
     echo "config.user not defined in env/$envyml" 1>&2
     exit 1
