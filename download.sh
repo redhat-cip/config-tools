@@ -75,7 +75,14 @@ puppetgit=$($ORIG/extract.py module "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 envyml=$($ORIG/extract.py environment "$yamlfile").yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
+
+# allow to have an empty jenkins field
+
+set +e
+
 jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
+
+set -e
 
 # infra and env
 
