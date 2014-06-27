@@ -53,3 +53,13 @@ with a ``deployment.yml`` like this::
     env
   infrastructure:
     git@github.com:enovance/os-ref-arch
+
+ 
+Available designs
++++++++++++++++++
+ 
+Examples of infrastructure git repositories:
+
+* Scalable infra: https://github.com/enovance/openstack-yaml-infra-ref-arch
+* 3 nodes in HA: https://github.com/enovance/openstack-yaml-infra-3nodes-fullha
+* 3 nodes without HA: https://github.com/enovance/openstack-yaml-infra-3nodes-nonha
