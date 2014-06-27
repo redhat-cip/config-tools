@@ -53,7 +53,13 @@ Exec {
 hiera_include('classes')
 EOF
 
-scp $SSHOPTS $HOSTS openrc.sh site.pp serverspec.tgz modules.tgz data.tgz $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $USER@$MASTER:/tmp/
+if [ -f jenkins_jobs.tgz ]; then
+    JJB=jenkins_jobs.tgz
+else
+    JJB=
+fi
+
+scp $SSHOPTS $HOSTS openrc.sh site.pp serverspec.tgz modules.tgz data.tgz $JJB $ORIG/config.tmpl $ORIG/configure.sh $ORIG/global.yml $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $USER@$MASTER:/tmp/
 rsync -e "ssh $SSHOPTS" -a infra env $USER@$MASTER:/tmp/
 
 ssh $SSHOPTS $USER@$MASTER sudo rm -rf /etc/serverspec /etc/puppet/modules /etc/puppet/data
@@ -61,6 +67,10 @@ ssh $SSHOPTS $USER@$MASTER sudo mkdir -p /etc/config-tools
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/serverspec.tgz -C /etc
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/modules.tgz -C /etc/puppet
 ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/data.tgz -C /etc/puppet
+if [ -n "JJB" ]; then
+    ssh $SSHOPTS $USER@$MASTER sudo tar xf /tmp/$JJB -C /etc
+    ssh $SSHOPTS $USER@$MASTER sudo /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
+fi
 ssh $SSHOPTS $USER@$MASTER sudo mv /tmp/site.pp /etc/puppet/manifests
 if [ -n "$HOSTS" ]; then
     ssh $SSHOPTS $USER@$MASTER sudo cp /tmp/hosts /etc/

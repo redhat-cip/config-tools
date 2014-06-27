@@ -75,6 +75,7 @@ puppetgit=$($ORIG/extract.py module "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 envyml=$($ORIG/extract.py environment "$yamlfile").yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
+jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
 
 # infra and env
 
@@ -105,6 +106,14 @@ fi
 if [ -z "$MASTER" ]; then
     echo "config.puppet_master not defined in env/$envyml" 1>&2
     exit 1
+fi
+
+# Jenkins jobs builder
+
+rm -f jenkins_jobs.tgz
+if [ -n "$jenkinsgit" ]; then
+    update_or_clone "$jenkinsgit" jenkins_jobs
+    tar zcf jenkins_jobs.tgz jenkins_jobs
 fi
 
 # /etc/puppet/data
