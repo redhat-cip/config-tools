@@ -193,6 +193,6 @@ mv infra env $TOP/etc/config-tools/
 
 # create the archive
 
-tar zcvf archive.tgz -C $TOP .
+tar zcf archive.tgz -C $TOP .
 
 # download.sh ends here
