@@ -148,7 +148,7 @@ EOF
 # hosts
 
 if [ -r $ORIG/infra/hosts.tmpl ]; then
-    $ORIG/generate.py 0 $ORIG/global.yml $ORIG/infra/hosts.tmpl > $TOP/etc/hosts
+    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/infra/hosts.tmpl > $TOP/etc/hosts
 fi
 
 # Puppet modules
