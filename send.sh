@@ -28,6 +28,8 @@ set -x
 
 ORIG=$(cd $(dirname $0); pwd)
 
+. top/etc/config-tools/config
+
 scp $SSHOPTS archive.tgz extract-archive.sh $USER@$MASTER:/tmp/
 ssh $SSHOPTS $USER@$MASTER sudo /tmp/extract-archive.sh
 
