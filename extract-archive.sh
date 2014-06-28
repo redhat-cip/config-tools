@@ -22,5 +22,6 @@ set -x
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+/opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 
 # extract-archive.sh ends here
