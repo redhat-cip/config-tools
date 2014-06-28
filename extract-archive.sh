@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright (C) 2014 eNovance SAS <licensing@enovance.com>
 #
@@ -16,19 +16,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Copy files and put them at the right places on $MASTER
+tar xf /tmp/archive.tgz --no-same-owner -C /
+mkdir -p /root/.ssh
+cp ~/.ssh/authorized_keys /root/.ssh/
 
-SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
-      -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey \
-      -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
-      -oConnectTimeout=3 -oUserKnownHostsFile=/dev/null"
-
-set -e
-set -x
-
-ORIG=$(cd $(dirname $0); pwd)
-
-scp $SSHOPTS archive.tgz extract-archive.sh $USER@$MASTER:/tmp/
-ssh $SSHOPTS $USER@$MASTER sudo /tmp/extract-archive.sh
-
-# send.sh ends here
+# extract-archive.sh ends here

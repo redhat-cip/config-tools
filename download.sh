@@ -98,12 +98,16 @@ if [ ! -f env/$envyml ]; then
     exit 1
 fi
 
-$ORIG/merge.py infra/infra.yml env/$envyml > global.yml
+# create root of the tree
 
-$ORIG/generate.py 0 global.yml $ORIG/config.tmpl > config
-. config
+TOP=$(pwd)/top
+rm -rf $TOP
+mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin
 
-$ORIG/generate.py 0 global.yml infra/openrc.sh.tmpl > openrc.sh
+$ORIG/merge.py infra/infra.yml env/$envyml > $TOP/etc/config-tools/global.yml
+
+$ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/config.tmpl > $TOP/etc/config-tools/config
+. $TOP/etc/config-tools/config
 
 if [ -z "$USER" ]; then
     echo "config.user not defined in env/$envyml" 1>&2
@@ -117,13 +121,12 @@ fi
 
 # Jenkins jobs builder
 
-rm -f jenkins_jobs.tgz
 if [ -n "$jenkinsgit" ]; then
     update_or_clone "$jenkinsgit" jenkins_jobs
-    tar zcf jenkins_jobs.tgz jenkins_jobs
+    mv jenkins_jobs $TOP/etc/
 fi
 
-# /etc/puppet/data
+# Puppet
 
 for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl infra/data/type.yaml.tmpl; do
     if [ ! -f  ]; then
@@ -132,21 +135,21 @@ for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl infra/data/type.y
     fi
 done
 
-rm -rf data.tgz data
-mkdir data
-tar zcf data.tgz -C infra data
+cp -r infra/data $TOP/etc/puppet/
 
-# Serverspec
+cat > $TOP/etc/puppet/manifests/site.pp <<EOF
+Exec {
+  path => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+}
 
-update_or_clone "$serverspecgit" serverspec
+hiera_include('classes')
+EOF
 
-git --git-dir=serverspec/.git rev-parse HEAD > serverspec-rev
+# hosts
 
-cp infra/arch.yml.tmpl serverspec/
-sed -i "s/root/$USER/" serverspec/spec/spec_helper.rb
-
-rm -f serverspec.tgz
-tar zcf serverspec.tgz --exclude=".git*" serverspec
+if [ -r $ORIG/infra/hosts.tmpl ]; then
+    $ORIG/generate.py 0 $ORIG/global.yml $ORIG/infra/hosts.tmpl > $TOP/etc/hosts
+fi
 
 # Puppet modules
 
@@ -161,7 +164,35 @@ fi
 rm -rf modules
 PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
 
-rm -f modules.tgz
-tar zcf modules.tgz --exclude=".git*" modules
+mv modules $TOP/etc/puppet/
+
+# Serverspec
+
+update_or_clone "$serverspecgit" serverspec
+
+git --git-dir=serverspec/.git rev-parse HEAD > serverspec-rev
+
+cp infra/arch.yml.tmpl serverspec/
+sed -i "s/root/$USER/" serverspec/spec/spec_helper.rb
+
+mv serverspec $TOP/etc/
+
+# scripts
+
+cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $TOP/usr/sbin/
+
+# config-tools
+
+cp $ORIG/config.tmpl $TOP/etc/config-tools/
+
+if [ -r infra/openrc.sh.tmpl ]; then
+    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
+fi
+
+mv infra env $TOP/etc/config-tools/
+
+# create the archive
+
+tar zcvf archive.tgz -C $TOP .
 
 # download.sh ends here
