@@ -16,8 +16,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+set -e
+set -x
+
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
-cp ~/.ssh/authorized_keys /root/.ssh/
+cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
 
 # extract-archive.sh ends here
