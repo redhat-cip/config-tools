@@ -111,7 +111,7 @@ mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin
 
 $ORIG/merge.py infra/infra.yml env/$envyml > $TOP/etc/config-tools/global.yml
 
-$ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/config.tmpl > $TOP/etc/config-tools/config
+$ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/config.tmpl version=$version role=$role > $TOP/etc/config-tools/config
 . $TOP/etc/config-tools/config
 
 if [ -z "$USER" ]; then
