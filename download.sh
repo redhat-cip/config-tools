@@ -28,6 +28,10 @@ set -x
 
 tag="$1"
 yaml="$2"
+shift 2
+
+role=openstack-full
+eval "$@"
 
 checkout_tag() {
     cd $1
@@ -123,7 +127,12 @@ fi
 # eDeploy
 
 if [ -d env/$env ]; then
+    if [ -z "$version" ]; then
+        echo "pass version=<version> on the command line" 1>&1
+        exit 1
+    fi
     cp -r env/$env/* $TOP/etc/
+    sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $TOP/etc/edeploy/*
 fi
 
 # Jenkins jobs builder
