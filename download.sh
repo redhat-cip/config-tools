@@ -73,7 +73,8 @@ update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
-envyml=$($ORIG/extract.py environment "$yamlfile").yml
+env=$($ORIG/extract.py environment "$yamlfile")
+envyml=${env}.yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
 
 # allow to have an empty jenkins field
@@ -117,6 +118,12 @@ fi
 if [ -z "$MASTER" ]; then
     echo "config.puppet_master not defined in env/$envyml" 1>&2
     exit 1
+fi
+
+# eDeploy
+
+if [ -d env/$env ]; then
+    cp -r env/$env/* $TOP/etc/
 fi
 
 # Jenkins jobs builder

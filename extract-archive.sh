@@ -24,4 +24,8 @@ mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
 /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 
+if [ -r /etc/edeploy/state ]; then
+    chown www-data /etc/edeploy/*.cmdb /etc/edeploy/state
+fi
+
 # extract-archive.sh ends here
