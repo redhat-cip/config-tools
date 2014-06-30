@@ -22,6 +22,13 @@ set -x
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+
+# Wait Jenkins is up and running, it may take a long time.
+if ! timeout 800 sh -c "while ! curl -s http://localhost:8282 | grep 'No builds in the queue.' >/dev/null 2>&1; do sleep 10; done"; then
+  echo "Jenkins is not up and running after long time."
+  exit 1
+fi
+
 /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 
 if [ -r /etc/edeploy/state ]; then
