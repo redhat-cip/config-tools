@@ -266,6 +266,8 @@ EOF
 type=${PROF_BY_HOST[$h]}
 EOF
          scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+         scp $SSHOPTS /etc/hosts $USER@$h.$DOMAIN:/tmp/hosts
+         ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hosts /etc/hosts
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
          n=$(($n + 1)))
