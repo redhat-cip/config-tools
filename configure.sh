@@ -237,7 +237,9 @@ EOF
         a2ensite puppetboard
     fi
 
+    puppetdb ssl-setup -f
     service $WEB_SERVER start
+    service puppetdb restart
 
     # puppetdb is slow to start so try multiple times to reach it
     NUM=10
