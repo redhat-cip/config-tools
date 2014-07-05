@@ -237,9 +237,7 @@ EOF
         a2ensite puppetboard
     fi
 
-    puppetdb ssl-setup -f
     service $WEB_SERVER start
-    service puppetdb restart
 
     # puppetdb is slow to start so try multiple times to reach it
     NUM=10
@@ -307,7 +305,10 @@ set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
+
+         if [[ ! $h.$DOMAIN == $FQDN ]]; then
+           ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
+         fi
          
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
          ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
