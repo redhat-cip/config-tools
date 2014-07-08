@@ -81,7 +81,7 @@ The arity field can have these forms:
     else:
         pattern = arity_def
         num = 0
-    if not 'n' in pattern:
+    if 'n' not in pattern:
         raise(Invalid('Invalid arity pattern %s' % arity_def))
     pattern = pattern[:-1]
     if len(pattern) == 0:
@@ -99,7 +99,7 @@ def validate(variables):
        'profiles' not in variables:
         raise(Invalid('No hosts or profiles section'))
 
-    if not 'infra' in variables or not 'name' in variables:
+    if 'infra' not in variables or 'name' not in variables:
         raise(Invalid('No infra or name field'))
 
     if variables['infra'] != variables['name']:
