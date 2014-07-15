@@ -56,7 +56,7 @@ generate() {
     file=$2
     shift 2
     args="$@"
-    
+
     generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
 }
 
@@ -261,14 +261,24 @@ EOF
 }
 
     for h in $HOSTS; do
-        (echo "Configure Puppet environment on ${h} node:"
-         tee /tmp/environment.txt.$h <<EOF
+        if [ $h = `hostname` ]; then
+            (echo "Configure Puppet environment on ${h} node:"
+             tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-         scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
-         n=$(($n + 1)))
+             mkdir -p /etc/facter/facts.d
+             cp /tmp/environment.txt.$h /etc/facter/facts.d
+             n=$(($n + 1)))
+        else
+            (echo "Configure Puppet environment on ${h} node:"
+             tee /tmp/environment.txt.$h <<EOF
+type=${PROF_BY_HOST[$h]}
+EOF
+             scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+             n=$(($n + 1)))
+        fi
     done
 
 ######################################################################
@@ -296,26 +306,48 @@ if [ $STEP -eq 0 ]; then
 
     n=0
     for h in $HOSTS; do
-        (echo "Provisioning Puppet agent on ${h} node:"
-         scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo mv /tmp/resolv.conf /tmp/hosts /etc
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
+        if [ $h = `hostname` ]; then
+            (echo "Provisioning Puppet agent on ${h} node:"
+             cp /tmp/hosts /etc
+             augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 save
 EOT
 
-         if [[ ! $h.$DOMAIN == $FQDN ]]; then
-           ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
-         fi
-         
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
-         
-         ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
-        n=$(($n + 1))
+             if [[ ! $h.$DOMAIN == $FQDN ]]; then
+               rm -rf /var/lib/puppet/ssl/* || :
+             fi
+
+             /etc/init.d/ntp stop || :
+             ntpdate 0.europe.pool.ntp.org || :
+             /etc/init.d/ntp start || :
+
+             puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+            n=$(($n + 1))
+        else
+            (echo "Provisioning Puppet agent on ${h} node:"
+             scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo mv /tmp/resolv.conf /tmp/hosts /etc
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
+set /files/etc/puppet/puppet.conf/agent/pluginsync true
+set /files/etc/puppet/puppet.conf/agent/certname $h
+set /files/etc/puppet/puppet.conf/agent/server $MASTER
+save
+EOT
+
+             if [[ ! $h.$DOMAIN == $FQDN ]]; then
+               ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
+             fi
+
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
+
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+            n=$(($n + 1))
+        fi
     done
 
     while [ $n -ne 0 ]; do
@@ -354,9 +386,17 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             n=$(($n + 1))
             echo "Run Puppet on $h node (step ${step}, try $loop):"
             if run_parallel $step; then
-                ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+                if [ $h = `hostname` ]; then
+                    puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+                else
+                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+                fi
             else
-                ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+                if [ $h = `hostname` ]; then
+                    puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+                else
+                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+                fi
             fi
         done
 
