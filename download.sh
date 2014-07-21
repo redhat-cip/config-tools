@@ -131,7 +131,7 @@ if [ -d env/$env ]; then
         echo "pass version=<version> on the command line" 1>&1
         exit 1
     fi
-    cp -r env/$env/* $TOP/etc/
+    cp -r env/$env/* $TOP/
     sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $TOP/etc/edeploy/*
 fi
 
