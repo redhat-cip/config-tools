@@ -228,7 +228,7 @@ mv serverspec $TOP/etc/
 
 # scripts
 
-cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $TOP/usr/sbin/
+cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $TOP/usr/sbin/
 
 # config-tools
 
