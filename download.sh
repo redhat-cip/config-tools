@@ -81,10 +81,18 @@ env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
 
-# allow to have an empty jenkins field
+# allow to have an empty fields (optional)
 
 set +e
 
+if [ -z "$version" ]; then
+    version=$($ORIG/extract.py version "$yamlfile")
+fi
+
+kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
+pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
+health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
+edeployurl=$($ORIG/extract.py edeploy "$yamlfile"|sed -e "s/@VERSION@/$version/")
 jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
 
 set -e
@@ -133,6 +141,31 @@ if [ -d env/$env ]; then
     fi
     cp -r env/$env/* $TOP/
     sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $TOP/etc/edeploy/*
+
+    mkdir -p $ORIG/cache/$version
+
+    mkdir -p $TOP/var/lib/tftpboot
+    for url in $kernel $pxe $health; do
+        (cd $ORIG/cache/$version
+        base=$(basename $url)
+        if [ ! -f $base ]; then
+            wget -q $url
+        fi
+        cp $base $TOP/var/lib/tftpboot/
+        )
+    done
+
+    mkdir -p $TOP/var/www/install
+    for role in $(grep edeploy: $TOP/etc/config-tools/global.yml|cut -d: -f2|fgrep -v install-server|sort -u); do
+        (cd $ORIG/cache/$version
+        wget -q $edeployurl/$role-$version.edeploy.md5
+        if ! md5sum -c $role-$version.edeploy.md5; then
+            rm -f $role-$version.edeploy
+            wget -q $edeployurl/$role-$version.edeploy
+        fi
+        cp $role-$version.edeploy* $TOP/var/www/install
+        )
+    done
 fi
 
 # Jenkins jobs builder
