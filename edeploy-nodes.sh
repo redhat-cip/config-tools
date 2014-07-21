@@ -116,8 +116,14 @@ test_connectivity() {
     ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password bmc reset cold
     return 0
 }
+cleanup() {
+    /etc/init.d/dnsmasq stop
+}
 
 set -x
+
+/etc/init.d/dnsmasq start
+trap cleanup 0
 
 JOBS=
 tmpfile=$(tempfile)
