@@ -32,7 +32,7 @@ fi
 /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 
 if [ -r /etc/edeploy/state ]; then
-    chown www-data /etc/edeploy/*.cmdb /etc/edeploy/state
+    chown www-data:www-data /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3
 fi
 
 # extract-archive.sh ends here
