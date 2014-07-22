@@ -155,15 +155,16 @@ if [ -d env/$env ]; then
         )
     done
 
-    mkdir -p $TOP/var/www/install
+    mkdir -p $TOP/var/www/install/$version
     for role in $(grep edeploy: $TOP/etc/config-tools/global.yml|cut -d: -f2|fgrep -v install-server|sort -u); do
         (cd $ORIG/cache/$version
         wget -q $edeployurl/$role-$version.edeploy.md5
         if ! md5sum -c $role-$version.edeploy.md5; then
             rm -f $role-$version.edeploy
             wget -q $edeployurl/$role-$version.edeploy
+            md5sum -c $role-$version.edeploy.md5
         fi
-        cp $role-$version.edeploy* $TOP/var/www/install
+        cp $role-$version.edeploy* $TOP/var/www/install/$version/
         )
     done
 fi
