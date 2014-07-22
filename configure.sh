@@ -313,6 +313,7 @@ if [ $STEP -eq 0 ]; then
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
+rm /files/etc/puppet/puppet.conf/main/templatedir
 save
 EOT
 
@@ -334,6 +335,7 @@ EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
+rm /files/etc/puppet/puppet.conf/main/templatedir
 save
 EOT
 
