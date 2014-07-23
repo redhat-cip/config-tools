@@ -19,6 +19,12 @@
 set -e
 set -x
 
+if [ -r /etc/redhat-release ]; then
+    USER=apache
+else
+    USER=www-data
+fi
+
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
@@ -32,7 +38,19 @@ fi
 /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 
 if [ -r /etc/edeploy/state ]; then
-    chown www-data:www-data /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3
+    chown $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3
 fi
+
+# extract eDeploy roles for rsync
+mkdir -p /var/lib/debootstrap/install
+cd /var/www/install
+for version in $( ls -d *); do
+    for path in $(ls $version/*.edeploy); do
+        filename=$(basename $path)
+        base=$(echo $filename|sed "s/-$version.edeploy//")
+        mkdir -p /var/lib/debootstrap/install/$version/$base
+        tar xf $path -C /var/lib/debootstrap/install/$version/$base
+    done
+done
 
 # extract-archive.sh ends here
