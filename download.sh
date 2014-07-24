@@ -140,7 +140,8 @@ if [ -d env/$env ]; then
         exit 1
     fi
     rsync -a env/$env/ $TOP/
-    sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $TOP/etc/edeploy/*
+    # use find to avoid breaking symlinks
+    sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $(find $TOP/etc/edeploy/ -type f)
 
     mkdir -p $ORIG/cache/$version
 
@@ -148,7 +149,10 @@ if [ -d env/$env ]; then
     for url in $kernel $pxe $health; do
         (cd $ORIG/cache/$version
         base=$(basename $url)
-        if [ ! -f $base ]; then
+        rm -f $base.md5
+        wget -q $url.md5
+        if ! md5sum -c $base.md5; then
+            rm -f $base
             wget -q $url
         fi
         cp $base $TOP/var/lib/tftpboot/
@@ -158,6 +162,7 @@ if [ -d env/$env ]; then
     mkdir -p $TOP/var/www/install/$version
     for role in $(grep edeploy: $TOP/etc/config-tools/global.yml|cut -d: -f2|fgrep -v install-server|sort -u); do
         (cd $ORIG/cache/$version
+        rm -f $role-$version.edeploy.md5
         wget -q $edeployurl/$role-$version.edeploy.md5
         if ! md5sum -c $role-$version.edeploy.md5; then
             rm -f $role-$version.edeploy
