@@ -119,14 +119,14 @@ test_connectivity() {
 
 # be sure to stop dnsmasq on any script exit
 cleanup() {
-    /etc/init.d/dnsmasq stop
+    service dnsmasq stop
 }
 
 set -x
 
 trap cleanup 0
-/etc/init.d/dnsmasq stop
-/etc/init.d/dnsmasq start
+service dnsmasq stop
+service dnsmasq start
 
 JOBS=
 tmpfile=$(tempfile)

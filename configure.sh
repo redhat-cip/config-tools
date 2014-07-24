@@ -321,9 +321,9 @@ EOT
                rm -rf /var/lib/puppet/ssl/* || :
              fi
 
-             /etc/init.d/ntp stop || :
+             service ntp stop || :
              ntpdate 0.europe.pool.ntp.org || :
-             /etc/init.d/ntp start || :
+             service ntp start || :
 
              puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
             n=$(($n + 1))
@@ -343,9 +343,9 @@ EOT
                ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
              fi
 
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp stop || :
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp stop || :
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo /etc/init.d/ntp start || :
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp start || :
 
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
             n=$(($n + 1))
