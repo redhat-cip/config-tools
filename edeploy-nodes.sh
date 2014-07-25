@@ -33,6 +33,12 @@ NODES="$*"
 
 HOSTS=/etc/edeploy/hosts.conf
 
+LOGDIR=$WORKSPACE
+
+if [ ! -d "$LOGDIR" ]; then
+    LOGDIR=$(mktemp -d)
+fi
+
 if [ ! -r $HOSTS ]; then
     echo "$HOSTS not present. Aborting"
     exit 1
@@ -129,7 +135,7 @@ service dnsmasq stop
 service dnsmasq start
 
 JOBS=
-tmpfile=$(tempfile)
+tmpfile=$(mktemp)
 declare -a assoc
 
 for node in $NODES; do
@@ -142,7 +148,7 @@ for node in $NODES; do
             reboot_node $ipmi $user $pass
 	    sleep 120
             test_connectivity $ip $hostname $ipmi $user $pass || exit 1
-	) > $DIR/../edeploy-$hostname.log 2>&1 &
+	) > $LOGDIR/edeploy-$hostname.log 2>&1 &
 	JOBS="$JOBS $!"
 	assoc[$!]=$hostname
     done < $tmpfile
@@ -174,7 +180,7 @@ fi
 rm $tmpfile
 
 if [ -n "$SUDO_USER" ]; then
-    chown $SUDO_USER $DIR/../edeploy-*.log
+    chown $SUDO_USER $LOGDIR/edeploy-*.log
 fi
 
 exit $rc
