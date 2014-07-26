@@ -25,17 +25,21 @@ else
     USER=www-data
 fi
 
+rm -f /etc/edeploy/*
+
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
 
-# Wait Jenkins is up and running, it may take a long time.
-if ! timeout 1000 sh -c "while ! curl -s http://localhost:8282 | grep 'No builds in the queue.' >/dev/null 2>&1; do sleep 10; done"; then
-  echo "Jenkins is not up and running after long time."
-  exit 1
-fi
+if [ -d /etc/jenkins_jobs/jobs ]; then
+    # Wait Jenkins is up and running, it may take a long time.
+    if ! timeout 1000 sh -c "while ! curl -s http://localhost:8282 | grep 'No builds in the queue.' >/dev/null 2>&1; do sleep 10; done"; then
+        echo "Jenkins is not up and running after long time."
+        exit 1
+    fi
 
-/opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
+    /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
+fi
 
 if [ -r /etc/edeploy/state ]; then
     chown $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3
@@ -52,5 +56,10 @@ for version in $( ls -d *); do
         tar xf $path -C /var/lib/debootstrap/install/$version/$base
     done
 done
+
+# for RHEL www hierarchy compatibility
+if [ -d /var/www/html ]; then
+    ln -sf /var/www/install /var/www/html/
+fi
 
 # extract-archive.sh ends here
