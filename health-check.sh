@@ -117,6 +117,14 @@ test_connectivity() {
     return 0
 }
 
+wait_for_shutdown() {
+    local host_ip=$1
+
+    while ping -c 1 $host_ip; do
+	sleep 10
+    done
+}
+
 # be sure to stop dnsmasq on any script exit
 cleanup() {
     service dnsmasq stop
@@ -124,18 +132,23 @@ cleanup() {
 
 set -x
 
+# we clean the result dir to be able to count the number of results to
+# check if everything is right
+rm -rf /var/lib/edeploy/health/install
+
 trap cleanup 0
 service dnsmasq stop
 service dnsmasq start
 
-pxemngr nextboot default health-check
-
 JOBS=
 tmpfile=$(mktemp)
 declare -a assoc
+count=0
 
 for node in $NODES; do
     grep "^$node " $HOSTS > $tmpfile
+    lines=$(wc -l < $tmpfile)
+    count=$(($count + $lines))
     while read hostname ip mac ipmi user pass; do
         (
 	    echo "Rebooting $hostname"
@@ -144,6 +157,7 @@ for node in $NODES; do
             reboot_node $ipmi $user $pass
 	    sleep 120
             test_connectivity $ip $hostname $ipmi $user $pass || exit 1
+	    wait_for_shutdown $ip
 	) > $LOGDIR/edeploy-$hostname.log 2>&1 &
 	JOBS="$JOBS $!"
 	assoc[$!]=$hostname
@@ -162,8 +176,14 @@ for job in $JOBS; do
     fi
 done
 
+if [ $count != $(ls /var/lib/edeploy/health/install/*/*.hw|wc -l) ]; then
+    rc=1
+fi
+
+cp /var/lib/edeploy/health/install/*/*.hw $LOGDIR/
+
 if [ -n "$SUDO_USER" ]; then
-    chown $SUDO_USER $LOGDIR/edeploy-*.log
+    chown $SUDO_USER $LOGDIR/*
 fi
 
 exit $rc
