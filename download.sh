@@ -115,7 +115,7 @@ fi
 
 TOP=$(pwd)/top
 rm -rf $TOP
-mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin
+mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin $TOP/usr/bin
 
 $ORIG/merge.py infra/infra.yml env/$envyml > $TOP/etc/config-tools/global.yml
 
@@ -234,7 +234,8 @@ mv serverspec $TOP/etc/
 
 # scripts
 
-cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/sbin/
+cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $TOP/usr/sbin/
+cp $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/bin/
 
 # config-tools
 
