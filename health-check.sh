@@ -128,6 +128,8 @@ trap cleanup 0
 service dnsmasq stop
 service dnsmasq start
 
+pxemngr nextboot default health-check
+
 JOBS=
 tmpfile=$(mktemp)
 declare -a assoc
