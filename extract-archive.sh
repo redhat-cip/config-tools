@@ -25,7 +25,7 @@ else
     USER=www-data
 fi
 
-rm -f /etc/edeploy/*
+rm -rf /etc/edeploy/*
 
 tar xf /tmp/archive.tgz --no-same-owner -C /
 mkdir -p /root/.ssh
