@@ -77,8 +77,10 @@ poweroff_node() {
 
 configure_pxe() {
     local host_name=$1
+    local mac=$2
     # edeploy|local
-    local boot_medium=$2
+    local boot_medium=$3
+    pxemngr addsystem $host_name $mac || :
     pxemngr nextboot $host_name $boot_medium
 }
 
@@ -153,7 +155,7 @@ for node in $NODES; do
         (
 	    echo "Rebooting $hostname"
             poweroff_node $ipmi $user $pass
-            configure_pxe $hostname health-check
+            configure_pxe $hostname $mac health-check
             reboot_node $ipmi $user $pass
 	    sleep 120
             test_connectivity $ip $hostname $ipmi $user $pass || exit 1
