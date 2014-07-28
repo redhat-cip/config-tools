@@ -142,6 +142,10 @@ else
     service apache2 start || :
 fi
 
+# clean the generated files as they will be collected at the end of
+# the job and we don't want old ones
+rm -f /var/lib/edeploy/logs/* /var/lib/edeploy/hw/*
+
 JOBS=
 tmpfile=$(mktemp)
 declare -a assoc
@@ -187,8 +191,10 @@ if [ -x /srv/edeploy/server/verify-cmdb.py ]; then
 fi
 rm $tmpfile
 
+mv /var/lib/edeploy/logs/* /var/lib/edeploy/hw/* $LOGDIR/ || :
+
 if [ -n "$SUDO_USER" ]; then
-    chown $SUDO_USER $LOGDIR/edeploy-*.log
+    chown $SUDO_USER $LOGDIR/*
 fi
 
 exit $rc
