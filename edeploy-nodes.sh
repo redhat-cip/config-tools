@@ -144,7 +144,7 @@ fi
 
 # clean the generated files as they will be collected at the end of
 # the job and we don't want old ones
-rm -f /var/lib/edeploy/logs/* /var/lib/edeploy/hw/*
+rm -f /var/lib/edeploy/logs/* /var/lib/edeploy/hw/* $LOGDIR/*.log* $LOGDIR/*.hw
 
 JOBS=
 tmpfile=$(mktemp)
