@@ -42,7 +42,7 @@ if [ -d /etc/jenkins_jobs/jobs ]; then
 fi
 
 if [ -r /etc/edeploy/state ]; then
-    chown $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/*
+    chown -h $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/tmp/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/*
 fi
 
 # extract eDeploy roles for rsync
