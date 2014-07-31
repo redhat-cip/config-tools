@@ -213,7 +213,9 @@ server = ${FQDN}
 port = 8081
 EOF
 
-    sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" /etc/apache2/sites-available/puppetmaster
+    if [ -r /etc/apache2/sites-available/puppetmaster ]; then
+        sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" /etc/apache2/sites-available/puppetmaster
+    fi
 
     rm -rf /var/lib/puppet/ssl && puppet cert generate ${FQDN}
 
