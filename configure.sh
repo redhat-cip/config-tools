@@ -232,14 +232,18 @@ EOF
     puppet resource service puppetmaster ensure=stopped enable=false
     service puppetdb start
     puppet resource service puppetdb ensure=running enable=true
-    a2ensite puppetmaster
 
-    # if puppetboard is present, enable it
-    if [ -r /var/www/puppetboard/wsgi.py ]; then
-        a2ensite puppetboard
+    if [ "$WEB_SERVER" = "apache2" ]; then
+        a2ensite puppetmaster
+
+        # if puppetboard is present, enable it
+        if [ -r /var/www/puppetboard/wsgi.py ]; then
+            a2ensite puppetboard
+        fi
     fi
 
     service $WEB_SERVER start
+    puppet resource service $WEB_SERVER ensure=running enable=true
 
     # puppetdb is slow to start so try multiple times to reach it
     NUM=10
