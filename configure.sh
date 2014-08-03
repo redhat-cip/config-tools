@@ -198,6 +198,7 @@ EOF
 
     cat > /etc/puppetdb/conf.d/jetty.ini <<EOF
 [jetty]
+host = ${FQDN}
 port = 8080
 
 ssl-host = ${FQDN}
@@ -219,6 +220,7 @@ EOF
 
     rm -rf /var/lib/puppet/ssl && puppet cert generate ${FQDN}
 
+    mkdir -p /etc/puppetdb/ssl
     cp /var/lib/puppet/ssl/private_keys/$(hostname -f).pem /etc/puppetdb/ssl/key.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/key.pem
     cp /var/lib/puppet/ssl/certs/$(hostname -f).pem /etc/puppetdb/ssl/cert.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/cert.pem
     cp /var/lib/puppet/ssl/certs/ca.pem /etc/puppetdb/ssl/ca.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/ca.pem
@@ -229,7 +231,13 @@ EOF
 
     tee -a /etc/puppet/autosign.conf <<< '*'
 
-    puppet resource service puppetmaster ensure=stopped enable=false
+    if [ -r /etc/apache2/sites-available/puppetmaster ]; then
+        puppet resource service puppetmaster ensure=stopped enable=false
+    else
+        # Launch puppetmaster directly while we don't have the config
+        # via apache
+        puppet resource service puppetmaster ensure=running enable=true
+    fi
     service puppetdb start
     puppet resource service puppetdb ensure=running enable=true
 
