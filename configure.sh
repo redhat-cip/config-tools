@@ -242,6 +242,10 @@ EOF
         if [ -r /var/www/puppetboard/wsgi.py ]; then
             a2ensite puppetboard
         fi
+    else
+        if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
+            mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
+        fi
     fi
 
     service $WEB_SERVER start
