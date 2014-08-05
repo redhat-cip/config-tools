@@ -29,10 +29,22 @@ class TestExtract(unittest.TestCase):
         self.assertEquals(extract.extract_from_yaml('key2.subkey', YAML),
                           'value')
 
+    def test_extract3(self):
+        self.assertIn(extract.extract_from_yaml('*.subkey', YAML),
+                      ['value', 'value2'])
+
+    def test_extract_all(self):
+        res = extract.extract_from_yaml('*.subkey', YAML, True)
+        self.assertEquals(len(res), 2)
+        self.assertIn(res[0], ['value', 'value2'])
+        self.assertIn(res[1], ['value', 'value2'])
+
 YAML = '''
 key: value
 key2:
   subkey: value
+key3:
+  subkey: value2
 '''
 
 if __name__ == "__main__":
