@@ -154,6 +154,7 @@ if [ -d env/$env ]; then
         if ! md5sum -c $base.md5; then
             rm -f $base
             wget -q $url
+            md5sum -c $base.md5
         fi
         cp $base $TOP/var/lib/tftpboot/
         )
@@ -161,7 +162,7 @@ if [ -d env/$env ]; then
 
     mkdir -p $TOP/var/www/install/$version
     # TODO: make the list of roles generic
-    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' "$yamlfile"|fgrep -v install-server|sort -u); do
+    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yml|fgrep -v install-server|sort -u); do
         (cd $ORIG/cache/$version
         rm -f $role-$version.edeploy.md5
         wget -q $edeployurl/$role-$version.edeploy.md5
