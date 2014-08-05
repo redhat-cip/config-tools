@@ -134,11 +134,11 @@ detect_os() {
     case $OS in
         Debian|Ubuntu)
             WEB_SERVER="apache2"
-            PUPPET_VHOST="/etc/httpd/conf.d/puppetmaster.conf"
+            PUPPET_VHOST="/etc/apache2/sites-available/puppetmaster"
             ;;
         CentOS|RedHatEnterpriseServer)
             WEB_SERVER="httpd"
-            PUPPET_VHOST="/etc/apache2/sites-available/puppetmaster"
+            PUPPET_VHOST="/etc/httpd/conf.d/puppetmaster.conf"
             ;;
         *)
             echo "Operating System not supported."
@@ -216,6 +216,10 @@ server = ${FQDN}
 port = 8081
 EOF
 
+    if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
+        mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
+    fi
+
     sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" $PUPPET_VHOST
 
     rm -rf /var/lib/puppet/ssl && puppet cert generate ${FQDN}
@@ -241,10 +245,6 @@ EOF
         # if puppetboard is present, enable it
         if [ -r /var/www/puppetboard/wsgi.py ]; then
             a2ensite puppetboard
-        fi
-    else
-        if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
-            mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
         fi
     fi
 
