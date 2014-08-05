@@ -160,7 +160,8 @@ if [ -d env/$env ]; then
     done
 
     mkdir -p $TOP/var/www/install/$version
-    for role in $(grep edeploy: $TOP/etc/config-tools/global.yml|cut -d: -f2|fgrep -v install-server|sort -u); do
+    # TODO: make the list of roles generic
+    for role in openstack-full; do
         (cd $ORIG/cache/$version
         rm -f $role-$version.edeploy.md5
         wget -q $edeployurl/$role-$version.edeploy.md5
