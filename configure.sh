@@ -134,9 +134,11 @@ detect_os() {
     case $OS in
         Debian|Ubuntu)
             WEB_SERVER="apache2"
+            PUPPET_VHOST="/etc/httpd/conf.d/puppetmaster.conf"
             ;;
         CentOS|RedHatEnterpriseServer)
             WEB_SERVER="httpd"
+            PUPPET_VHOST="/etc/apache2/sites-available/puppetmaster"
             ;;
         *)
             echo "Operating System not supported."
@@ -214,9 +216,7 @@ server = ${FQDN}
 port = 8081
 EOF
 
-    if [ -r /etc/apache2/sites-available/puppetmaster ]; then
-        sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" /etc/apache2/sites-available/puppetmaster
-    fi
+    sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" $PUPPET_VHOST
 
     rm -rf /var/lib/puppet/ssl && puppet cert generate ${FQDN}
 
@@ -231,13 +231,7 @@ EOF
 
     tee -a /etc/puppet/autosign.conf <<< '*'
 
-    if [ -r /etc/apache2/sites-available/puppetmaster ]; then
-        puppet resource service puppetmaster ensure=stopped enable=false
-    else
-        # Launch puppetmaster directly while we don't have the config
-        # via apache
-        puppet resource service puppetmaster ensure=running enable=true
-    fi
+    puppet resource service puppetmaster ensure=stopped enable=false
     service puppetdb start
     puppet resource service puppetdb ensure=running enable=true
 
