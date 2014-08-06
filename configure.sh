@@ -233,8 +233,7 @@ EOF
     if [ $OS == "Debian" ] || [ $OS == "Ubuntu" ]; then
         echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
     else
-        LOCALE=$(locale|grep "LANG="|awk -F= '{print $2}')
-        sed -i "s/^\(LANG\s*=\s*\).*\$/\1$LOCALE/" /etc/sysconfig/httpd
+        sed -i "s/^\(LANG\s*=\s*\).*\$/\1en_US.UTF-8/" /etc/sysconfig/httpd
     fi
 
     tee -a /etc/puppet/autosign.conf <<< '*'
