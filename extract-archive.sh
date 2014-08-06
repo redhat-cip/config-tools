@@ -28,6 +28,8 @@ fi
 rm -rf /etc/edeploy/*
 
 tar xf /tmp/archive.tgz --no-same-owner -C /
+chown -R $SUDO_USER /etc/serverspec
+
 mkdir -p /root/.ssh
 cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
 
