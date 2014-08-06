@@ -229,8 +229,12 @@ EOF
     cp /var/lib/puppet/ssl/certs/$(hostname -f).pem /etc/puppetdb/ssl/cert.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/cert.pem
     cp /var/lib/puppet/ssl/certs/ca.pem /etc/puppetdb/ssl/ca.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/ca.pem
 
+    # Bug Puppet: https://tickets.puppetlabs.com/browse/PUP-1386
     if [ $OS == "Debian" ] || [ $OS == "Ubuntu" ]; then
         echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
+    else
+        LOCALE=$(locale|grep "LANG="|awk -F= '{print $2}')
+        sed -i "s/^\(LANG\s*=\s*\).*\$/\1$LOCALE/" /etc/sysconfig/httpd
     fi
 
     tee -a /etc/puppet/autosign.conf <<< '*'
