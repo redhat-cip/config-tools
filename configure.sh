@@ -443,7 +443,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     fi
 done
 
-su -l $SUDO_USER -c verify-servers.sh -x
+su -l $SUDO_USER -c 'verify-servers.sh -x'
 
 exit $RC
 
