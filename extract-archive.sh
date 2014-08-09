@@ -54,7 +54,7 @@ fi
 # extract eDeploy roles for rsync
 mkdir -p /var/lib/debootstrap/install
 cd /var/www/install
-for version in $( ls -d *); do
+for version in $(ls -d *-*); do
     for path in $(ls $version/*.edeploy); do
         filename=$(basename $path)
         base=$(echo $filename|sed "s/-$version.edeploy//")
@@ -62,6 +62,9 @@ for version in $( ls -d *); do
         tar xf $path -C /var/lib/debootstrap/install/$version/$base
     done
 done
+
+# allow to boot over http
+ln -f /var/lib/tftpboot/{vmlinuz,initrd.pxe,health.pxe} /var/www/install/
 
 # for RHEL www hierarchy compatibility
 if [ -d /var/www/html ]; then
