@@ -30,7 +30,16 @@ ORIG=$(cd $(dirname $0); pwd)
 
 . top/etc/config-tools/config
 
-scp $SSHOPTS archive.tgz extract-archive.sh $USER@$MASTER:/tmp/
-ssh $SSHOPTS $USER@$MASTER sudo /tmp/extract-archive.sh
+if tty -s; then
+    ROPTS=-vP
+fi
+
+rsync -e "ssh $SSHOPTS" -az $ROPTS archive.tar extract-archive.sh $USER@$MASTER:/tmp/
+
+if [ $USER != root ]; then
+    SUDO=sudo
+fi
+
+ssh $SSHOPTS $USER@$MASTER $SUDO /tmp/extract-archive.sh
 
 # send.sh ends here

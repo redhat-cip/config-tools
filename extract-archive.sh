@@ -19,6 +19,8 @@
 set -e
 set -x
 
+SUDO_USER=${SUDO_USER:=root}
+
 if [ -r /etc/redhat-release ]; then
     USER=apache
 else
@@ -27,11 +29,13 @@ fi
 
 rm -rf /etc/edeploy/*
 
-tar xf /tmp/archive.tgz --no-same-owner -C /
+tar xf /tmp/archive.tar --no-same-owner -C /
 chown -R $SUDO_USER /etc/serverspec
 
-mkdir -p /root/.ssh
-cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+if [ ${SUDO_USER} != root ]; then
+    mkdir -p /root/.ssh
+    cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+fi
 
 if [ -d /etc/jenkins_jobs/jobs ]; then
     # Wait Jenkins is up and running, it may take a long time.
