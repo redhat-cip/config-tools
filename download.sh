@@ -19,12 +19,20 @@
 ORIG=$(cd $(dirname $0); pwd)
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <tag> <deployment yaml> [<key>=<value>...]" 1>&2
+    echo "Usage: $0 [-l] <tag> <deployment yaml> [<key>=<value>...]" 1>&2
+    echo "    -l: do not download files. Use the local copies." 1>&2
     exit 1
 fi
 
 set -e
 set -x
+
+if [ $1 = -l ]; then
+    LOCAL=1
+    shift
+else
+    LOCAL=
+fi
 
 tag="$1"
 yaml="$2"
@@ -56,18 +64,35 @@ update_or_clone() {
     fi
 
     if [ -d $dir ]; then
-	cd $dir
-	git reset --hard
-	git clean -xfdq
-	git checkout master
-	git checkout .
-	git pull
-	cd ..
+        if [ "$LOCAL" != 1 ]; then
+	    cd $dir
+	    git reset --hard
+	    git clean -xfdq
+	    git checkout master
+	    git checkout .
+	    git pull
+	    cd ..
+        fi
     else
 	git clone $giturl $dir
     fi
 
     checkout_tag $dir
+}
+
+check_and_download() {
+    url=$1
+    base=$(basename $url)
+
+    if [ "$LOCAL" != 1 ]; then
+        rm -f $base.md5
+        wget -q $url.md5
+        if ! md5sum -c $base.md5; then
+            rm -f $base
+            wget -q $url
+            md5sum -c $base.md5
+        fi
+    fi
 }
 
 envgit=$(dirname $yaml)
@@ -148,15 +173,8 @@ if [ -d env/$env ]; then
     mkdir -p $TOP/var/lib/tftpboot
     for url in $kernel $pxe $health; do
         (cd $ORIG/cache/$version
-        base=$(basename $url)
-        rm -f $base.md5
-        wget -q $url.md5
-        if ! md5sum -c $base.md5; then
-            rm -f $base
-            wget -q $url
-            md5sum -c $base.md5
-        fi
-        cp $base $TOP/var/lib/tftpboot/
+         check_and_download $url
+         cp $base $TOP/var/lib/tftpboot/
         )
     done
 
@@ -164,14 +182,8 @@ if [ -d env/$env ]; then
     # TODO: make the list of roles generic
     for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yml|fgrep -v install-server|sort -u); do
         (cd $ORIG/cache/$version
-        rm -f $role-$version.edeploy.md5
-        wget -q $edeployurl/$role-$version.edeploy.md5
-        if ! md5sum -c $role-$version.edeploy.md5; then
-            rm -f $role-$version.edeploy
-            wget -q $edeployurl/$role-$version.edeploy
-            md5sum -c $role-$version.edeploy.md5
-        fi
-        cp $role-$version.edeploy* $TOP/var/www/install/$version/
+         check_and_download $edeployurl/$role-$version.edeploy
+         cp $role-$version.edeploy* $TOP/var/www/install/$version/
         )
     done
 fi
@@ -180,7 +192,7 @@ fi
 
 if [ -n "$jenkinsgit" ]; then
     update_or_clone "$jenkinsgit" jenkins_jobs
-    mv jenkins_jobs $TOP/etc/
+    cp -a jenkins_jobs $TOP/etc/
 fi
 
 # Puppet
@@ -218,10 +230,13 @@ if [ -n "$tag" -a "$tagged" = 1 ]; then
     sed -i -e "s/master/$(cat puppet-module-rev)/" ./puppet-module/Puppetfile
 fi
 
-rm -rf modules
-PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
+if [ "$LOCAL" != 1 ]; then
+    rm -rf modules
 
-mv modules $TOP/etc/puppet/
+    PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
+fi
+
+cp -a modules $TOP/etc/puppet/
 
 # Serverspec
 
@@ -232,7 +247,7 @@ git --git-dir=serverspec/.git rev-parse HEAD > serverspec-rev
 cp infra/arch.yml.tmpl serverspec/
 sed -i "s/root/$USER/" serverspec/spec/spec_helper.rb
 
-mv serverspec $TOP/etc/
+cp -a serverspec $TOP/etc/
 
 # scripts
 
@@ -247,10 +262,8 @@ if [ -r infra/openrc.sh.tmpl ]; then
     $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
 fi
 
-mv infra env $TOP/etc/config-tools/
-
 # create the archive
 
-tar zcf archive.tgz -C $TOP .
+tar cf archive.tar -C $TOP .
 
 # download.sh ends here
