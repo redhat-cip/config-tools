@@ -56,8 +56,11 @@ fi
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey \
       -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
-      -oConnectTimeout=600 -oUserKnownHostsFile=/dev/null \
-      -i /var/lib/jenkins/.ssh/id_rsa"
+      -oConnectTimeout=600 -oUserKnownHostsFile=/dev/null"
+
+if [ -r /var/lib/jenkins/.ssh/id_rsa ]; then
+    SSHOPTS="$SSHOPTS -i /var/lib/jenkins/.ssh/id_rsa"
+fi
 
 poweroff_node() {
     local ipmi_ip=$1
@@ -80,21 +83,60 @@ configure_pxe() {
     local mac=$2
     # edeploy|local
     local boot_medium=$3
-    pxemngr addsystem $host_name $mac || :
-    pxemngr nextboot $host_name $boot_medium
+    local ipmi_ip=$4
+    local ipmi_user=$5
+    local ipmi_password=$6
+    local tries=5
+    
+    # Force next boot to be under PXE
+    while [ $tries -gt 0 ]; do
+        if ipmitool -I lanplus -U $ipmi_user -P $ipmi_password -H $ipmi_ip chassis bootdev pxe options=persistent; then
+            break
+        fi
+        tries=$(($tries - 1))
+        sleep 30
+    done
+
+    # If we have a MAC address, register the system under pxemngr and
+    # set edeploy profile.
+    #
+    # If we don't have MAC addresses default boot must be set to boot
+    # under edeploy (pxemngr nextboot default edeploy).
+    if [ $mac != unknown ]; then
+        pxemngr addsystem $host_name $mac || :
+        pxemngr nextboot $host_name $boot_medium
+    fi
 }
 
 reboot_node() {
     local ipmi_ip=$1
     local ipmi_user=$2
     local ipmi_password=$3
-    status=$(ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password power status)
+    local tries=5
+    while [ $tries -gt 0 ]; do
+        status=$(ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password power status)
+        if [[ "$status" =~ Error ]] || [[ -z "$status" ]]; then
+            sleep 30
+        else
+            break
+        fi
+    done
+
     if [[  "$status" =~ .*off ]]; then
         cmd="on"
     else
         cmd="reset"
     fi
-    ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password power $cmd
+    
+    tries=5
+    
+    while [ $tries -gt 0 ]; do
+        if ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password power $cmd; then
+            break
+        fi
+        tries=$(($tries - 1))
+        sleep 30
+    done
 }
 
 test_connectivity() {
@@ -156,7 +198,7 @@ for node in $NODES; do
         (
 	    echo "Rebooting $hostname"
             poweroff_node $ipmi $user $pass
-            configure_pxe $hostname $mac edeploy
+            configure_pxe $hostname $mac edeploy $ipmi $user $pass
             reboot_node $ipmi $user $pass
 	    sleep 120
             test_connectivity $ip $hostname $ipmi $user $pass || exit 1
