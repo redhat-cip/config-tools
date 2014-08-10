@@ -18,10 +18,16 @@
 
 ORIG=$(cd $(dirname $0); pwd)
 
+if [ $(id -u) != 0 ]; then
+    exec sudo -i WORKSPACE=$WORKSPACE "$ORIG/$(basename $0)" "$@"
+fi
+
 SERVERSPECJOBS=10
 
-PATH=/usr/share/config-tools:$PATH
-export PATH
+if ! type -p rspec > /dev/null; then
+    PATH=/usr/local/bin:$PATH
+    export PATH
+fi
 
 CDIR=/etc/config-tools
 CFG=$CDIR/global.yml
@@ -29,13 +35,26 @@ CFG=$CDIR/global.yml
 . $CDIR/config
 
 if [ "$1" = -x ]; then
-    XMLOUTPUT=1
-    shift
+    XMLOUTPUT="$2"
+    shift 2
 else
-    XMLOUTPUT=0
+    XMLOUTPUT=
 fi
 
 step=$1
+
+TMPDIR=$(mktemp -d)
+
+if [ ! -d "$TMPDIR" ]; then
+    echo "Unable to create temp dir." 1>&2
+    exit 1
+fi
+
+cleanup() {
+    rm -rf $TMPDIR
+}
+
+trap cleanup 0
 
 if [ -z "$step" ]; then
     step=$(cat $CDIR/step)
@@ -49,34 +68,33 @@ generate.py $step $CFG /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/servers
 
 cd /etc/serverspec
 
-rm -f /tmp/*.xml
-
 RET=0
 targets="$(rake -T spec|cut -f2 -d' '|grep -v '^spec'|sed 's/serverspec://')"
 
-echo -n "all:" > Makefile
+echo -n "all:" > $TMPDIR/Makefile
 for target in $targets; do
-    echo -n " $target" >> Makefile
+    echo -n " $target" >> $TMPDIR/Makefile
 done
-echo >> Makefile
+echo >> $TMPDIR/Makefile
 
 for target in $targets; do
-    echo "$target:" >> Makefile
-    if [ $XMLOUTPUT -eq 1 ]; then
-	echo "	rake serverspec:$target SPEC_OPTS=\"-r rspec-extra-formatters -f JUnitFormatter -o /tmp/$target.xml\" > $target.log 2>&1" >> Makefile
+    echo "$target:" >> $TMPDIR/Makefile
+    if [ -n "$XMLOUTPUT" ]; then
+        rm -f "$XMLOUTPUT/$target.xml"
+	echo "	cd /etc/serverspec; rake serverspec:$target SPEC_OPTS=\"-r rspec-extra-formatters -f JUnitFormatter -o $XMLOUTPUT/$target.xml\" > $TMPDIR/$target.log 2>&1" >> $TMPDIR/Makefile
     else
-	echo "	rake serverspec:$target SPEC_OPTS='--profile' > $target.log 2>&1" >> Makefile
+	echo "	cd /etc/serverspec; rake serverspec:$target SPEC_OPTS='--profile' > $TMPDIR/$target.log 2>&1" >> $TMPDIR/Makefile
     fi
-    echo >> Makefile
+    echo >> $TMPDIR/Makefile
 done
 
-make -j$SERVERSPECJOBS
+make -j$SERVERSPECJOBS -f $TMPDIR/Makefile
 
 RET=$?
 
 for target in $targets; do
     echo "$target:"
-    cat $target.log
+    cat $TMPDIR/$target.log
     echo "=============================="
 done
 
