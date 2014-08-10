@@ -424,7 +424,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             done
         fi
 
-        if su -l $SUDO_USER -c verify-servers.sh $step; then
+        if verify-servers.sh $step; then
             RC=0
             break
         else
@@ -442,7 +442,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     fi
 done
 
-su -l $SUDO_USER -c 'verify-servers.sh -x'
+verify-servers.sh -x
 
 exit $RC
 
