@@ -16,11 +16,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-set -e
-set -x
+ORIG=$(cd $(dirname $0); pwd)
 
 if [ $(id -u) != 0 ]; then
-    exec sudo -i "$0" "$@"
+    exec sudo -i WORKSPACE=$WORKSPACE "$ORIG/$(basename $0)" "$@"
 fi
 
 if [ $# -gt 2 ]; then
@@ -28,15 +27,22 @@ if [ $# -gt 2 ]; then
     exit 1
 fi
 
+set -e
+set -x
+
 LAST=$1
 
 CDIR=/etc/config-tools
 CFG=$CDIR/global.yml
 
+LOGDIR=$WORKSPACE
+
+if [ ! -d "$LOGDIR" ]; then
+    LOGDIR=$(mktemp -d)
+fi
+
 TRY=5
 PARALLELSTEPS='none'
-
-ORIG=$(cd $(dirname $0); pwd)
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey \
@@ -305,7 +311,7 @@ detect_os
 if [ $STEP -eq 0 ]; then
     configure_hostname
     generate 0 /etc/puppet/data/common.yaml
-    configure_puppet | tee /tmp/puppet-master.step0.log
+    configure_puppet | tee $LOGDIR/puppet-master.step0.log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         STEP=1
         echo $STEP > $CDIR/step
@@ -340,7 +346,7 @@ EOT
              ntpdate 0.europe.pool.ntp.org || :
              service ntp start || :
 
-             puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+             puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
             n=$(($n + 1))
         else
             (echo "Provisioning Puppet agent on ${h} node:"
@@ -362,7 +368,7 @@ EOT
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp start || :
 
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > /tmp/$h.step0.log 2>&1 &
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
             n=$(($n + 1))
         fi
     done
@@ -404,15 +410,15 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             echo "Run Puppet on $h node (step ${step}, try $loop):"
             if run_parallel $step; then
                 if [ $h = `hostname` ]; then
-                    puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+                    puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > /tmp/$h.step${step}.try${loop}.log 2>&1 &
+                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
                 if [ $h = `hostname` ]; then
-                    puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+                    puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee /tmp/$h.step${step}.try${loop}.log
+                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 fi
             fi
         done
@@ -442,7 +448,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     fi
 done
 
-verify-servers.sh -x
+verify-servers.sh -x $LOGDIR
 
 exit $RC
 
