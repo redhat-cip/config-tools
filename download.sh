@@ -224,7 +224,7 @@ fi
 
 update_or_clone "$puppetgit" puppet-module
 
-git --git-dir=puppet-module/.git rev-parse HEAD > puppet-module-rev
+git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
 
 if [ -n "$tag" -a "$tagged" = 1 ]; then
     sed -i -e "s/master/$(cat puppet-module-rev)/" ./puppet-module/Puppetfile
@@ -242,7 +242,7 @@ cp -a modules $TOP/etc/puppet/
 
 update_or_clone "$serverspecgit" serverspec
 
-git --git-dir=serverspec/.git rev-parse HEAD > serverspec-rev
+git --git-dir=serverspec/.git rev-parse HEAD > $TOP/etc/config-tools/serverspec-rev
 
 cp infra/arch.yml.tmpl serverspec/
 sed -i "s/root/$USER/" serverspec/spec/spec_helper.rb
