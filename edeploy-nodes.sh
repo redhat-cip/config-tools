@@ -224,7 +224,7 @@ done
 if [ -x /srv/edeploy/server/verify-cmdb.py ]; then
     for node in $NODES; do
 	while read hostname ip mac ipmi user pass; do
-	    if ! /srv/edeploy/server/verify-cmdb.py hostname $hostname /etc/edeploy/common.cmdb; then
+	    if ! /srv/edeploy/server/verify-cmdb.py hostname $hostname /etc/edeploy/*.cmdb; then
 		echo "$hostname not provisioned by eDeploy"
 		rc=1
 	    fi
