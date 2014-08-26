@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (C) 2014 eNovance SAS <licensing@enovance.com>
 #
@@ -49,6 +49,7 @@ fi
 
 if [ -r /etc/edeploy/state ]; then
     chown -h $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/lib/pxemngr/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/*
+    chown -R jenkins:jenkins ~jenkins/ || :
 fi
 
 # extract eDeploy roles for rsync
