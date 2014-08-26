@@ -48,7 +48,9 @@ if [ -d /etc/jenkins_jobs/jobs ]; then
 fi
 
 if [ -r /etc/edeploy/state ]; then
-    chown -h $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/lib/pxemngr/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/*
+    # After I.1.2.0 release, drop the "always True" statement
+    # Here because we had no pxemngr before.
+    chown -h $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/lib/pxemngr/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/* || :
     chown -R jenkins:jenkins ~jenkins/ || :
 fi
 
