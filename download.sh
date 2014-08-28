@@ -101,6 +101,7 @@ yamlfile=env/$(basename $yaml)
 update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
+ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
@@ -213,6 +214,14 @@ Exec {
 
 hiera_include('classes')
 EOF
+
+# Ansible
+update_or_clone "$ansiblegit" ansible
+cd ansible
+stable=$(git tag | sort -dr | head -1)
+cd ..
+mkdir -p $TOP/etc/ansible
+cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
 
 # hosts
 
