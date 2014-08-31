@@ -19,7 +19,7 @@
 ORIG=$(cd $(dirname $0); pwd)
 
 if [ $(id -u) != 0 ]; then
-    exec sudo -i WORKSPACE=$WORKSPACE "$ORIG/$(basename $0)" "$@"
+    exec sudo -i WORKSPACE=$WORKSPACE JOB_NAME=$JOB_NAME BUILD_ID=$BUILD_ID JENKINS_HOME=$JENKINS_HOME "$ORIG/$(basename $0)" "$@"
 fi
 
 if [ $# -gt 2 ]; then
@@ -67,8 +67,8 @@ generate() {
 }
 
 cleanup() {
-    if [ -r "$HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log" ]; then
-        ln -s "$HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log" $LOGDIR/output.log
+    if [ -r $JENKINS_HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log ]; then
+        ln -s $JENKINS_HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log $LOGDIR/output.log
     fi
 }
 
