@@ -66,6 +66,14 @@ generate() {
     generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
 }
 
+cleanup() {
+    if [ -r "$HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log" ]; then
+        ln -s "$HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log" $LOGDIR/output.log
+    fi
+}
+
+trap cleanup 0
+
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
         echo "$f doesn't exist" 1>&2
@@ -282,7 +290,7 @@ EOF
 }
 
     for h in $HOSTS; do
-        if [ $h = `hostname` ]; then
+        if [ $h = $(hostname -s) ]; then
             (echo "Configure Puppet environment on ${h} node:"
              tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
@@ -327,7 +335,7 @@ if [ $STEP -eq 0 ]; then
 
     n=0
     for h in $HOSTS; do
-        if [ $h = `hostname` ]; then
+        if [ $h = $(hostname -s) ]; then
             (echo "Provisioning Puppet agent on ${h} node:"
              cp /tmp/hosts /etc
              augtool << EOT
@@ -375,8 +383,15 @@ EOT
 
     while [ $n -ne 0 ]; do
         wait
+        if [ $? -ne 0 ]; then
+            RC=1
+        fi
         n=$(($n - 1))
     done
+    # check remote puppet result
+    if [ $RC = 1 ]; then
+        exit 1
+    fi
 fi
 
 ######################################################################
@@ -409,13 +424,13 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             n=$(($n + 1))
             echo "Run Puppet on $h node (step ${step}, try $loop):"
             if run_parallel $step; then
-                if [ $h = `hostname` ]; then
+                if [ $h = $(hostname -s) ]; then
                     puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
                     ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
-                if [ $h = `hostname` ]; then
+                if [ $h = $(hostname -s) ]; then
                     puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
                     ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
