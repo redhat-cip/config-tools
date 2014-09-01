@@ -292,11 +292,10 @@ EOF
     for h in $HOSTS; do
         if [ $h = $(hostname -s) ]; then
             (echo "Configure Puppet environment on ${h} node:"
-             tee /tmp/environment.txt.$h <<EOF
+             mkdir -p /etc/facter/facts.d
+             cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-             mkdir -p /etc/facter/facts.d
-             cp /tmp/environment.txt.$h /etc/facter/facts.d
              n=$(($n + 1)))
         else
             (echo "Configure Puppet environment on ${h} node:"
