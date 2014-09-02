@@ -66,14 +66,6 @@ generate() {
     generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
 }
 
-cleanup() {
-    if [ -r $JENKINS_HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log ]; then
-        ln -s $JENKINS_HOME/jobs/$JOB_NAME/builds/$BUILD_ID/log $LOGDIR/output.log
-    fi
-}
-
-trap cleanup 0
-
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
         echo "$f doesn't exist" 1>&2
