@@ -40,6 +40,6 @@ if [ $USER != root ]; then
     SUDO=sudo
 fi
 
-ssh $SSHOPTS $USER@$MASTER $SUDO /tmp/extract-archive.sh
+ssh -t $SSHOPTS $USER@$MASTER $SUDO /tmp/extract-archive.sh
 
 # send.sh ends here

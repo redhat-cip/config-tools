@@ -295,8 +295,8 @@ EOF
 type=${PROF_BY_HOST[$h]}
 EOF
              scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
              n=$(($n + 1)))
         fi
     done
@@ -350,8 +350,8 @@ EOT
         else
             (echo "Provisioning Puppet agent on ${h} node:"
              scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo mv /tmp/resolv.conf /tmp/hosts /etc
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo mv /tmp/resolv.conf /tmp/hosts /etc
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
 set /files/etc/puppet/puppet.conf/agent/certname $h
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
@@ -360,14 +360,14 @@ save
 EOT
 
              if [[ ! $h.$DOMAIN == $FQDN ]]; then
-               ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
+               ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
              fi
 
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp stop || :
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp start || :
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo service ntp stop || :
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo service ntp start || :
 
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
+             ssh -t $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
             n=$(($n + 1))
         fi
     done
@@ -418,13 +418,13 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
                 if [ $h = $(hostname -s) ]; then
                     puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
+                    ssh -t $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
                 if [ $h = $(hostname -s) ]; then
                     puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
+                    ssh -t $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 fi
             fi
         done

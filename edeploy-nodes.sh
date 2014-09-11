@@ -148,7 +148,7 @@ test_connectivity() {
     local ipmi_password=$5
     while true; do
         echo -n "."
-        ssh $SSHOPTS jenkins@$host_ip uname -a && break
+        ssh -t $SSHOPTS jenkins@$host_ip uname -a && break
         sleep 4
         i=$[i+1]
         if [[ $i -ge $TIMEOUT_ITERATION ]]; then
