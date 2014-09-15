@@ -101,7 +101,6 @@ yamlfile=env/$(basename $yaml)
 update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
-ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
@@ -115,6 +114,7 @@ if [ -z "$version" ]; then
     version=$($ORIG/extract.py version "$yamlfile")
 fi
 
+ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
 pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
@@ -125,7 +125,19 @@ set -e
 
 # infra and env
 
-update_or_clone "$infragit" infra
+infranum=1
+for infradir in $infragit; do
+    update_or_clone "$infradir" infra$infranum
+    infranum=$(($infranum + 1))
+done
+infranum=$(($infranum - 1))
+
+# merge the infra directories
+rm -rf infra
+mkdir infra
+for num in $(seq 1 $infranum); do
+    cp -a infra$num/* infra/
+done
 
 if [ ! -f infra/infra.yml ]; then
     echo "infra.yml not found in $infragit" 1>&2
@@ -216,12 +228,15 @@ hiera_include('classes')
 EOF
 
 # Ansible
-update_or_clone "$ansiblegit" ansible
-cd ansible
-stable=$(git tag | sort -dr | head -1)
-cd ..
-mkdir -p $TOP/etc/ansible
-cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
+
+if [ -n "$ansiblegit" ]; then
+    update_or_clone "$ansiblegit" ansible
+    cd ansible
+    stable=$(git tag | sort -dr | head -1)
+    cd ..
+    mkdir -p $TOP/etc/ansible
+    cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
+fi
 
 # hosts
 
