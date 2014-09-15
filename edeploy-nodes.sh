@@ -194,11 +194,12 @@ declare -a assoc
 
 for node in $NODES; do
     grep "^$node " $HOSTS > $tmpfile
-    while read hostname ip mac ipmi user pass; do
+    while read hostname ip mac ipmi user pass pxeprof; do
         (
 	    echo "Rebooting $hostname"
             poweroff_node $ipmi $user $pass
-            configure_pxe $hostname $mac edeploy $ipmi $user $pass
+            pxeprof=${pxeprof:-edeploy}
+            configure_pxe $hostname $mac $pxeprof $ipmi $user $pass
             reboot_node $ipmi $user $pass
 	    sleep 120
             test_connectivity $ip $hostname $ipmi $user $pass || exit 1
