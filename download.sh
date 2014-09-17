@@ -251,7 +251,7 @@ update_or_clone "$puppetgit" puppet-module
 git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
 
 if [ -n "$tag" -a "$tagged" = 1 ]; then
-    sed -i -e "s/master/$(cat puppet-module-rev)/" ./puppet-module/Puppetfile
+    sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
 fi
 
 if [ "$LOCAL" != 1 ]; then
