@@ -73,7 +73,7 @@ for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/pu
     fi
 done
 
-generate 0 /etc/config-tools/config
+generate 0 $CDIR/config
 
 . $CDIR/config
 
