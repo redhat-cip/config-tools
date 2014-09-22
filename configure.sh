@@ -49,6 +49,10 @@ SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
       -oConnectTimeout=3 -oUserKnownHostsFile=/dev/null"
 
+if [ -r $JENKINS_HOME/.ssh/id_rsa ]; then
+    SSHOPTS="$SSHOPTS -i $JENKINS_HOME/.ssh/id_rsa"
+fi
+
 PUPPETOPTS="--onetime --verbose --no-daemonize --no-usecacheonfailure \
     --no-splay --show_diff"
 

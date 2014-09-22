@@ -58,8 +58,8 @@ SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
       -oConnectTimeout=600 -oUserKnownHostsFile=/dev/null"
 
-if [ -r /var/lib/jenkins/.ssh/id_rsa ]; then
-    SSHOPTS="$SSHOPTS -i /var/lib/jenkins/.ssh/id_rsa"
+if [ -r $JENKINS_HOME/.ssh/id_rsa ]; then
+    SSHOPTS="$SSHOPTS -i $JENKINS_HOME/.ssh/id_rsa"
 fi
 
 poweroff_node() {
