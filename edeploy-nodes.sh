@@ -26,7 +26,7 @@
 DIR=$(cd $(dirname $0); pwd)
 
 if [ $(id -u) != 0 ]; then
-    exec sudo -i WORKSPACE=$WORKSPACE "$DIR/$(basename $0)" "$@"
+    exec sudo -i WORKSPACE=$WORKSPACE JOB_NAME=$JOB_NAME BUILD_ID=$BUILD_ID JENKINS_HOME=$JENKINS_HOME "$DIR/$(basename $0)" "$@"
 fi
 
 NODES="$*"
