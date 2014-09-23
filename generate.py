@@ -92,6 +92,13 @@ The arity field can have these forms:
         return False
     return (value - num) % time == 0
 
+def verifiy_deprecate(variables, deprecatedstr):
+    'Verify deprecated configs'
+    deprecated_values = load(deprecatedstr)
+    for deprecated_value in deprecated_values:
+        if deprecated_value in variables['config'].keys():
+            print ('[DEPRECATED] %s is now deprecated and should be replaced by %s' % (deprecated_value, deprecated_values[deprecated_value]))
+    return True
 
 def validate(variables):
     'Validate variables.'
@@ -132,11 +139,12 @@ def validate(variables):
     return True
 
 
-def expand_template(step, yamlstr, tmpl, ovrwt={}):
+def expand_template(step, yamlstr, tmpl, deprecatedstr, ovrwt={}):
     '''Expand a template string according to the yaml variables augmented with
 information with steps.'''
     variables = get_vars(yamlstr)
     variables.update(ovrwt)
+    verifiy_deprecate(variables, deprecatedstr)
     validate(variables)
     variables['step'] = step
     reinject(variables)
@@ -147,14 +155,14 @@ if __name__ == "__main__":
     import sys
     #import pprint
 
-    if len(sys.argv) < 4:
-        sys.stderr.write('Usage: %s <step> <yaml file> <template file>'
+    if len(sys.argv) < 5:
+        sys.stderr.write('Usage: %s <step> <yaml file> <template file> <deprecated_file>'
                          ' [var=val...]\n'
                          % sys.argv[0])
         sys.exit(1)
 
     overwrite = {}
-    for arg in sys.argv[4:]:
+    for arg in sys.argv[5:]:
         key, value = arg.split('=')
         overwrite[key] = value
 
@@ -162,6 +170,7 @@ if __name__ == "__main__":
         print expand_template(int(sys.argv[1]),
                               open(sys.argv[2]).read(),
                               open(sys.argv[3]).read(),
+                              open(sys.argv[4]).read(),
                               overwrite)
     except Invalid, excpt:
         print excpt
