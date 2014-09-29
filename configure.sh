@@ -261,7 +261,7 @@ EOF
         fi
     fi
 
-    service $WEB_SERVER start
+    service $WEB_SERVER restart
     puppet resource service $WEB_SERVER ensure=running enable=true
 
     # puppetdb is slow to start so try multiple times to reach it
