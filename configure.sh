@@ -249,7 +249,7 @@ EOF
     tee -a /etc/puppet/autosign.conf <<< '*'
 
     puppet resource service puppetmaster ensure=stopped enable=false
-    service puppetdb start
+    service puppetdb restart
     puppet resource service puppetdb ensure=running enable=true
 
     if [ "$WEB_SERVER" = "apache2" ]; then
