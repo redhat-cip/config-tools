@@ -242,6 +242,8 @@ EOF
     # Bug Puppet: https://tickets.puppetlabs.com/browse/PUP-1386
     if [ $OS == "Debian" ] || [ $OS == "Ubuntu" ]; then
         echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
+        # Bug Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=736849
+        echo 'umask 022' | tee --append /etc/apache2/envvars
     else
         sed -i "s/^\(LANG\s*=\s*\).*\$/\1en_US.UTF-8/" /etc/sysconfig/httpd
     fi
