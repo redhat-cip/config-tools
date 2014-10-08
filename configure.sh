@@ -68,6 +68,7 @@ generate() {
     args="$@"
 
     generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
+    chmod 0644 $file
 }
 
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
