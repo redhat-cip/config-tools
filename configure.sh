@@ -264,7 +264,6 @@ EOF
         fi
     fi
 
-    chown -R puppet:puppet /etc/puppet
     service $WEB_SERVER restart
     puppet resource service $WEB_SERVER ensure=running enable=true
 
