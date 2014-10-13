@@ -120,28 +120,27 @@ pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 edeployurl=$($ORIG/extract.py edeploy "$yamlfile"|sed -e "s/@VERSION@/$version/")
 jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
+scenario=$($ORIG/extract.py scenario "$yamlfile")
 
 set -e
 
 # infra and env
+update_or_clone "$infragit" infra
 
-infranum=1
-for infradir in $infragit; do
-    update_or_clone "$infradir" infra$infranum
-    infranum=$(($infranum + 1))
-done
-infranum=$(($infranum - 1))
-
-# merge the infra directories
-rm -rf infra
-mkdir infra
-for num in $(seq 1 $infranum); do
-    cp -a infra$num/* infra/
-done
-
-if [ ! -f infra/infra.yml ]; then
-    echo "infra.yml not found in $infragit" 1>&2
-    exit 1
+if [ -n "$scenario" ]; then
+    if [ ! -f "infra/scenarios/${scenario}/infra.yaml" ]; then
+        echo "scenarios/${scenario}/infra.yml not found in $infragit" 1>&2
+        exit 1
+    else
+        infrayaml=infra/scenarios/${scenario}/infra.yaml
+    fi
+else
+    if [ ! -f infra/infra.yml ]; then
+        echo "infra.yml not found in $infragit" 1>&2
+        exit 1
+    else
+        infrayaml=infra/infra.yaml
+    fi
 fi
 
 if [ ! -f env/$envyml ]; then
@@ -155,7 +154,7 @@ TOP=$(pwd)/top
 rm -rf $TOP
 mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin $TOP/usr/bin
 
-$ORIG/merge.py infra/infra.yml env/$envyml > $TOP/etc/config-tools/global.yml
+$ORIG/merge.py $infrayaml env/$envyml > $TOP/etc/config-tools/global.yml
 
 $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/config.tmpl version=$version role=$role > $TOP/etc/config-tools/config
 . $TOP/etc/config-tools/config
