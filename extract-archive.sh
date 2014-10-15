@@ -19,6 +19,9 @@
 set -e
 set -x
 
+# some functions are useful
+source /srv/edeploy/build/common
+
 SUDO_USER=${SUDO_USER:=root}
 
 if [ -r /etc/redhat-release ]; then
@@ -44,6 +47,9 @@ if [ -d /etc/jenkins_jobs/jobs ]; then
         exit 1
     fi
 
+    # Required to upgrade from I.1.1.0 to I.1.2.0
+    # Change in JJB: http://goo.gl/1dDhye
+    iniset /etc/jenkins_jobs/jenkins_jobs.ini job_builder allow_duplicates True
     /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 fi
 
