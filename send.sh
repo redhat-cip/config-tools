@@ -34,7 +34,7 @@ if tty -s; then
     ROPTS=-vP
 fi
 
-rsync -e "ssh $SSHOPTS" -az $ROPTS archive.tar extract-archive.sh $USER@$MASTER:/tmp/
+rsync -e "ssh $SSHOPTS" -az $ROPTS archive.tar functions extract-archive.sh $USER@$MASTER:/tmp/
 
 if [ $USER != root ]; then
     SUDO=sudo
