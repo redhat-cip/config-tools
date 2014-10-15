@@ -129,14 +129,14 @@ update_or_clone "$infragit" infra
 
 if [ -n "$scenario" ]; then
     if [ ! -f "infra/scenarios/${scenario}/infra.yaml" ]; then
-        echo "scenarios/${scenario}/infra.yml not found in $infragit" 1>&2
+        echo "scenarios/${scenario}/infra.yaml not found in $infragit" 1>&2
         exit 1
     else
         infrayaml=infra/scenarios/${scenario}/infra.yaml
     fi
 else
-    if [ ! -f infra/infra.yml ]; then
-        echo "infra.yml not found in $infragit" 1>&2
+    if [ ! -f infra/infra.yaml ]; then
+        echo "infra.yaml not found in $infragit" 1>&2
         exit 1
     else
         infrayaml=infra/infra.yaml
