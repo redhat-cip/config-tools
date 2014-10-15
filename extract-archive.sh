@@ -19,8 +19,8 @@
 set -e
 set -x
 
-# some functions are useful
-source /srv/edeploy/build/common
+ORIG=$(cd $(dirname $0); pwd)
+. $ORIG/functions
 
 SUDO_USER=${SUDO_USER:=root}
 
