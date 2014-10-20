@@ -200,6 +200,7 @@ EOF
   - "%{::type}/common"
   - common
 EOF
+chown puppet:puppet /etc/puppet/hiera.yaml
 
     cat > /etc/puppet/routes.yaml <<EOF
 ---
@@ -208,6 +209,7 @@ master:
     terminus: puppetdb
     cache: yaml
 EOF
+chown puppet:puppet /etc/puppet/routes.yaml
 
     cat > /etc/puppetdb/conf.d/jetty.ini <<EOF
 [jetty]
@@ -226,6 +228,7 @@ EOF
 server = ${FQDN}
 port = 8081
 EOF
+chown puppet:puppet /etc/puppet/puppetdb.yaml
 
     if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
         mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
