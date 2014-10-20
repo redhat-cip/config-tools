@@ -253,6 +253,7 @@ chown puppet:puppet /etc/puppet/puppetdb.conf
     fi
 
     tee -a /etc/puppet/autosign.conf <<< '*'
+    chown puppet:puppet /etc/puppet/autosign.conf
 
     puppet resource service puppetmaster ensure=stopped enable=false
     service puppetdb restart
