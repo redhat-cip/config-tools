@@ -228,7 +228,7 @@ EOF
 server = ${FQDN}
 port = 8081
 EOF
-chown puppet:puppet /etc/puppet/puppetdb.yaml
+chown puppet:puppet /etc/puppet/puppetdb.conf
 
     if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
         mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
