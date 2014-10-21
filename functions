@@ -33,3 +33,17 @@ $option = $value
         sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
     fi
 }
+
+# Determinate is the given option present in the INI file
+# ini_has_option config-file section option
+function ini_has_option {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    local file=$1
+    local section=$2
+    local option=$3
+    local line
+    line=$(sed -ne "/^\[$section\]/,/^\[.*\]/ { /^$option[ \t]*=/ p; }" "$file")
+    $xtrace
+    [ -n "$line" ]
+}
