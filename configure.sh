@@ -410,8 +410,10 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     for h in $HOSTS; do
         generate $step /etc/puppet/data/fqdn.yaml host=$h
         mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
         # hack to fix %{hiera} without ""
         sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
     done
     for p in $PROFILES; do
