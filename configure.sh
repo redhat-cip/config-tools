@@ -469,6 +469,9 @@ done
 
 verify-servers.sh -x $LOGDIR
 
+# ensure logs are readable by Jenkins
+chmod -R 644 $LOGDIR/*
+
 exit $RC
 
 # configure.sh ends here
