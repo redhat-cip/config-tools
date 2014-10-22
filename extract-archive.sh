@@ -41,6 +41,7 @@ if [ ${SUDO_USER} != root ]; then
 fi
 
 if [ -d /etc/jenkins_jobs/jobs ]; then
+    service jenkins restart
     # Wait Jenkins is up and running, it may take a long time.
     if ! timeout 1000 sh -c "while ! curl -s http://localhost:8282 | grep 'No builds in the queue.' >/dev/null 2>&1; do sleep 10; done"; then
         echo "Jenkins is not up and running after long time."
