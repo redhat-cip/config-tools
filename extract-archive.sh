@@ -51,9 +51,7 @@ if [ -d /etc/jenkins_jobs/jobs ]; then
     # Required to upgrade from I.1.1.0 to I.1.2.0
     # Change in JJB: http://goo.gl/1dDhye
     iniset /etc/jenkins_jobs/jenkins_jobs.ini job_builder allow_duplicates True
-    # (TODO) EmilienM
-    # Bug in JJB: https://bugs.launchpad.net/openstack-ci/
-    PBR_VERSION=jjb /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
+    /opt/jenkins-job-builder/jenkins_jobs/cmd.py update --delete-old /etc/jenkins_jobs/jobs
 fi
 
 if [ -r /etc/edeploy/state ]; then
