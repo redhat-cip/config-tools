@@ -21,15 +21,27 @@ yaml_file=$1
 
 usage() {
   cat << EOF
-  This script will modify passwords, uuid and ssh public and private keys in a env yaml file
+  This script will modify passwords, uuid and ssh public and private keys in a env yaml file.
+  Some utilities are mandatory: pwgen, ssh-keygen and uuidgen.
   usage: $0 filename
 EOF
   exit
 }
 
+check_utils() {
+  for util in pwgen uuidgen ssh-keygen; do
+    is_available=$(which $util)
+    if [ -z $is_available ]; then
+      usage
+    fi
+  done
+}
+
 if [ -z $yaml_file ]; then
   usage
 fi
+
+check_utils
 
 strings="swift_hash_suffix|password|secret|heat_auth_encryption_key|ks_admin_token"
 
@@ -41,7 +53,7 @@ done
 # root password
 password=$(pwgen 30 1)
 encrypted_password=$(openssl passwd -1 $password)
-sed -i "/\<root_password\>/i # root password $password" $yaml_file
+sed -i "/\broot_password\b/i # root password $password" $yaml_file
 sed -i "s|\([[:space:]]*\broot_password\b\).*|\1: $encrypted_password|" $yaml_file
 
 # haproxy_auth
