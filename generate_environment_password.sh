@@ -21,7 +21,7 @@ yaml_file=$1
 
 usage() {
   cat << EOF
-  This script will modify password and ssh key in a env yaml file
+  This script will modify passwords, uuid and ssh public and private keys in a env yaml file
   usage: $0 filename
 EOF
   exit
@@ -42,11 +42,11 @@ done
 password=$(pwgen 30 1)
 encrypted_password=$(openssl passwd -1 $password)
 sed -i "/\<root_password\>/i # root password $password" $yaml_file
-sed -i "s|\([[:space:]]*\<root_password\>\).*|\1: $encrypted_password|" $yaml_file 
+sed -i "s|\([[:space:]]*\broot_password\b\).*|\1: $encrypted_password|" $yaml_file
 
 # haproxy_auth
 password=$(pwgen 30 1)
-sed -i "s|\([[:space:]]*\<haproxy_auth\>\).*|\1: root:$password|" $yaml_file 
+sed -i "s|\([[:space:]]*\bhaproxy_auth\b\).*|\1: root:$password|" $yaml_file
 
 # uuid
 for value in rbd_secret_uuid ceph_fsid; do
@@ -63,7 +63,7 @@ sed -i 's/^/    /' $dir/nova
 sed -i "/nova_ssh_private_key/r $dir/nova" $yaml_file
 
 nova_ssh_public_key=$(cat $dir/nova.pub)
-sed -i "s|\([[:space:]]*nova_ssh_public_key\).*|\1: $nova_ssh_public_key|" $yaml_file 
+sed -i "s|\([[:space:]]*\bnova_ssh_public_key\b\).*|\1: $nova_ssh_public_key|" $yaml_file
 
 rm $dir/nova*
 rmdir $dir
