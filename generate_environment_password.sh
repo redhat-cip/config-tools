@@ -31,7 +31,7 @@ if [ -z $yaml_file ]; then
   usage
 fi
 
-strings="swift_hash_suffix|password|secret_key|heat_auth_encryption_key|ks_admin_token|neutron_metadata_proxy_shared_secret"
+strings="swift_hash_suffix|password|secret|heat_auth_encryption_key|ks_admin_token"
 
 for value in $(grep -E "$strings" $yaml_file | sed 's/.*:://' | grep -Ev "\<root_password\>" |  awk -F':' '{print $1}'); do
   password=$(pwgen -s -c -n 30 1)
