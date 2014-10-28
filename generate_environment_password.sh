@@ -48,6 +48,12 @@ sed -i "s|\([[:space:]]*\<root_password\>\).*|\1: $encrypted_password|" $yaml_fi
 password=$(pwgen 30 1)
 sed -i "s|\([[:space:]]*\<haproxy_auth\>\).*|\1: root:$password|" $yaml_file 
 
+# uuid
+for value in rbd_secret_uuid ceph_fsid; do
+  uuid=$(uuidgen)
+  sed -i "s/\([[:space:]]*$value\).*/\1: $uuid/" $yaml_file
+done
+
 # gen ssh
 dir=$(mktemp -d)
 
