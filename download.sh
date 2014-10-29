@@ -80,6 +80,31 @@ update_or_clone() {
     checkout_tag $dir
 }
 
+clone() {
+    giturl=$1
+    dir=$2
+
+    if [ -r $dir/.git/config ]; then
+        if ! grep -q "url = $giturl\$" $dir/.git/config; then
+            rm -rf $dir
+        fi
+    fi
+
+    if [ -d $dir ]; then
+        if [ "$LOCAL" != 1 ]; then
+	    cd $dir
+	    git reset --hard
+	    git clean -xfdq
+	    git checkout master
+	    git checkout .
+	    git pull
+	    cd ..
+        fi
+    else
+	git clone $giturl $dir
+    fi
+}
+
 check_and_download() {
     url=$1
     base=$(basename $url)
@@ -229,12 +254,9 @@ EOF
 # Ansible
 
 if [ -n "$ansiblegit" ]; then
-    update_or_clone "$ansiblegit" ansible
-    cd ansible
-    stable=$(git tag | sort -dr | head -1)
-    cd ..
+    clone "$ansiblegit" ansible
     mkdir -p $TOP/etc/ansible
-    cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
+    cp -a ansible/upgrade/$tag/*/* $TOP/etc/ansible/
 fi
 
 # hosts
