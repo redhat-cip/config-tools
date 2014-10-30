@@ -74,7 +74,8 @@ for version in $(ls -d *-*); do
 done
 
 # allow to boot over http
-ln -f /var/lib/tftpboot/{vmlinuz,initrd.pxe,health.pxe} /var/www/install/ || :
+ln -f /var/lib/tftpboot/{vmlinuz,initrd.pxe,health.pxe} /var/www/install/ || \
+  cp -f /var/lib/tftpboot/{vmlinuz,initrd.pxe,health.pxe} /var/www/install/ || :
 
 # for RHEL www hierarchy compatibility
 if [ -d /var/www/html ]; then
