@@ -60,5 +60,4 @@ Available designs
  
 Examples of infrastructure git repositories:
 
-* Scalable infra: https://github.com/enovance/openstack-yaml-infra-ref-arch
-* 3 nodes in HA: https://github.com/enovance/openstack-yaml-infra-3nodes
+* 3 nodes in HA and Scalable infra: https://github.com/enovance/openstack-yaml-infra
