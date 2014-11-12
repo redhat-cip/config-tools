@@ -296,7 +296,7 @@ cp -a serverspec $TOP/etc/
 
 # scripts
 
-cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/bin/
+cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/merge.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/bin/
 
 # config-tools
 
