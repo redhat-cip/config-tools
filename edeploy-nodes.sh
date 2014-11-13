@@ -236,6 +236,12 @@ rm $tmpfile
 
 mv /var/lib/edeploy/logs/* /var/lib/edeploy/hw/* $LOGDIR/ || :
 
+if [ -r /etc/redhat-release ]; then
+    cp /var/log/httpd/*-edeploy.log $LOGDIR/ || :
+else
+    cp /var/log/apache2/*-edeploy.log $LOGDIR/ || :
+fi
+
 if [ -n "$SUDO_USER" ]; then
     chown $SUDO_USER $LOGDIR/*
 fi
