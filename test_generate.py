@@ -122,8 +122,8 @@ class TestGenerate(unittest.TestCase):
 
     def test_generate(self):
         model = {'gw': '192.168.1.1',
-                 'ip': '192.168.1.10-12',
-                 'hostname': 'host10-12'}
+                 '@ip': '192.168.1.10-12',
+                 '@hostname': 'host10-12'}
         self.assertEqual(
             generate.generate_list(model),
             [{'gw': '192.168.1.1', 'ip': '192.168.1.10', 'hostname': 'host10'},
@@ -133,8 +133,8 @@ class TestGenerate(unittest.TestCase):
 
     def test_generate_with_zeros(self):
         model = {'gw': '192.168.1.1',
-                 'ip': '192.168.1.1-6',
-                 'hostname': 'ceph001-006'}
+                 '@ip': '192.168.1.1-6',
+                 '@hostname': 'ceph001-006'}
         self.assertEqual(
             generate.generate_list(model),
             [{'gw': '192.168.1.1', 'ip': '192.168.1.1', 'hostname': 'ceph001'},
@@ -147,14 +147,14 @@ class TestGenerate(unittest.TestCase):
             )
 
     def test_generate_253(self):
-        result = generate.generate_list({'hostname': '10.0.1-2.2-254'})
+        result = generate.generate_list({'@hostname': '10.0.1-2.2-254'})
         self.assertEqual(
             len(result),
             2 * 253,
             result)
 
     def test_generate_invalid(self):
-        result = generate.generate_list({'hostname': '10.0.1-2.2-254',
+        result = generate.generate_list({'@hostname': '10.0.1-2.2-254',
                                          'version': 'D7-H.1.0.0'})
         self.assertEqual(
             len(result),
@@ -162,7 +162,7 @@ class TestGenerate(unittest.TestCase):
             result)
 
     def test_generate_list(self):
-        result = generate.generate_list({'hostname':
+        result = generate.generate_list({'@hostname':
                                          ('hosta', 'hostb', 'hostc')})
         self.assertEqual(
             result,
@@ -184,10 +184,10 @@ class TestGenerate(unittest.TestCase):
         self.assertEqual(result, [model])
 
     def test_generate_deeper(self):
-        model = {'cmdb':
+        model = {'@cmdb':
                  {'gw': False,
-                  'ip': '192.168.1.10-12',
-                  'hostname': 'host10-12'}}
+                  '@ip': '192.168.1.10-12',
+                  '@hostname': 'host10-12'}}
         self.assertEqual(
             generate.generate_list(model),
             [{'cmdb':
@@ -205,23 +205,23 @@ class TestGenerate(unittest.TestCase):
             )
 
     def test_generate_hosts(self):
-        model = {'host10-12':
-                 {'cmdb':
-                  {'gw': '192.168.1.1',
-                   'ip': '192.168.1.10-12'}}}
+        model = {'@host10-12':
+                 {'@cmdb':
+                  {'gw': ['192.168.1.1',  '192.168.1.2'],
+                   '@ip': '192.168.1.10-12'}}}
         self.assertEqual(
             generate.generate_dict(model),
             {'host10':
              {'cmdb':
-              {'gw': '192.168.1.1',
+              {'gw': ['192.168.1.1',  '192.168.1.2'],
                'ip': '192.168.1.10'}},
              'host11':
              {'cmdb':
-              {'gw': '192.168.1.1',
+              {'gw': ['192.168.1.1',  '192.168.1.2'],
                'ip': '192.168.1.11'}},
              'host12':
              {'cmdb':
-              {'gw': '192.168.1.1',
+              {'gw': ['192.168.1.1',  '192.168.1.2'],
                'ip': '192.168.1.12'}}}
             )
 
