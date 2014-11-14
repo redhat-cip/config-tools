@@ -175,7 +175,7 @@ defined like 10-12:15-18 or from a list of entries.'''
             yield elt
     elif isinstance(pattern, dict):
         for key, entry in pattern.items():
-            if key[0] == '@':
+            if key[0] == '=':
                 pattern[key[1:]] = _generate_values(entry)
                 del pattern[key]
             else:
@@ -250,7 +250,7 @@ values like host10-12 or 192.168.2.10-12:14-20.'''
     yielded = {}
     yielded.update(model)
     for key, value in yielded.items():
-        if key[0] == '@':
+        if key[0] == '=':
             yielded[key[1:]] = _generate_values(value)
             del yielded[key]
         else:
@@ -267,7 +267,7 @@ def generate_dict(model):
     '''Generate a dict with ranges in keys and values.'''
     result = {}
     for thekey in model.keys():
-        if thekey[0] == '@':
+        if thekey[0] == '=':
             key = thekey[1:]
             for newkey, val in izip(list(_generate_values(key)),
                                     generate_list(model[thekey])):
