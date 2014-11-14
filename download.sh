@@ -38,13 +38,15 @@ tag="$1"
 yaml="$2"
 shift 2
 
+branch=${tag%.*}
+
 role=openstack-full
 eval "$@"
 
 checkout_tag() {
     cd $1
-    if [ -n "$tag" ] && (git tag; git branch -r) | grep $tag; then
-	git checkout $tag
+    if [ -n "$tag" ] && (git tag; git branch -r) | egrep "$tag|$branch"; then
+	git checkout $tag || git checkout $branch
 	tagged=1
     else
 	tagged=0
@@ -68,13 +70,14 @@ update_or_clone() {
 	    cd $dir
 	    git reset --hard
 	    git clean -xfdq
-	    git checkout master
+	    git checkout $branch || git checkout master
 	    git checkout .
 	    git pull
 	    cd ..
         fi
     else
 	git clone $giturl $dir
+	git checkout $branch || git checkout master
     fi
 
     checkout_tag $dir
@@ -95,13 +98,14 @@ clone() {
 	    cd $dir
 	    git reset --hard
 	    git clean -xfdq
-	    git checkout master
+	    git checkout $branch || git checkout master
 	    git checkout .
 	    git pull
 	    cd ..
         fi
     else
 	git clone $giturl $dir
+	git checkout $branch || git checkout master
     fi
 }
 
