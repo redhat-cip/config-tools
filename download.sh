@@ -77,7 +77,9 @@ update_or_clone() {
         fi
     else
 	git clone $giturl $dir
+	cd $dir
 	git checkout $branch || git checkout master
+        cd ..
     fi
 
     checkout_tag $dir
