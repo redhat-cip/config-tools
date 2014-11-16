@@ -105,7 +105,9 @@ clone() {
         fi
     else
 	git clone $giturl $dir
+	cd $dir
 	git checkout $branch || git checkout master
+        cd ..
     fi
 }
 
