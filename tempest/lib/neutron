@@ -1,0 +1,20 @@
+#---------------------------------------------------------------
+# Project         : Configure Tempest
+# File            : configure-tempest.sh
+# Copyright       : (C) 2013 by
+# Author          : Mehdi Abaakouk
+# Created On      : Thu Jan 24 18:26:30 2013
+# Purpose         : Install and run Tempest
+#---------------------------------------------------------------
+
+function setup_neutron(){
+    source /etc/config-tools/openrc.sh
+    NETWORK_ID=$(neutron net-list -- --router:external=True | grep -v -e '+' -e 'subnets' | awk '{print $2}')
+
+    ROUTER_ID=""
+    API_VERSION="2.0"
+
+    iniset network public_router_id "$ROUTER_ID"
+    iniset network public_network_id "$NETWORK_ID"
+    iniset network api_version v${API_VERSION}
+}

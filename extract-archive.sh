@@ -34,6 +34,7 @@ rm -rf /etc/edeploy/*
 
 tar xf /tmp/archive.tar --no-same-owner -C /
 chown -R $SUDO_USER /etc/serverspec
+chown -R $SUDO_USER /opt/tempest-scripts
 
 if [ ${SUDO_USER} != root ]; then
     mkdir -p /root/.ssh

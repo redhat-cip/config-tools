@@ -1,0 +1,26 @@
+
+function create_s3_materials(){
+    BOTO_MATERIALS_PATH=$HOME/s3-materials
+    IMAGE_NAME=cirros-0.3.1-x86_64
+    IMAGE_URL=http://download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-uec.tar.gz
+
+    mkdir -p $BOTO_MATERIALS_PATH
+
+    wget "$IMAGE_URL" -O $BOTO_MATERIALS_PATH/$IMAGE_NAME-uec.tar.gz
+    tar -xzf $BOTO_MATERIALS_PATH/$IMAGE_NAME-uec.tar.gz -C $BOTO_MATERIALS_PATH
+
+    kernel="$IMAGE_NAME-vmlinuz"
+    ramdisk="$IMAGE_NAME-initrd"
+    disk_image="$IMAGE_NAME-blank.img"
+
+    euca-bundle-image -r x86_64 -i "$BOTO_MATERIALS_PATH/$kernel" --kernel true -d "$BOTO_MATERIALS_PATH"
+    euca-bundle-image -r x86_64 -i "$BOTO_MATERIALS_PATH/$ramdisk" --ramdisk true -d "$BOTO_MATERIALS_PATH"
+    euca-bundle-image -r x86_64 -i "$BOTO_MATERIALS_PATH/$disk_image" -d "$BOTO_MATERIALS_PATH"
+
+
+    iniset scenario img_dir $BOTO_MATERIALS_PATH
+    iniset boto s3_materials_path $BOTO_MATERIALS_PATH
+    iniset boto aki_manifest $kernel
+    iniset boto ami_manifest $disk_image
+    iniset boto ari_manifest $ramdisk
+}

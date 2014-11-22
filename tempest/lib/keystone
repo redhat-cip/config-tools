@@ -1,0 +1,117 @@
+#!/bin/bash -x
+#---------------------------------------------------------------
+# Project         : Fill Keystone
+# File            : keystone.sh
+# Copyright       : (C) 2013 by
+# Author          : Emilien Macchi & Mehdi Abaakouk
+# Created On      : Thu Jan 24 18:26:30 2013
+# Purpose         : Install and run Tempest
+#---------------------------------------------------------------
+
+source /etc/config-tools/openrc.sh
+
+check_not_empty(){
+	name=$1
+	value=$(eval "echo \$$name")
+	if [ -z "$value" ] ; then
+		echo
+		echo "** $name is empty, tempest can't work fine **"
+		echo
+		exit 1
+	fi
+}
+
+
+setup_keystone_user_role(){
+    tools/with_venv.sh keystone endpoint-list # test venv
+
+    
+
+    tools/with_venv.sh keystone role-create  --name ResellerAdmin || true
+    # Get IDs
+    role_reseller_id=$(tools/with_venv.sh keystone role-list | awk '/ResellerAdmin/{print $2}')
+    # Allow to use _member_ or Member belong setups:
+    role_id=$(tools/with_venv.sh keystone role-list | awk '/ember/{print $2}' | head -n 1)
+    role_swift_id=$(tools/with_venv.sh keystone role-list | awk '/SwiftOperator/{print $2}')
+
+    # create demo tenants
+    tools/with_venv.sh keystone tenant-create --name demo | awk '/id/{print $4}' || true
+    tools/with_venv.sh keystone tenant-create --name alt_demo | awk '/id/{print $4}' || true
+
+    # Get IDs
+    tenant_admin_id=$(tools/with_venv.sh keystone tenant-list | awk '/ admin /{print $2}')
+    tenant_demo_id=$(tools/with_venv.sh keystone tenant-list | awk '/ demo /{print $2}')
+    tenant_alt_demo_id=$(tools/with_venv.sh keystone tenant-list | awk '/ alt_demo /{print $2}')
+
+    # set unlimited security groups limits for all created tenants
+    for tenant_id in $tenant_admin_id $tenant_demo_id $tenant_alt_demo_id; do
+      neutron quota-update --tenant_id $tenant_id --security-group -1
+    done
+
+    # create demo users
+    tools/with_venv.sh keystone user-create --name demo --pass secret --email demo@demo.com --tenant-id $tenant_demo_id || true
+    tools/with_venv.sh keystone user-create --name alt_demo --pass secret --email alt_demo@demo.com --tenant-id $tenant_alt_demo_id || true
+
+    user_admin_id=$(tools/with_venv.sh keystone user-list | awk '/ admin /{print $2}')
+    user_demo_id=$(tools/with_venv.sh keystone user-list | awk '/ demo /{print $2}')
+    user_alt_demo_id=$(tools/with_venv.sh keystone user-list | awk '/ alt_demo /{print $2}')
+
+    # associate users and roles
+    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_reseller_id --tenant-id $tenant_admin_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_demo_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_demo_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_alt_demo_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_swift_id --tenant-id $tenant_demo_id || true
+    tools/with_venv.sh keystone user-role-add --user-id $user_alt_demo_id --role-id $role_swift_id --tenant-id $tenant_alt_demo_id || true
+
+    # Needed for Heat
+    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_admin_id || true
+
+    check_not_empty role_id
+    check_not_empty role_swift_id
+    check_not_empty tenant_demo_id
+    check_not_empty tenant_alt_demo_id
+    check_not_empty user_demo_id
+    check_not_empty user_alt_demo_id
+}
+
+setup_ec2_s3_creds(){
+
+    s3_url=$(tools/with_venv.sh keystone endpoint-get --service s3 | awk '/s3/{print $4}')
+    if [ "$s3_url" ] ; then
+        iniset boto s3_url $s3_url
+        export S3_URL=$s3_url
+    fi
+
+    ec2_url=$(tools/with_venv.sh keystone endpoint-get --service ec2 | awk '/ec2/{print $4}')
+    if [ "$ec2_url" ] ; then
+        iniset boto ec2_url $ec2_url
+        export EC2_URL=$ec2_url
+    fi
+
+
+    # Setup EC2 env for the admin user
+    CREDS=$(tools/with_venv.sh keystone ec2-credentials-create)
+    export EC2_ACCESS_KEY=$(echo "$CREDS" | awk '/ access / { print $4 }')
+    export EC2_SECRET_KEY=$(echo "$CREDS" | awk '/ secret / { print $4 }')
+    export EC2_USER_ID=42 # nova does not use user id, but bundling requires it
+    export EC2_PRIVATE_KEY=${HOME}/pk.pem
+    export EC2_CERT=${HOME}/cert.pem
+    export NOVA_CERT=${HOME}/cacert.pem
+    export EUCALYPTUS_CERT=${NOVA_CERT} 
+
+    iniset boto aws_access $EC2_ACCESS_KEY
+    iniset boto aws_secret $EC2_SECRET_KEY
+
+    # Remove old certificates
+    rm -f $HOME/cacert.pem
+    rm -f $HOME/cert.pem
+    rm -f $HOME/pk.pem
+
+    tools/with_venv.sh nova x509-get-root-cert $HOME/cacert.pem
+    tools/with_venv.sh nova x509-create-cert $HOME/pk.pem $HOME/cert.pem
+
+
+}
+

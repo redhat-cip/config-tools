@@ -240,6 +240,10 @@ if [ -n "$jenkinsgit" ]; then
     cp -a jenkins_jobs $TOP/etc/
 fi
 
+# Tempest scripts
+mkdir $TOP/opt
+cp -r $ORIG/tempest $TOP/opt/tempest-scripts
+
 # Puppet
 
 for f in infra/data/common.yaml.tmpl infra/data/fqdn.yaml.tmpl infra/data/type.yaml.tmpl; do

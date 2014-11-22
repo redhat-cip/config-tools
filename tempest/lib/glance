@@ -1,0 +1,32 @@
+#---------------------------------------------------------------
+# Project : Fill Glance
+# File: glance.sh
+# Copyright   : (C) 2013 by
+# Author  : Emilien Macchi
+# Created On  : Thu Jan 24 18:26:30 2013
+# Purpose : Install and run Tempest
+#---------------------------------------------------------------
+
+
+function setup_glance(){
+    # Variables
+    IMAGE_NAME=cirros
+    IMAGE_URL="http://download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-disk.img"
+    IMAGE_CONT_FORMAT=bare
+    IMAGE_DISK_FORMAT=qcow2
+    API_VERSION="2.1"
+
+    # Download and import an image
+    IMAGE_ID=$(tools/with_venv.sh glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
+    if [ ! "$IMAGE_ID" ] ; then
+            tools/with_venv.sh glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
+                --disk-format=$IMAGE_DISK_FORMAT --location $IMAGE_URL
+            IMAGE_ID=$(tools/with_venv.sh glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
+    fi
+
+    # Configure Tempest
+    iniset compute image_ref $IMAGE_ID
+    iniset compute image_ref_alt $IMAGE_ID
+    #NOTE(sileht): some test won't work with version 2.1
+    #iniset image api_version $API_VERSION
+}
