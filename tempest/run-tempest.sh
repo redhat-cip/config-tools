@@ -44,8 +44,6 @@ if [ "$VERSION" ]; then
     fi
 fi
 
-venv(){ tools/with_venv.sh "$@" ; }
-
 export PYTHONUNBUFFERED=true
 export NOSE_WITH_OPENSTACK=1
 export NOSE_OPENSTACK_COLOR=1
@@ -65,7 +63,5 @@ else
    TESTRARGS="$custom_tests_to_run"
 fi
 
-venv pip install --no-use-wheel junitxml testrepository
-
-[ ! -d .testrepository ] && venv testr init
-venv testr run --subunit $TESTRARGS | venv subunit2junitxml -o tempest_xunit.xml  -f --no-passthrough | venv subunit2pyunit --no-passthrough
+[ ! -d .testrepository ] && testr init
+testr run --subunit $TESTRARGS | subunit2junitxml -o tempest_xunit.xml  -f --no-passthrough | subunit2pyunit --no-passthrough

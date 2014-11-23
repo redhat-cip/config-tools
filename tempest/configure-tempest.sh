@@ -12,15 +12,16 @@ set -e
 set -x
 
 here=$(readlink -f $(dirname $0))
-cd /usr/share/openstack-tempest-icehouse
+tempest_dir="/usr/share/openstack-tempest-icehouse"
 
+cd $tempest_dir
 source /etc/config-tools/openrc.sh
 
-source lib/functions
-source lib/keystone
-source lib/glance
-source lib/neutron
-source lib/swift
+source $here/lib/functions
+source $here/lib/keystone
+source $here/lib/glance
+source $here/lib/neutron
+source $here/lib/swift
 
 while getopts "akgnqcsmhz" opt ; do
     case $opt in
@@ -40,7 +41,7 @@ while getopts "akgnqcsmhz" opt ; do
 done
 
 # Basic Configuration of Tempest
-cp etc/tempest.conf.sample etc/tempest.conf
+cp $tempest_dir/etc/tempest.conf.sample $tempest_dir/etc/tempest.conf
 mkdir -p /var/lib/tempest/state
 sudo chmod 755 /var/lib/tempest/state
 

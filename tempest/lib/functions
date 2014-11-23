@@ -10,7 +10,7 @@ function ini_has_option() {
 }
 
 function iniset() {
-    local file=$here/tempest/etc/tempest.conf
+    local file=$tempest_dir/etc/tempest.conf
     local section=$1
     local option=$2
     local value=$3
