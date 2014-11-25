@@ -59,6 +59,8 @@ test_update_server_name
 test_virtual_interfaces.VirtualInterfacesTestJSON
 test_virtual_interfaces.VirtualInterfacesTestXML
 test_volumes_actions
+test_live_block_migration
+test_live_block_migration_negative
 
 # Experimental, not tested:
 test_vpnaas_extensions
