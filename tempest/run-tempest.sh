@@ -14,7 +14,7 @@ set -x
 here=$(dirname $(readlink -m $0))
 
 tests_to_run=""
-while getopts "v:p" opt; do
+while getopts "v:p:" opt; do
     case $opt in
         v ) VERSION=$OPTARG;;
         p ) PROJECT=$OPTARG;;
