@@ -17,11 +17,11 @@ function setup_glance(){
     API_VERSION="2.1"
 
     # Download and import an image
-    IMAGE_ID=$(tools/with_venv.sh glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
+    IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     if [ ! "$IMAGE_ID" ] ; then
-            tools/with_venv.sh glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
+            glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
                 --disk-format=$IMAGE_DISK_FORMAT --location $IMAGE_URL
-            IMAGE_ID=$(tools/with_venv.sh glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
+            IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     fi
 
     # Configure Tempest

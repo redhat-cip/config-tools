@@ -43,7 +43,7 @@ done
 # Basic Configuration of Tempest
 cp $tempest_dir/etc/tempest.conf.sample $tempest_dir/etc/tempest.conf
 mkdir -p /var/lib/tempest/state
-sudo chmod 755 /var/lib/tempest/state
+chmod 755 /var/lib/tempest/state
 
 iniset DEFAULT lock_path "/var/lib/tempest/state"
 iniset auth allow_tenant_isolation true

@@ -23,25 +23,22 @@ check_not_empty(){
 
 
 setup_keystone_user_role(){
-    tools/with_venv.sh keystone endpoint-list # test venv
-
-    
-
-    tools/with_venv.sh keystone role-create  --name ResellerAdmin || true
+    keystone endpoint-list # test venv
+    keystone role-create  --name ResellerAdmin || true
     # Get IDs
-    role_reseller_id=$(tools/with_venv.sh keystone role-list | awk '/ResellerAdmin/{print $2}')
+    role_reseller_id=$(keystone role-list | awk '/ResellerAdmin/{print $2}')
     # Allow to use _member_ or Member belong setups:
-    role_id=$(tools/with_venv.sh keystone role-list | awk '/ember/{print $2}' | head -n 1)
-    role_swift_id=$(tools/with_venv.sh keystone role-list | awk '/SwiftOperator/{print $2}')
+    role_id=$(keystone role-list | awk '/ember/{print $2}' | head -n 1)
+    role_swift_id=$(keystone role-list | awk '/SwiftOperator/{print $2}')
 
     # create demo tenants
-    tools/with_venv.sh keystone tenant-create --name demo | awk '/id/{print $4}' || true
-    tools/with_venv.sh keystone tenant-create --name alt_demo | awk '/id/{print $4}' || true
+    keystone tenant-create --name demo | awk '/id/{print $4}' || true
+    keystone tenant-create --name alt_demo | awk '/id/{print $4}' || true
 
     # Get IDs
-    tenant_admin_id=$(tools/with_venv.sh keystone tenant-list | awk '/ admin /{print $2}')
-    tenant_demo_id=$(tools/with_venv.sh keystone tenant-list | awk '/ demo /{print $2}')
-    tenant_alt_demo_id=$(tools/with_venv.sh keystone tenant-list | awk '/ alt_demo /{print $2}')
+    tenant_admin_id=$(keystone tenant-list | awk '/ admin /{print $2}')
+    tenant_demo_id=$(keystone tenant-list | awk '/ demo /{print $2}')
+    tenant_alt_demo_id=$(keystone tenant-list | awk '/ alt_demo /{print $2}')
 
     # set unlimited security groups limits for all created tenants
     for tenant_id in $tenant_admin_id $tenant_demo_id $tenant_alt_demo_id; do
@@ -49,24 +46,24 @@ setup_keystone_user_role(){
     done
 
     # create demo users
-    tools/with_venv.sh keystone user-create --name demo --pass secret --email demo@demo.com --tenant-id $tenant_demo_id || true
-    tools/with_venv.sh keystone user-create --name alt_demo --pass secret --email alt_demo@demo.com --tenant-id $tenant_alt_demo_id || true
+    keystone user-create --name demo --pass secret --email demo@demo.com --tenant-id $tenant_demo_id || true
+    keystone user-create --name alt_demo --pass secret --email alt_demo@demo.com --tenant-id $tenant_alt_demo_id || true
 
-    user_admin_id=$(tools/with_venv.sh keystone user-list | awk '/ admin /{print $2}')
-    user_demo_id=$(tools/with_venv.sh keystone user-list | awk '/ demo /{print $2}')
-    user_alt_demo_id=$(tools/with_venv.sh keystone user-list | awk '/ alt_demo /{print $2}')
+    user_admin_id=$(keystone user-list | awk '/ admin /{print $2}')
+    user_demo_id=$(keystone user-list | awk '/ demo /{print $2}')
+    user_alt_demo_id=$(keystone user-list | awk '/ alt_demo /{print $2}')
 
     # associate users and roles
-    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_reseller_id --tenant-id $tenant_admin_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_demo_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_demo_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_alt_demo_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_swift_id --tenant-id $tenant_demo_id || true
-    tools/with_venv.sh keystone user-role-add --user-id $user_alt_demo_id --role-id $role_swift_id --tenant-id $tenant_alt_demo_id || true
+    keystone user-role-add --user-id $user_admin_id --role-id $role_reseller_id --tenant-id $tenant_admin_id || true
+    keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_demo_id || true
+    keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_demo_id || true
+    keystone user-role-add --user-id $user_admin_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
+    keystone user-role-add --user-id $user_alt_demo_id --role-id $role_id --tenant-id $tenant_alt_demo_id || true
+    keystone user-role-add --user-id $user_demo_id --role-id $role_swift_id --tenant-id $tenant_demo_id || true
+    keystone user-role-add --user-id $user_alt_demo_id --role-id $role_swift_id --tenant-id $tenant_alt_demo_id || true
 
     # Needed for Heat
-    tools/with_venv.sh keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_admin_id || true
+    keystone user-role-add --user-id $user_demo_id --role-id $role_id --tenant-id $tenant_admin_id || true
 
     check_not_empty role_id
     check_not_empty role_swift_id
@@ -78,13 +75,13 @@ setup_keystone_user_role(){
 
 setup_ec2_s3_creds(){
 
-    s3_url=$(tools/with_venv.sh keystone endpoint-get --service s3 | awk '/s3/{print $4}')
+    s3_url=$(keystone endpoint-get --service s3 | awk '/s3/{print $4}')
     if [ "$s3_url" ] ; then
         iniset boto s3_url $s3_url
         export S3_URL=$s3_url
     fi
 
-    ec2_url=$(tools/with_venv.sh keystone endpoint-get --service ec2 | awk '/ec2/{print $4}')
+    ec2_url=$(keystone endpoint-get --service ec2 | awk '/ec2/{print $4}')
     if [ "$ec2_url" ] ; then
         iniset boto ec2_url $ec2_url
         export EC2_URL=$ec2_url
@@ -92,7 +89,7 @@ setup_ec2_s3_creds(){
 
 
     # Setup EC2 env for the admin user
-    CREDS=$(tools/with_venv.sh keystone ec2-credentials-create)
+    CREDS=$(keystone ec2-credentials-create)
     export EC2_ACCESS_KEY=$(echo "$CREDS" | awk '/ access / { print $4 }')
     export EC2_SECRET_KEY=$(echo "$CREDS" | awk '/ secret / { print $4 }')
     export EC2_USER_ID=42 # nova does not use user id, but bundling requires it
@@ -109,8 +106,8 @@ setup_ec2_s3_creds(){
     rm -f $HOME/cert.pem
     rm -f $HOME/pk.pem
 
-    tools/with_venv.sh nova x509-get-root-cert $HOME/cacert.pem
-    tools/with_venv.sh nova x509-create-cert $HOME/pk.pem $HOME/cert.pem
+    nova x509-get-root-cert $HOME/cacert.pem
+    nova x509-create-cert $HOME/pk.pem $HOME/cert.pem
 
 
 }
