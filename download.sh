@@ -134,6 +134,7 @@ yamlfile=env/$(basename $yaml)
 update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
+puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$version/")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
@@ -279,20 +280,19 @@ fi
 
 # Puppet modules
 
-update_or_clone "$puppetgit" puppet-module
-
-git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
-
-if [ -n "$tag" -a "$tagged" = 1 ]; then
-    sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
+if [ -n "$puppetmodules" ];then
+    curl "$puppetmodules" | tar xz
+else
+    update_or_clone "$puppetgit" puppet-module
+    git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
+    if [ -n "$tag" -a "$tagged" = 1 ]; then
+        sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
+    fi
+    if [ "$LOCAL" != 1 ]; then
+        rm -rf modules
+        PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
+    fi
 fi
-
-if [ "$LOCAL" != 1 ]; then
-    rm -rf modules
-
-    PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
-fi
-
 cp -a modules $TOP/etc/puppet/
 
 # Serverspec
