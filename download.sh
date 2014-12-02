@@ -269,7 +269,10 @@ EOF
 if [ -n "$ansiblegit" ]; then
     clone "$ansiblegit" ansible
     mkdir -p $TOP/etc/ansible
-    cp -a ansible/upgrade/$tag/*/* $TOP/etc/ansible/
+    if [ -z "$stable" ]; then
+      echo "Please indicate to provision.sh stable=<latest stable release>."
+    fi
+    cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
 fi
 
 # hosts
