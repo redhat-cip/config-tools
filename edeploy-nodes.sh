@@ -180,8 +180,10 @@ service dnsmasq start
 
 if [ -r /etc/redhat-release ]; then
     service httpd start || :
+    service rsyncd start || :
 else
     service apache2 start || :
+    service rsync start || :
 fi
 
 # clean the generated files as they will be collected at the end of
