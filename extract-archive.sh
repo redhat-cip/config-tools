@@ -94,8 +94,10 @@ for version in $(ls -d *-*); do
     for path in $(ls $version/*.edeploy); do
         filename=$(basename $path)
         base=$(echo $filename|sed "s/-$version.edeploy//")
-        mkdir -p /var/lib/debootstrap/install/$version/$base
-        tar xf $path --xattrs --selinux -C /var/lib/debootstrap/install/$version/$base
+        if [ ! -d /var/lib/debootstrap/install/$version/$base ] ; then
+            mkdir -p /var/lib/debootstrap/install/$version/$base
+            tar xf $path --xattrs --selinux -C /var/lib/debootstrap/install/$version/$base
+        fi
     done
 done
 
