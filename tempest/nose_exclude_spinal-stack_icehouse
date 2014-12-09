@@ -67,6 +67,7 @@ test_vpnaas_extensions
 test_neutron_vpn
 test_neutron_ipsec
 test_fwaas_extensions
+test_neutron_firewall
 
 # New failures 2014-08-13:
 VolumesBackupsTest.test_volume_backup_create_get_detailed_list_restore_delete
