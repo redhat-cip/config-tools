@@ -199,6 +199,7 @@ EOF
   - "%{::type}/%{::fqdn}"
   - "%{::type}/common"
   - common
+  - secrets
 EOF
 chown puppet:puppet /etc/puppet/hiera.yaml
 
