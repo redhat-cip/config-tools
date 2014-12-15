@@ -140,188 +140,44 @@ configure_hostname() {
     fi
 }
 
-detect_os() {
-    OS=$(lsb_release -i -s)
-    case $OS in
-        Debian|Ubuntu)
-            WEB_SERVER="apache2"
-            PUPPET_VHOST="/etc/apache2/sites-available/puppetmaster"
-            ;;
-        CentOS|RedHatEnterpriseServer)
-            WEB_SERVER="httpd"
-            PUPPET_VHOST="/etc/httpd/conf.d/puppetmaster.conf"
-            ;;
-        *)
-            echo "Operating System not supported."
-            exit 1
-            ;;
-    esac
-    RELEASE=$(lsb_release -c -s)
-    DIST_RELEASE=$(lsb_release -s -r)
-}
-
-configure_puppet() {
-    service puppetmaster stop
-    service puppetdb stop
-    service $WEB_SERVER stop
-
-    cat > /etc/puppet/puppet.conf <<EOF
-[main]
-logdir=/var/log/puppet
-vardir=/var/lib/puppet
-ssldir=/var/lib/puppet/ssl
-rundir=/var/run/puppet
-factpath=\$vardir/lib/facter
-configtimeout=10m
-pluginsync=true
-
-[master]
-ssl_client_header = SSL_CLIENT_S_DN
-ssl_client_verify_header = SSL_CLIENT_VERIFY
-storeconfigs=true
-storeconfigs_backend=puppetdb
-reports=store,puppetdb
-pluginsync=true
-
-[agent]
-pluginsync=true
-certname=${FQDN}
-server=${FQDN}
+#
+# Set server type in each machine so hiera can
+# provide them with the correct values during
+# puppet run
+#
+for h in $HOSTS; do
+    if [ $h = $(hostname -s) ]; then
+        (echo "Configure Puppet environment on ${h} node:"
+         mkdir -p /etc/facter/facts.d
+         cat > /etc/facter/facts.d/environment.txt <<EOF
+type=${PROF_BY_HOST[$h]}
 EOF
-
-    cat > /etc/puppet/hiera.yaml <<EOF
----
-:backends:
-  - yaml
-:yaml:
-  :datadir: /etc/puppet/data
-:hierarchy:
-  - "%{::type}/%{::fqdn}"
-  - "%{::type}/common"
-  - common
-EOF
-chown puppet:puppet /etc/puppet/hiera.yaml
-
-    cat > /etc/puppet/routes.yaml <<EOF
----
-master:
-  facts:
-    terminus: puppetdb
-    cache: yaml
-EOF
-chown puppet:puppet /etc/puppet/routes.yaml
-
-    cat > /etc/puppetdb/conf.d/jetty.ini <<EOF
-[jetty]
-host = ${FQDN}
-port = 8080
-
-ssl-host = ${FQDN}
-ssl-port = 8081
-ssl-key = /etc/puppetdb/ssl/key.pem
-ssl-cert = /etc/puppetdb/ssl/cert.pem
-ssl-ca-cert = /etc/puppetdb/ssl/ca.pem
-EOF
-
-    cat > /etc/puppet/puppetdb.conf <<EOF
-[main]
-server = ${FQDN}
-port = 8081
-EOF
-chown puppet:puppet /etc/puppet/puppetdb.conf
-
-    if [ -f /etc/httpd/conf.d/puppetmaster.conf.disabled ]; then
-        mv /etc/httpd/conf.d/puppetmaster.conf.disabled /etc/httpd/conf.d/puppetmaster.conf
-    fi
-
-    sed -i -e "s!SSLCertificateFile.*!SSLCertificateFile /var/lib/puppet/ssl/certs/${FQDN}.pem!" -e "s!SSLCertificateKeyFile.*!SSLCertificateKeyFile /var/lib/puppet/ssl/private_keys/${FQDN}.pem!" $PUPPET_VHOST
-
-    rm -rf /var/lib/puppet/ssl && puppet cert generate ${FQDN}
-
-    mkdir -p /etc/puppetdb/ssl
-    cp /var/lib/puppet/ssl/private_keys/$(hostname -f).pem /etc/puppetdb/ssl/key.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/key.pem
-    cp /var/lib/puppet/ssl/certs/$(hostname -f).pem /etc/puppetdb/ssl/cert.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/cert.pem
-    cp /var/lib/puppet/ssl/certs/ca.pem /etc/puppetdb/ssl/ca.pem && chown puppetdb:puppetdb /etc/puppetdb/ssl/ca.pem
-
-    # Bug Puppet: https://tickets.puppetlabs.com/browse/PUP-1386
-    if [ $OS == "Debian" ] || [ $OS == "Ubuntu" ]; then
-        echo '. /etc/default/locale' | tee --append /etc/apache2/envvars
-        # Bug Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=736849
-        echo 'umask 022' | tee --append /etc/apache2/envvars
+        n=$(($n + 1)))
     else
-        sed -i "s/^\(LANG\s*=\s*\).*\$/\1en_US.UTF-8/" /etc/sysconfig/httpd
-    fi
-
-    tee -a /etc/puppet/autosign.conf <<< '*'
-    chown puppet:puppet /etc/puppet/autosign.conf
-
-    puppet resource service puppetmaster ensure=stopped enable=false
-    service puppetdb restart
-    puppet resource service puppetdb ensure=running enable=true
-
-    if [ "$WEB_SERVER" = "apache2" ]; then
-        a2ensite puppetmaster
-
-        # if puppetboard is present, enable it
-        if [ -r /var/www/puppetboard/wsgi.py ]; then
-            a2ensite puppetboard
-        fi
-    fi
-
-    service $WEB_SERVER restart
-    puppet resource service $WEB_SERVER ensure=running enable=true
-
-    # puppetdb is slow to start so try multiple times to reach it
-    NUM=10
-    RC=1
-    while [ $NUM -gt 0 ]; do
-        if puppet agent $PUPPETOPTS  $PUPPETOPTS2; then
-            RC=0
-            echo "Puppet Server UP and RUNNING!"
-            break
-        fi
-        NUM=$(($NUM - 1))
-        sleep 10
-    done
-    # check puppet result
-    if [ $RC = 1 ]; then
-        exit 1
-    fi
-    # Some issues have been found when running puppet the first time.
-    # It seems that restarting web server solves the issue.
-    service $WEB_SERVER restart
-}
-
-    for h in $HOSTS; do
-        if [ $h = $(hostname -s) ]; then
-            (echo "Configure Puppet environment on ${h} node:"
-             mkdir -p /etc/facter/facts.d
-             cat > /etc/facter/facts.d/environment.txt <<EOF
+        (echo "Configure Puppet environment on ${h} node:"
+        tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-             n=$(($n + 1)))
-        else
-            (echo "Configure Puppet environment on ${h} node:"
-             tee /tmp/environment.txt.$h <<EOF
-type=${PROF_BY_HOST[$h]}
-EOF
-             scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
-             n=$(($n + 1)))
-        fi
-    done
+        scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+        n=$(($n + 1)))
+    fi
+done
 
 ######################################################################
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
 
-detect_os
-
 if [ $STEP -eq 0 ]; then
     configure_hostname
     generate 0 /etc/puppet/data/common.yaml
-    configure_puppet | tee $LOGDIR/puppet-master.step0.log
+    # TODO (spredzy): See why it needs
+    # to be run twice for passenger to
+    # catch up
+    puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee $LOGDIR/puppet-master.step0.log
+    puppet apply -e 'include ::cloud::install::puppetdb' | tee $LOGDIR/puppet-master.step0.log
+    puppet apply /etc/puppet/modules/cloud/scripts/bootstrap_post_puppetdb.pp | tee $LOGDIR/puppet-master.step0.log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         STEP=1
         echo $STEP > $CDIR/step
@@ -337,71 +193,25 @@ if [ $STEP -eq 0 ]; then
 
     n=0
     for h in $HOSTS; do
-        if [ $h = $(hostname -s) ]; then
-            (echo "Provisioning Puppet agent on ${h} node:"
-             cp /tmp/hosts /etc
-             augtool << EOT
-set /files/etc/puppet/puppet.conf/agent/pluginsync true
-set /files/etc/puppet/puppet.conf/agent/certname $h
-set /files/etc/puppet/puppet.conf/agent/server $MASTER
-rm /files/etc/puppet/puppet.conf/main/templatedir
-save
-EOT
-
-             if [[ ! $h.$DOMAIN == $FQDN ]]; then
-               rm -rf /var/lib/puppet/ssl/* || :
-             fi
-
-             service ntp stop || :
-             ntpdate 0.europe.pool.ntp.org || :
-             service ntp start || :
-
-             puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
-            n=$(($n + 1))
-        else
+        if [ $h != $(hostname -s) ]; then
             (echo "Provisioning Puppet agent on ${h} node:"
              scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/resolv.conf /tmp/hosts /etc
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
 set /files/etc/puppet/puppet.conf/agent/pluginsync true
-set /files/etc/puppet/puppet.conf/agent/certname $h
+set /files/etc/puppet/puppet.conf/agent/certname $h.$DOMAIN
 set /files/etc/puppet/puppet.conf/agent/server $MASTER
 rm /files/etc/puppet/puppet.conf/main/templatedir
 save
 EOT
-
-             if [[ ! $h.$DOMAIN == $FQDN ]]; then
-               ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /var/lib/puppet/ssl/* || :
-             fi
-
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp stop || :
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo ntpdate 0.europe.pool.ntp.org || :
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo service ntp start || :
-
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo puppet agent $PUPPETOPTS $PUPPETOPTS2) > $LOGDIR/$h.step0.log 2>&1 &
-            n=$(($n + 1))
+)
         fi
     done
-
-    while [ $n -ne 0 ]; do
-        wait
-        if [ $? -ne 0 ]; then
-            RC=1
-        fi
-        n=$(($n - 1))
-    done
-    # check remote puppet result
-    if [ $RC = 1 ]; then
-        exit 1
-    fi
 fi
 
 ######################################################################
 # Step 1+: regular puppet runs (without certificate creation)
 ######################################################################
-
-# useful after an upgrade
-service $WEB_SERVER restart
 
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
