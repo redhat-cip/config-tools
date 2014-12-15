@@ -153,8 +153,8 @@ for h in $HOSTS; do
            then
            cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
-apache::mod::passenger::passenger_root="/usr/local/share/gems/gems/passenger-4.0.55"
-apache::mod::passenger::mod_lib_path="/usr/local/share/gems/gems/passenger-4.0.55/buildout/apache2/"
+apache::mod::passenger::passenger_root=/usr/local/share/gems/gems/passenger-4.0.55
+apache::mod::passenger::mod_lib_path=/usr/local/share/gems/gems/passenger-4.0.55/buildout/apache2/
 EOF
            else
            cat > /etc/facter/facts.d/environment.txt <<EOF
