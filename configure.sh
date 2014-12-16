@@ -149,18 +149,9 @@ for h in $HOSTS; do
     if [ $h = $(hostname -s) ]; then
         (echo "Configure Puppet environment on ${h} node:"
          mkdir -p /etc/facter/facts.d
-         if [[ -e /etc/redhat-release ]];
-           then
-           cat > /etc/facter/facts.d/environment.txt <<EOF
-type=${PROF_BY_HOST[$h]}
-apache::mod::passenger::passenger_root=/usr/local/share/gems/gems/passenger-4.0.55
-apache::mod::passenger::mod_lib_path=/usr/local/share/gems/gems/passenger-4.0.55/buildout/apache2/
-EOF
-           else
-           cat > /etc/facter/facts.d/environment.txt <<EOF
+         cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-         fi
         n=$(($n + 1)))
     else
         (echo "Configure Puppet environment on ${h} node:"
@@ -177,6 +168,16 @@ done
 ######################################################################
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
+
+# TODO (spredzy) :
+# Dirty hack to make sure those parameter
+# are taken in acount at first run
+if [[ -e /etc/redhat-release ]];
+then
+  grep 'apache::mod::passenger::passenger_root' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::passenger_root: /usr/local/share/gems/gems/passenger-4.0.55" >> /etc/puppet/data/common.yaml.tmpl
+  grep 'apache::mod::passenger::mod_lib_path' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::mod_lib_path: /usr/local/share/gems/gems/passenger-4.0.55/buildout/apache2/" >> /etc/puppet/data/common.yaml.tmpl
+fi
+
 
 if [ $STEP -eq 0 ]; then
     configure_hostname
