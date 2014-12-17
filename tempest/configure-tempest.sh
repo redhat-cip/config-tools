@@ -108,10 +108,16 @@ if [[ $NOVA == YES ]]; then
     iniset compute-admin tenant_name "$OS_TENANT_NAME"
     iniset compute-admin password "$OS_PASSWORD"
 
+    # TODO (EmilienM)
+    # Nova API v3 endpoint is created in Spinal-Stack
+    # but not considered as stable.
+    # CI is now broken because if this, let's disable it
+    # while we figure out what's wrong.
     # Enable Nova API v3
-    if keystone service-list | grep "computev3"; then
-      iniset compute-feature-enabled api_v3 True
-    fi
+    #  if keystone service-list | grep "computev3"; then
+    #    iniset compute-feature-enabled api_v3 True
+    #  fi
+    iniset compute-feature-enabled api_v3 False
 fi
 
 if [[ $CEILOMETER == YES ]]; then
