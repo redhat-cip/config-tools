@@ -117,6 +117,8 @@ if [[ $NOVA == YES ]]; then
     #  if keystone service-list | grep "computev3"; then
     #    iniset compute-feature-enabled api_v3 True
     #  fi
+    # It's due to commit: https://github.com/openstack/tempest/commit/e8dfd67c5564800cdd4630b73a59aaef11972148
+    # Please read the commit message to understand why they did that.
     iniset compute-feature-enabled api_v3 False
 fi
 
