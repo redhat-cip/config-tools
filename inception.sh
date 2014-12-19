@@ -30,6 +30,7 @@ release="$2"
 deployfile="$3"
 remote="$4"
 imageurl="$5"
+tag="$6"
 
 if [ -z "dist" -o -z "$release" -o -z "$deployfile" -o -z "$remote" -o -z "$imageurl" ]; then
     echo "$0 [-l] <dist> <release> <deployment file url> <remote> <image url>" 1>&2
@@ -45,6 +46,11 @@ SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
 
 set -e
 set -x
+
+# $tag defaults to $release
+if [ -z "$tag" ]; then
+    tag="$release"
+fi
 
 # Get remote access settings
 
@@ -72,7 +78,7 @@ done
 
 # Get config from deployment file
 
-${ORIG}/download.sh $flag $release $deployfile version=$dist-$release
+${ORIG}/download.sh $flag $tag $deployfile version=$dist-$release
 CFG=./top/etc/config-tools/global.yml
 
 if [ ! -d top/etc/config-tools/infra ]; then
