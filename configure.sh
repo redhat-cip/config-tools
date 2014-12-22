@@ -169,16 +169,6 @@ done
 # Step 0: provision the puppet master and the certificates on the nodes
 ######################################################################
 
-# TODO (spredzy) :
-# Dirty hack to make sure those parameter
-# are taken in acount at first run
-if [[ -e /etc/redhat-release ]];
-then
-  grep 'apache::mod::passenger::passenger_root' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::passenger_root: /usr/local/share/gems/gems/passenger-4.0.56" >> /etc/puppet/data/common.yaml.tmpl
-  grep 'apache::mod::passenger::mod_lib_path' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::mod_lib_path: /usr/local/share/gems/gems/passenger-4.0.56/buildout/apache2/" >> /etc/puppet/data/common.yaml.tmpl
-fi
-
-
 if [ $STEP -eq 0 ]; then
     configure_hostname
     generate 0 /etc/puppet/data/common.yaml
