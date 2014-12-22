@@ -174,8 +174,8 @@ done
 # are taken in acount at first run
 if [[ -e /etc/redhat-release ]];
 then
-  grep 'apache::mod::passenger::passenger_root' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::passenger_root: /usr/local/share/gems/gems/passenger-4.0.55" >> /etc/puppet/data/common.yaml.tmpl
-  grep 'apache::mod::passenger::mod_lib_path' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::mod_lib_path: /usr/local/share/gems/gems/passenger-4.0.55/buildout/apache2/" >> /etc/puppet/data/common.yaml.tmpl
+  grep 'apache::mod::passenger::passenger_root' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::passenger_root: /usr/local/share/gems/gems/passenger-4.0.56" >> /etc/puppet/data/common.yaml.tmpl
+  grep 'apache::mod::passenger::mod_lib_path' /etc/puppet/data/common.yaml.tmpl || echo "apache::mod::passenger::mod_lib_path: /usr/local/share/gems/gems/passenger-4.0.56/buildout/apache2/" >> /etc/puppet/data/common.yaml.tmpl
 fi
 
 
