@@ -203,6 +203,14 @@ if [ -z "$MASTER" ]; then
     exit 1
 fi
 
+if [ -n "$scenario" -a -d infra/scenarios/${scenario}/files ]; then
+    tar c -C "infra/scenarios/${scenario}/files" . | tar xv -C $TOP
+fi
+
+if [ -d infra/files ]; then
+    tar c -C "infra/files" . | tar xv -C $TOP
+fi
+
 # eDeploy
 
 if [ -d env/$env ]; then
@@ -320,6 +328,8 @@ cp $ORIG/config.tmpl $TOP/etc/config-tools/
 if [ -r infra/openrc.sh.tmpl ]; then
     $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
 fi
+
+(cd $TOP; find . -name '*.tmpl'|sed -e 's@^\.@@'|egrep -v '/etc/puppet/data/fqdn.yaml|/etc/puppet/data/type.yaml|/etc/serverspec/arch.yml.tmpl|/etc/config-tools/config.tmpl') > $TOP/etc/config-tools/templates
 
 # create the archive
 

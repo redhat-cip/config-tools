@@ -216,7 +216,9 @@ fi
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > $CDIR/step
-    generate $step /etc/puppet/data/common.yaml
+    for template in $(cat /etc/config-tools/templates); do
+        generate $step $template
+    done
     for h in $HOSTS; do
         generate $step /etc/puppet/data/fqdn.yaml host=$h
         mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
