@@ -329,7 +329,7 @@ if [ -r infra/openrc.sh.tmpl ]; then
     $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
 fi
 
-(cd $TOP; find . -name '*.tmpl'|sed -e 's@^\.@@'|egrep -v '/etc/puppet/data/fqdn.yaml|/etc/puppet/data/type.yaml|/etc/serverspec/arch.yml.tmpl|/etc/config-tools/config.tmpl') > $TOP/etc/config-tools/templates
+(cd $TOP; find . -name '*.tmpl'|sed -e 's@^\.@@' -e 's@.tmpl$@@'|egrep -v '/etc/puppet/data/fqdn.yaml|/etc/puppet/data/type.yaml|/etc/serverspec/arch.yml.tmpl|/etc/config-tools/config.tmpl') > $TOP/etc/config-tools/templates
 
 # create the archive
 
