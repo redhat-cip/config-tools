@@ -241,14 +241,18 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             echo "Run Puppet on $h node (step ${step}, try $loop):"
             if run_parallel $step; then
                 if [ $h = $(hostname -s) ]; then
+                    pkill -9 puppet || true
                     puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
+                    ssh $SSHOPTS $USER@$h sudo -i pkill -9 puppet || true
                     ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
                 if [ $h = $(hostname -s) ]; then
+                    pkill -9 puppet || true
                     puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
+                    ssh $SSHOPTS $USER@$h sudo -i pkill -9 puppet || true
                     ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 fi
             fi
