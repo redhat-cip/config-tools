@@ -137,7 +137,7 @@ puppetgit=$($ORIG/extract.py module "$yamlfile")
 puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$version/")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
-envyml=${env}.yml
+envyml=${env}.yaml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
 
 # allow to have an empty fields (optional)
@@ -188,9 +188,9 @@ TOP=$(pwd)/top
 rm -rf $TOP
 mkdir -p $TOP/etc/config-tools $TOP/etc/puppet/manifests $TOP/usr/sbin $TOP/usr/bin
 
-$ORIG/merge.py $infrayaml env/$envyml > $TOP/etc/config-tools/global.yml
+$ORIG/merge.py $infrayaml env/$envyml > $TOP/etc/config-tools/global.yaml
 
-$ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/config.tmpl version=$version role=$role > $TOP/etc/config-tools/config
+$ORIG/generate.py 0 $TOP/etc/config-tools/global.yaml $ORIG/config.tmpl version=$version role=$role > $TOP/etc/config-tools/config
 . $TOP/etc/config-tools/config
 
 if [ -z "$USER" ]; then
@@ -234,7 +234,7 @@ if [ -d env/$env ]; then
 
     mkdir -p $TOP/var/www/install/$version
     # TODO: make the list of roles generic
-    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yml|fgrep -v install-server|sort -u); do
+    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yaml|fgrep -v install-server|sort -u); do
         (cd $ORIG/cache/$version
          check_and_download $edeployurl/$role-$version.edeploy
          cp $role-$version.edeploy* $TOP/var/www/install/$version/
@@ -286,7 +286,7 @@ fi
 # hosts
 
 if [ -r $ORIG/infra/hosts.tmpl ]; then
-    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml $ORIG/infra/hosts.tmpl > $TOP/etc/hosts
+    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yaml $ORIG/infra/hosts.tmpl > $TOP/etc/hosts
 fi
 
 # Puppet modules
@@ -312,7 +312,7 @@ update_or_clone "$serverspecgit" serverspec
 
 git --git-dir=serverspec/.git rev-parse HEAD > $TOP/etc/config-tools/serverspec-rev
 
-cp infra/arch.yml.tmpl serverspec/
+cp infra/arch.yaml.tmpl serverspec/
 sed -i "s/root/$USER/" serverspec/spec/spec_helper.rb
 
 cp -a serverspec $TOP/etc/
@@ -326,10 +326,10 @@ cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/merge.py $
 cp $ORIG/config.tmpl $TOP/etc/config-tools/
 
 if [ -r infra/openrc.sh.tmpl ]; then
-    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
+    $ORIG/generate.py 0 $TOP/etc/config-tools/global.yaml infra/openrc.sh.tmpl > $TOP/etc/config-tools/openrc.sh
 fi
 
-(cd $TOP; find . -name '*.tmpl'|sed -e 's@^\.@@' -e 's@.tmpl$@@'|egrep -v '/etc/puppet/data/fqdn.yaml|/etc/puppet/data/type.yaml|/etc/serverspec/arch.yml.tmpl|/etc/config-tools/config.tmpl') > $TOP/etc/config-tools/templates
+(cd $TOP; find . -name '*.tmpl'|sed -e 's@^\.@@' -e 's@.tmpl$@@'|egrep -v '/etc/puppet/data/fqdn.yaml|/etc/puppet/data/type.yaml|/etc/serverspec/arch.yaml.tmpl|/etc/config-tools/config.tmpl') > $TOP/etc/config-tools/templates
 
 # create the archive
 
