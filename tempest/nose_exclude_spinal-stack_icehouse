@@ -206,8 +206,10 @@ test_create_security_group_rule_with_invalid_ports
 
 # nova tests that often fail
 test_get_hypervisor_uptime
-test_aggregates.AggregatesAdminTestJSON.test_aggregate_add_remove_host
-test_aggregates_negative.AggregatesAdminNegativeTestJSON.test_aggregate_remove_host_as_user
+test_aggregate_add_remove_host
+test_aggregate_add_host_list
+test_aggregate_remove_host_as_user
+test_aggregate_add_host_get_details
 
 # OSSA 2014-041 - Glance
 # policy.json limits some actions to admin
