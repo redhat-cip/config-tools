@@ -30,7 +30,7 @@ if ! type -p rspec > /dev/null; then
 fi
 
 CDIR=/etc/config-tools
-CFG=$CDIR/global.yml
+CFG=$CDIR/global.yaml
 
 . $CDIR/config
 
@@ -64,7 +64,7 @@ if [ -z "$step" ]; then
     step=100
 fi
 
-generate.py $step $CFG /etc/serverspec/arch.yml.tmpl|grep -v '^$' > /etc/serverspec/arch.yml
+generate.py $step $CFG /etc/serverspec/arch.yaml.tmpl|grep -v '^$' > /etc/serverspec/arch.yaml
 
 cd /etc/serverspec
 

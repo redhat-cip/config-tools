@@ -33,7 +33,7 @@ set -x
 LAST=$1
 
 CDIR=/etc/config-tools
-CFG=$CDIR/global.yml
+CFG=$CDIR/global.yaml
 
 LOGDIR=$WORKSPACE
 
@@ -71,7 +71,7 @@ generate() {
     chmod 0644 $file
 }
 
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
+for f in /etc/serverspec/arch.yaml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
         echo "$f doesn't exist" 1>&2
         exit 1

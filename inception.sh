@@ -73,7 +73,7 @@ done
 # Get config from deployment file
 
 ${ORIG}/download.sh $flag $release $deployfile version=$dist-$release
-CFG=./top/etc/config-tools/global.yml
+CFG=./top/etc/config-tools/global.yaml
 
 if [ ! -d top/etc/config-tools/infra ]; then
     mkdir top/etc/config-tools/infra
