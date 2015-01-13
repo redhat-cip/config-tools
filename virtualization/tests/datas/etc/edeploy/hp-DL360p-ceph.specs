@@ -1,0 +1,18 @@
+# -*- python -*-
+
+[
+    ('disk', '$disk1', 'size', '300'),
+    ('disk', '$disk1', 'slot', '$slot1'),
+    ('disk', '$disk2', 'size', '300'),
+    ('disk', '$disk2', 'slot', '$slot2'),
+    ('disk', '$disk3', 'size', '300'),
+    ('disk', '$disk3', 'slot', '$slot3'),
+    ('disk', '$disk4', 'size', '300'),
+    ('disk', '$disk4', 'slot', '$slot4'),
+    ('cpu', 'logical', 'number', "$nbcpu"),
+    ('system', 'ipmi', 'channel', "$ipmi-channel"),
+    ('system', 'product', 'name', 'ProLiant DL360p Gen8 (654081-B21)'),
+    ('network', '$eth', 'serial', '$$mac'),
+    ('network', '$eth1', 'serial', '$$mac1'),
+    ('system', 'product', 'serial', 'CZ3340P75T')
+]

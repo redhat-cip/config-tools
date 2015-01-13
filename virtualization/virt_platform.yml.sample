@@ -1,0 +1,44 @@
+hosts:
+  os-ci-test10:
+    disks:
+    - size: 300G
+    - size: 300G
+    - size: 300G
+    - size: 300G
+    nics:
+    - mac: d8:9d:67:1a:8f:59
+      name: eth0
+      network: default
+    - mac: d8:9d:67:1a:8f:58
+      name: eth1
+      network: default
+  os-ci-test11:
+    disks:
+    - size: 100G
+    - size: 2000G
+    - size: 2000G
+    - size: 2000G
+    nics:
+    - mac: d8:9d:67:1a:41:7d
+      name: eth0
+      network: default
+    - mac: d8:9d:67:1a:41:7c
+      name: eth1
+      network: default
+  os-ci-test12:
+    disks:
+    - size: 100G
+    - size: 2000G
+    - size: 2000G
+    - size: 2000G
+    nics:
+    - mac: d8:9d:67:32:12:a5
+      name: eth0
+      network: default
+    - mac: d8:9d:67:32:12:a4
+      name: eth1
+      network: default
+networks:
+- address: 10.151.68.0
+  name: default
+  netmask: 255.255.255.0

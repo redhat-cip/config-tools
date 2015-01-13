@@ -1,0 +1,5 @@
+# -*- python -*-
+[
+    ('hp-DL360p-ceph', 1),
+    ('hp-DL360p-ceph-ssd', 2),
+]
