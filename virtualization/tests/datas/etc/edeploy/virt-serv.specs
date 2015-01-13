@@ -1,0 +1,7 @@
+# -*- python -*-
+
+[
+    ('disk', '$disk', 'size', '20'),
+    ('cpu', 'logical', 'number', "$nbcpu"),
+    ('network', '$eth', 'serial', '$mac'),
+]

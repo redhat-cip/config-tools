@@ -1,0 +1,9 @@
+# -*- python -*-
+
+[{'hostname': 'os-ci-test4',
+  'ip': '10.151.68.48',
+  'gateway': '10.151.68.3',
+  'netmask': '255.255.255.0',
+  'domainname': 'ring.enovance.com',
+}]
+

@@ -1,0 +1,11 @@
+# -*- python -*-
+
+[
+    ('disk', '$disk1', 'size', '10'),
+    ('disk', '$disk2', 'size', '10'),
+    ('disk', '$disk3', 'size', '10'),
+    ('disk', '$disk4', 'size', '10'),
+    ('cpu', 'logical', 'number', "$nbcpu"),
+    ('network', '$eth', 'serial', '$$mac'),
+    ('network', '$eth1', 'serial', '$$mac1'),
+]

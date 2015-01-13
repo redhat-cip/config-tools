@@ -1,0 +1,71 @@
+# -*- python -*-
+
+bootable_disk = '/dev/' + var['disk']
+
+run('dmsetup remove_all || :')
+
+for disk, path in ((bootable_disk, '/chroot'), ):
+    run('parted -s %s mklabel msdos' % disk)
+    run('parted -s %s mkpart primary ext2 0%% 100%%' % disk)
+    run('dmsetup remove_all || /bin/true')
+    run('mkfs.ext4 -L slash %s1' % disk)
+
+run('mount LABEL=slash /chroot')
+
+config('/etc/fstab', 'a').write('''
+LABEL=slash / ext4 defaults 0 1
+''')
+
+config('/etc/hostname').write('''
+%(hostname)s
+''' % var)
+
+config('/etc/network/interfaces').write('''
+auto lo
+iface lo inet loopback
+
+auto eth0
+allow-hotplug eth0
+iface eth0 inet static
+    address %(ip)s
+    gateway %(gateway)s
+    netmask %(netmask)s
+''' % var)
+
+config('/etc/networks').write('''
+default 0.0.0.0
+loopback 127.0.0.0
+link-local 169.254.0.0
+''' % var)
+
+config('/etc/sysconfig/network').write('''
+NETWORKING=yes
+NETWORKING_IPV6=yes
+HOSTNAME=%(hostname)s
+''' % var)
+
+config('/etc/sysconfig/network-scripts/ifcfg-eth0').write('''
+DEVICE=eth0
+BOOTPROTO=static
+ONBOOT=yes
+IPADDR0=%(ip)s
+PREFIX0=24
+GATEWAY=%(gateway)s
+RESOLV_MODS=no
+LINK_DETECTION_DELAY=6
+HWADDR=%(mac)s
+''' % var)
+
+config('/etc/resolv.conf').write('''
+search ring.enovance.com
+nameserver 94.143.114.197
+nameserver 94.143.117.197
+nameserver 88.190.240.75
+nameserver 198.154.188.4
+nameserver 10.151.68.201
+''')
+
+config('/etc/hostname').write('''%(hostname)s.%(domainname)s
+''' % var)
+
+set_role('openstack-full', 'RH7.0-I.1.3.0', bootable_disk)

@@ -1,0 +1,16 @@
+# -*- python -*-
+
+generate({'hostname': 'os-ci-test10-12',
+          'mac': ('d8:9d:67:1a:8f:58', # test10
+                  'd8:9d:67:1a:41:7c', # test11
+                  'd8:9d:67:32:12:a4', # test12
+                  ),
+          'mac1': ('d8:9d:67:1a:8f:59', # test10
+                  'd8:9d:67:1a:41:7d', # test11
+                  'd8:9d:67:32:12:a5', # test12
+                  ),
+          'ip': '10.151.68.54-56',
+          'gateway': '10.151.68.3',
+          'netmask': '255.255.255.0',
+          'domainname': 'ring.enovance.com',
+          })

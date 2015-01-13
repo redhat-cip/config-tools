@@ -1,0 +1,6 @@
+# -*- python -*-
+
+[
+    ('virt-serv', 1),
+    ('virt-node', 3),
+]

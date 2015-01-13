@@ -1,0 +1,14 @@
+DOMAIN=ring.enovance.com
+HOSTS="os-ci-test4 os-ci-test12 os-ci-test11 os-ci-test10 "
+USER=jenkins
+MASTER=${MASTER:=os-ci-test4.ring.enovance.com}
+PARALLELSTEPS="2|4|5"
+PROFILES="install-server openstack-full "
+declare -A PROF_BY_HOST
+PROF_BY_HOST["os-ci-test4"]="install-server"
+PROF_BY_HOST["os-ci-test12"]="openstack-full"
+PROF_BY_HOST["os-ci-test11"]="openstack-full"
+PROF_BY_HOST["os-ci-test10"]="openstack-full"
+
+EDEPLOY_VERSION=RH7.0-I.1.3.0
+EDEPLOY_ROLE=openstack-full
