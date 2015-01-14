@@ -155,12 +155,8 @@ class Network(object):
 <network>
   <name>{{ name }}</name>
   <uuid>{{ uuid }}</uuid>
-  <forward mode='bridge'/>
-  <bridge name='{{ bridge_name }}' stp='on' delay='0' />
-{% for ip in ips %}
-  <ip address='{{ ip.address }}' netmask='{{ ip.netmask }}' />
-{% endfor %}
-  <mac address='52:54:00:42:00:00'/>
+  <bridge name='{{ bridge_name }}' stp='on' delay='0'/>
+  <mac address='{{ mac }}'/>
 </network>
     """
 
