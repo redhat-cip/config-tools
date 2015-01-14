@@ -76,7 +76,7 @@ class Host(object):
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
       <source file='{{ disk.path }}'/>
-      <target dev='{{ disk.name }}' bus='virtio'/>
+      <target dev='{{ disk.name }}' bus='sata'/>
     </disk>
 {% endfor %}
 {% for nic in nics %}
