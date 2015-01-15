@@ -46,7 +46,7 @@ like this::
 with a ``deployment.yml`` like this::
 
   module:
-    git@github.com:enovance/puppet-openstack-cloud
+    git@github.com:stackforge/puppet-openstack-cloud
   serverspec:
     git@github.com:enovance/openstack-serverspec.git
   environment:
