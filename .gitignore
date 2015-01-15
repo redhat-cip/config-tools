@@ -1,2 +1,10 @@
-*~
 *.pyc
+*~
+ansible
+env
+infra
+jenkins_jobs
+modules
+puppet-module
+serverspec
+top
