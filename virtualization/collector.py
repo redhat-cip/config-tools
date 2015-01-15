@@ -33,7 +33,7 @@ Options:
   --version             Show version.
 """
 
-from hardware.generate import generate
+from hardware.generate import generate # noqa
 from hardware import matcher
 
 import copy
@@ -52,7 +52,7 @@ def _get_content(path):
         with open(path, "r") as f:
             return f.read()
     except (OSError, IOError) as e:
-        print("Error: cannot open or read file '%s'" % path)
+        print("Error: cannot open or read file '%s': %s" % (path, e))
         sys.exit(1)
 
 
@@ -73,16 +73,14 @@ def _get_default_network(cmdb_machines):
             "netmask": netmask}
 
 
-# TODO: use hardware.matcher
 def _get_disks(specs):
     disks = []
-    letter_index = 0
-    for spec in specs:
-        if "size" in spec:
-            disks_size = "%sG" % spec[3]
-            disks.append({"size": disks_size})
-            letter_index += 1
-
+    info = {}
+    while matcher.match_spec(('disk', '$disk', 'size', '$gb'),
+                             specs, info):
+        disks_size = "%sG" % info['gb']
+        disks.append({"size": disks_size})
+        info = {}
     return disks
 
 
@@ -157,7 +155,7 @@ def save_virt_platform(virt_platform, output_path):
         print "Virtual platform generated successfully at '%s' !" % \
               output_file_path
     except (OSError, IOError) as e:
-        print("Error: cannot write file '%s'" % output_file_path)
+        print("Error: cannot write file '%s': %s" % (output_file_path, e))
         sys.exit(1)
 
 

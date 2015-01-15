@@ -54,7 +54,7 @@ cmdb_machines = [{'mac1': 'd8:9d:67:1a:8f:59',
 
 
 def test_get_disks():
-    actual = collector._get_disks(specs)
+    actual = collector._get_disks(list(specs))
     expected = [{"size": "100G"}, {"size": "200G"},
                 {"size": "300G"}, {"size": "400G"}]
     assert expected == actual
