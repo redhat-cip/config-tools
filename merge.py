@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2014 eNovance SAS <licensing@enovance.com>
+# Copyright (C) 2014-2015 eNovance SAS <licensing@enovance.com>
 #
 # Author: Frederic Lepied <frederic.lepied@enovance.com>
 #
@@ -22,20 +22,7 @@
 import sys
 from yaml import dump, load
 
-
-def merge(user, default):
-    'Merge 2 data structures'
-    for key, val in default.iteritems():
-        if key not in user:
-            user[key] = val
-        else:
-            if isinstance(user[key], dict) and isinstance(val, dict):
-                user[key] = merge(user[key], val)
-            elif isinstance(user[key], list) and isinstance(val, list):
-                user[key] = user[key] + val
-            else:
-                user[key] = val
-    return user
+from hardware import merge
 
 
 def main():
@@ -43,7 +30,7 @@ def main():
     vars_ = {}
     for fname in sys.argv[1:]:
         current = load(open(fname).read())
-        merge(vars_, current)
+        merge.merge(vars_, current)
     sys.stdout.write(dump(vars_))
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ master without interaction.
 On the puppet master, you need to have the following installed:
 
 - make
-- python with the jinja2 and yaml modules
+- python with the hardware, jinja2 and yaml modules
 - rake
 - serverspec
 
