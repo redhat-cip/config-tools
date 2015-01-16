@@ -56,7 +56,7 @@ export NOSE_LOGFORMAT='%(asctime)-15s %(message)s'
 export NOSE_WITH_XUNIT=1
 export NOSE_XUNIT_FILE=tempest_xunit.xml
 
-cd /usr/share/openstack-tempest-icehouse/
+cd /usr/share/openstack-tempest-juno/
 if [ ! "$custom_tests_to_run" ]; then
   TESTRARGS='(?!.*\[.*\bslow\b.*\])(^tempest\.(api|cli)'$testr_exclude')'
 else

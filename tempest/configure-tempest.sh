@@ -12,7 +12,7 @@ set -e
 set -x
 
 here=$(readlink -f $(dirname $0))
-tempest_dir="/usr/share/openstack-tempest-icehouse"
+tempest_dir="/usr/share/openstack-tempest-juno"
 
 cd $tempest_dir
 source /etc/config-tools/openrc.sh
