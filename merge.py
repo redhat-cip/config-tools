@@ -22,7 +22,7 @@
 import sys
 from yaml import dump, load
 
-from hardware import merge
+from hardware import generate
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     vars_ = {}
     for fname in sys.argv[1:]:
         current = load(open(fname).read())
-        merge.merge(vars_, current)
+        generate.merge(vars_, current)
     sys.stdout.write(dump(vars_))
 
 if __name__ == "__main__":
