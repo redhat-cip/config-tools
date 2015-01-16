@@ -19,20 +19,30 @@
 ORIG=$(cd $(dirname $0); pwd)
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 [-l] <tag> <deployment yaml> [<key>=<value>...]" 1>&2
+    echo "Usage: $0 [-l] [-i] <tag> <deployment yaml> [<key>=<value>...]" 1>&2
     echo "    -l: do not download files. Use the local copies." 1>&2
+    echo "    -i: download the install-server role." 1>&2
     exit 1
 fi
 
+LOCAL=
+INST=
+
+while getopts li opt; do
+    if [ $opt = l ]; then
+        LOCAL=1
+        shift
+    elif [ $opt = i ]; then
+        INST=1
+        shift
+    else
+        echo "$0: unknown option $opt"
+        exit 1
+    fi
+done
+
 set -e
 set -x
-
-if [ $1 = -l ]; then
-    LOCAL=1
-    shift
-else
-    LOCAL=
-fi
 
 tag="$1"
 yaml="$2"
@@ -234,7 +244,10 @@ if [ -d env/$env ]; then
 
     mkdir -p $TOP/var/www/install/$version
     # TODO: make the list of roles generic
-    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yml|fgrep -v install-server|sort -u); do
+    for role in $($ORIG/extract.py -a 'profiles.*.edeploy' $TOP/etc/config-tools/global.yml|sort -u); do
+        if [ "$role" = 'install-server' -a -z "$INST"  ]; then
+            continue
+        fi
         (cd $ORIG/cache/$version
          check_and_download $edeployurl/$role-$version.edeploy
          cp $role-$version.edeploy* $TOP/var/www/install/$version/
