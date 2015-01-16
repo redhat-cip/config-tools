@@ -17,9 +17,11 @@
 
 import argparse
 import random
-import uuid
+import os.path
 import subprocess
 import sys
+import tempfile
+import uuid
 
 import jinja2
 import yaml
@@ -123,6 +125,9 @@ class Host(object):
                 continue
             self.meta[k] = definition[k]
 
+        if 'use_cloud_init' in definition:
+           self.prepare_cloud_init()
+
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
 
@@ -136,6 +141,34 @@ class Host(object):
     def _call(self, *kargs):
         subprocess.call(['ssh', 'root@%s' % self.target_host] +
                         list(kargs))
+
+    def prepare_cloud_init(self):
+
+        ssh_key_file = os.path.expanduser('~/.ssh/id_rsa.pub')
+        contents = {
+            'user-data': '#cloud-config\nusers:\n' +
+                         ' - default\n' +
+                         ' - name: root\n' +
+                         '   ssh-authorized-keys:\n' +
+                         '    - %s' % open(ssh_key_file).read() +
+                         'runcmd:\n' +
+                         ' - sed -i -e "s/^Defaults\s\+requiretty/# \\0/" ' +
+                         '/etc/sudoers',
+            'meta-data': 'instance-id: id-install-server\n' +
+                         'local-hostname: install-server\n'}
+        # TODO(Gonéri): use mktemp
+        self._call("mkdir", "-p", "/tmp/mydata")
+        for name, content in six.iteritems(contents):
+            fd = tempfile.NamedTemporaryFile()
+            fd.write(content)
+            fd.seek(0)
+            fd.flush()
+            self._push(fd.name, '/tmp/mydata/' + name)
+
+        self._call('genisoimage', '-quiet', '-output',
+                   Host.host_libvirt_image_dir + '/cloud-init.iso',
+                   '-volid', 'cidata', '-joliet', '-rock',
+                   '/tmp/mydata/user-data', '/tmp/mydata/meta-data')
 
     def register_disks(self, definition):
         cpt = 0
