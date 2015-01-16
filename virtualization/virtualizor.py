@@ -24,6 +24,7 @@ import sys
 import tempfile
 import uuid
 
+import ipaddress
 import jinja2
 import yaml
 import libvirt
@@ -268,7 +269,28 @@ def main(argv=sys.argv[1:]):
     conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
     networks = hosts_definition.get('networks', {})
     networks['sps_default'] = Network.default_network_settings
-    install_server_mac_addr = random_mac()
+    install_server_mac_addr = None
+
+    for hostname, definition in six.iteritems(hosts_definition['hosts']):
+        if 'profile' not in definition:
+            continue
+        if definition['profile'] != 'install-server':
+            continue
+        print("install-server (%s): %s" % (hostname, definition))
+        admin_nic_info = definition['nics'][0]
+        if 'mac' in admin_nic_info:
+            install_server_mac_addr
+        else:
+            install_server_mac_addr = random_mac()
+        network = ipaddress.ip_network(
+            unicode(
+                admin_nic_info['network'] + '/' + admin_nic_info['netmask']))
+        networks['sps_default'] = {'dhcp': {
+            'address': str(network.network_address + 1),
+            'netmask': str(network.netmask),
+            'hosts': [{'mac': install_server_mac_addr,
+                       'name': hostname,
+                       'ip': admin_nic_info['ip']}]}}
 
     existing_networks = ([n.name() for n in conn.listAllNetworks()])
     for netname, definition in six.iteritems(networks):
