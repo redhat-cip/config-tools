@@ -1,0 +1,37 @@
+# Neutron FWaaS and VPNaaS are disabled in our provisionning script.
+test_vpnaas_extensions
+test_fwaas_extensions
+test_neutron_firewall
+test_neutron_ipsec
+test_neutron_vpn
+
+# Race condition to delete shared subnet:
+# https://bugs.launchpad.net/tempest/+bug/1357055
+test_create_server.ServersTestJSON.test_verify_multiple_nics_order
+test_create_server.ServersTestManualDisk.test_verify_multiple_nics_order
+
+# Weird debug message - need to be investigated
+test_security_groups.SecurityGroupsTestJSON.test_server_security_groups
+test_attach_interfaces.AttachInterfacesTestJSON.test_add_remove_fixed_ip
+test_attach_interfaces.AttachInterfacesTestJSON.test_create_list_show_delete_interfaces
+test_crossdomain.CrossdomainTest.test_get_crossdomain_policy
+test_list_server_filters.ListServerFiltersTestJSON.test_list_servers_filtered_by_ip
+test_server_addresses.ServerAddressesTestJSON.test_list_server_addresses
+
+# "No nw_info cache associated with instance"
+# Fixed in Nova/Kilo - still seems buggy in Neutron
+# https://bugs.launchpad.net/nova/+bug/1249065
+test_server_rescue.ServerRescueTestJSON.test_rescued_vm_associate_dissociate_floating_ip
+test_floating_ips_actions_negative.FloatingIPsNegativeTestJSON.test_associate_nonexistent_floating_ip
+test_floating_ips_actions_negative.FloatingIPsNegativeTestJSON.test_associate_ip_to_server_without_passing_floating_ip
+test_floating_ips_actions.FloatingIPsTestJSON.test_associate_disassociate_floating_ip
+test_floating_ips_actions.FloatingIPsTestJSON.test_associate_already_associated_floating_ip
+
+# "(...) could not be found as device id on any ports"
+# Seems to be fixed in Tempest, still unstable
+# https://bugs.launchpad.net/neutron/+bug/1274121
+test_server_rescue.ServerRescueTestJSON.test_rescued_vm_add_remove_security_group
+
+# Due to tenant isolation disabled
+# https://bugs.launchpad.net/tempest/+bug/1251448 (won't be fixed)
+test_servers.ServersAdminTestJSON.test_list_servers_filter_by_exist_host
