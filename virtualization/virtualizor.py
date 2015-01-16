@@ -18,6 +18,7 @@
 import argparse
 import random
 import os.path
+import string
 import subprocess
 import sys
 import tempfile
@@ -188,6 +189,7 @@ class Host(object):
                            info['size'])
 
             info.update({
+                'name': 'sd' + string.ascii_lowercase[cpt],
                 'path': Host.host_libvirt_image_dir + '/' + filename})
             self.meta['disks'].append(info)
             cpt += 1
