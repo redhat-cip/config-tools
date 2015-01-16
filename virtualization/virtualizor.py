@@ -49,7 +49,12 @@ def get_conf(argv=sys.argv):
                         help='the input file.')
     parser.add_argument('target_host', type=str,
                         help='the libvirt server.')
-    return parser.parse_args(argv)
+    parser.add_argument('--pub-key-file', type=str,
+                        default=os.path.expanduser(
+                            '~/.ssh/id_rsa.pub'),
+                        help='SSH public key file.')
+    conf = parser.parse_args(argv)
+    return conf
 
 
 class Host(object):
@@ -114,7 +119,8 @@ class Host(object):
     """
     host_libvirt_image_dir = "/var/lib/libvirt/images"
 
-    def __init__(self, hostname, definition, target_host):
+    def __init__(self, conf, hostname, definition, target_host):
+        self.conf = conf
         self.hostname = hostname
         self.target_host = target_host
         self.meta = {'hostname': hostname, 'uuid': str(uuid.uuid1()),
@@ -145,16 +151,17 @@ class Host(object):
 
     def prepare_cloud_init(self):
 
-        ssh_key_file = os.path.expanduser('~/.ssh/id_rsa.pub')
+        ssh_key_file = self.conf.pub_key_file
+        ssh_keys = open(ssh_key_file).readlines()
         contents = {
             'user-data': '#cloud-config\nusers:\n' +
                          ' - default\n' +
                          ' - name: root\n' +
                          '   ssh-authorized-keys:\n' +
-                         '    - %s' % open(ssh_key_file).read() +
+                         '    - ' + ('    - '.join(ssh_keys)) +
                          'runcmd:\n' +
                          ' - sed -i -e "s/^Defaults\s\+requiretty/# \\0/" ' +
-                         '/etc/sudoers',
+                         '/etc/sudoers\n',
             'meta-data': 'instance-id: id-install-server\n' +
                          'local-hostname: install-server\n'}
         # TODO(Gonéri): use mktemp
@@ -300,7 +307,7 @@ def main(argv=sys.argv[1:]):
                 print("Host %s already exist." % hostname)
                 continue
         pprint(definition)
-        host = Host(hostname, definition, conf.target_host)
+        host = Host(conf, hostname, definition, conf.target_host)
         conn.createXML(host.dump_libvirt_xml())
 
 
