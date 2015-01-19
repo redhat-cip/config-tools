@@ -253,6 +253,10 @@ if [ -d env/$env ]; then
          cp $role-$version.edeploy* $TOP/var/www/install/$version/
         )
     done
+
+    mkdir -p $TOP/var/lib/debootstrap
+    update_or_clone "git@github.com:enovance/edeploy.git" edeploy
+    cp -ar edeploy/metadata $TOP/var/lib/debootstrap
 fi
 
 # Jenkins jobs builder
