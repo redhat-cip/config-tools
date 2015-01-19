@@ -202,13 +202,15 @@ class Host(object):
             cpt += 1
 
     def register_nics(self, definition):
+        i = 0
         for info in definition['nics']:
             nic = {
                 'mac': info.get('mac', random_mac()),
-                'name': info['name'],
+                'name': info.get('name', 'noname%i' % i),
                 'network_name': 'sps_default'
             }
             self.meta['nics'].append(nic)
+            i += 1
 
     def dump_libvirt_xml(self):
         return self.template.render(self.meta)
