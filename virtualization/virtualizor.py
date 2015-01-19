@@ -26,12 +26,11 @@ import uuid
 
 import ipaddress
 import jinja2
-import yaml
 import libvirt
-
 import six
+import yaml
 
-from pprint import pprint
+# from pprint import pprint
 
 
 def random_mac():
@@ -276,7 +275,7 @@ def main(argv=sys.argv[1:]):
             continue
         if definition['profile'] != 'install-server':
             continue
-        print("install-server (%s): %s" % (hostname, definition))
+        print("install-server (%s)" % (hostname))
         admin_nic_info = definition['nics'][0]
         if 'mac' in admin_nic_info:
             install_server_mac_addr
@@ -328,7 +327,6 @@ def main(argv=sys.argv[1:]):
             else:
                 print("Host %s already exist." % hostname)
                 continue
-        pprint(definition)
         host = Host(conf, hostname, definition)
         conn.createXML(host.dump_libvirt_xml())
 
