@@ -1,2 +1,5 @@
 hardware>=0.6
+ipaddress
+jinja2
 PyYAML
+six

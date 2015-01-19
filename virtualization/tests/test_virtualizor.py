@@ -14,88 +14,86 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from mock import call
 import mock
+from mock import call
 import unittest
 import testtools
+import subprocess
 
-import virtualizor
+libvirt_conn = mock.Mock()
+libvirt_conn.listAllNetworks.return_value = [
+    mock.Mock(**{'name.return_value': 'sps_default'})]
+libvirt_conn.listAllDomains.return_value = [
+    mock.Mock(**{'name.return_value': 'os-ci-test11'})]
+
+
+class FakeLibvirt(object):
+    def open(a, b):
+        return libvirt_conn
+
+
+with mock.patch.dict('sys.modules', {'libvirt': FakeLibvirt()}):
+    import virtualizor
 
 
 class TestVirtualizor(testtools.TestCase):
-
-    def _get_mocked_libvirt_conn(self):
-        libvirt_conn = mock.Mock()
-        libvirt_conn.listAllNetworks.return_value = [
-            mock.Mock(**{'name.return_value': 'sps_default'})]
-        libvirt_conn.listAllDomains.return_value = [
-            mock.Mock(**{'name.return_value': 'os-ci-test11'})]
-        return libvirt_conn
 
     def test_random_mac(self):
         self.assertRegex(virtualizor.random_mac(),
                          '^([0-9a-fA-F]{2}:){5}([0-9a-fA-F]{2})$')
 
-    @mock.patch('libvirt.open')
-    @mock.patch('virtualizor.Host._call')
-    @mock.patch('virtualizor.Host._push')
-    def test_main(self, Host_push, Host_call, libvirt_open):
+    @mock.patch('virtualizor.subprocess.call')
+    def test_main(self, sub_call):
         img_dir = '/var/lib/libvirt/images'
-        libvirt_conn = self._get_mocked_libvirt_conn()
-        libvirt_open.return_value = libvirt_conn
         virtualizor.main(['virt_platform.yml.sample', 'bar'])
-        Host_call.assert_has_calls([
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test10-000.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test10-001.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test10-002.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test10-003.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test12-000.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test12-001.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test12-002.qcow2',
-                 '10G'),
-            call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                 img_dir + '/os-ci-test12-003.qcow2',
-                 '10G'),
-            call('mkdir', '-p', '/tmp/mydata'),
-            call('genisoimage', '-quiet', '-output',
-                 img_dir + '/cloud-init.iso', '-volid', 'cidata', '-joliet',
-                 '-rock', '/tmp/mydata/user-data', '/tmp/mydata/meta-data'),
-            call('qemu-img', 'create', '-f', 'qcow2',
-                 '-b', img_dir + '/install-server_original.qcow2',
-                 img_dir + '/os-ci-test4-000.qcow2',
-                 '30G'),
-            call('qemu-img', 'resize', '-q',
-                 img_dir + '/os-ci-test4-000.qcow2',
-                 '30G')
+        sub_call.assert_has_calls([
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test10-000.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test10-001.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test10-002.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test10-003.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test12-000.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test12-001.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test12-002.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
+                  img_dir + '/os-ci-test12-003.qcow2',
+                  '10G']),
+            call(['ssh', 'root@bar', 'mkdir', '-p', '/tmp/mydata']),
+            call(['scp', '-r', mock.ANY, 'root@bar:/tmp/mydata/meta-data']),
+            call(['scp', '-r', mock.ANY, 'root@bar:/tmp/mydata/user-data']),
+            call(['ssh', 'root@bar', 'genisoimage', '-quiet', '-output',
+                  img_dir + '/cloud-init.iso', '-volid', 'cidata', '-joliet',
+                  '-rock', '/tmp/mydata/user-data', '/tmp/mydata/meta-data']),
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-f', 'qcow2',
+                  '-b', img_dir + '/install-server_original.qcow2',
+                  img_dir + '/os-ci-test4-000.qcow2',
+                  '30G']),
+            call(['ssh', 'root@bar', 'qemu-img', 'resize', '-q',
+                  img_dir + '/os-ci-test4-000.qcow2',
+                  '30G'])
         ])
-        libvirt_open.assert_called_once_with('qemu+ssh://root@bar/system')
-        self.assertEqual(Host_push.call_count, 2)
+        self.assertEqual(sub_call.call_count, 14)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 0)
         self.assertEqual(libvirt_conn.createXML.call_count, 3)
 
-    @mock.patch('libvirt.open')
-    @mock.patch('virtualizor.Host._call')
-    @mock.patch('virtualizor.Host._push')
-    def test_main_with_replace(self, Host_push, Host_call, libvirt_open):
-        libvirt_conn = self._get_mocked_libvirt_conn()
-        libvirt_open.return_value = libvirt_conn
+    @mock.patch('virtualizor.subprocess.call')
+    def test_main_with_replace(self, sub_call):
+        libvirt_conn.reset_mock()
         virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar'])
-
-        self.assertEqual(Host_push.call_count, 2)
-        self.assertEqual(Host_call.call_count, 16)
+        self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
         self.assertEqual(libvirt_conn.createXML.call_count, 4)
 
