@@ -127,13 +127,14 @@ class Host(object):
                      'memory': 4194304,
                      'cpus': [], 'disks': [], 'nics': []}
 
-        for k in ('uuid', 'serial', 'product_name', 'memory', 'use_cloud_init'):
+        for k in ('uuid', 'serial', 'product_name',
+                  'memory', 'use_cloud_init'):
             if k not in definition:
                 continue
             self.meta[k] = definition[k]
 
         if 'use_cloud_init' in definition:
-           self.prepare_cloud_init()
+            self.prepare_cloud_init()
 
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
