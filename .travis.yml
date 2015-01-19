@@ -1,0 +1,10 @@
+language: python
+env:
+- TOXENV=py27
+- TOXENV=py34
+- TOXENV=pypy
+install:
+- travis_retry pip install tox
+script:
+- cd virtualization/
+- travis_retry tox
