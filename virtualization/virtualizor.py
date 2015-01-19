@@ -120,10 +120,9 @@ class Host(object):
     """
     host_libvirt_image_dir = "/var/lib/libvirt/images"
 
-    def __init__(self, conf, hostname, definition, target_host):
+    def __init__(self, conf, hostname, definition):
         self.conf = conf
         self.hostname = hostname
-        self.target_host = target_host
         self.meta = {'hostname': hostname, 'uuid': str(uuid.uuid1()),
                      'memory': 4194304,
                      'cpus': [], 'disks': [], 'nics': []}
@@ -144,10 +143,10 @@ class Host(object):
 
     def _push(self, source, dest):
         subprocess.call(['scp', '-r', source,
-                         'root@%s' % self.target_host + ':' + dest])
+                         'root@%s' % self.conf.target_host + ':' + dest])
 
     def _call(self, *kargs):
-        subprocess.call(['ssh', 'root@%s' % self.target_host] +
+        subprocess.call(['ssh', 'root@%s' % self.conf.target_host] +
                         list(kargs))
 
     def prepare_cloud_init(self):
@@ -329,7 +328,7 @@ def main(argv=sys.argv[1:]):
                 print("Host %s already exist." % hostname)
                 continue
         pprint(definition)
-        host = Host(conf, hostname, definition, conf.target_host)
+        host = Host(conf, hostname, definition)
         conn.createXML(host.dump_libvirt_xml())
 
 
