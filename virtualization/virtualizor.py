@@ -324,7 +324,7 @@ def main(argv=sys.argv[1:]):
         print("install-server (%s)" % (hostname))
         admin_nic_info = definition['nics'][0]
         if 'mac' in admin_nic_info:
-            install_server_mac_addr
+            install_server_mac_addr = admin_nic_info['mac']
         else:
             install_server_mac_addr = random_mac()
         network = ipaddress.ip_network(
@@ -362,9 +362,7 @@ def main(argv=sys.argv[1:]):
                      '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
                          version}
             ]
-            if 'nics' not in definition:
-                definition['nics'] = [{'mac': install_server_mac_addr,
-                                       'name': 'eth0'}]
+            definition['nics'][0].update({'mac': install_server_mac_addr})
 
         if hostname in existing_hosts:
             if conf.replace:
