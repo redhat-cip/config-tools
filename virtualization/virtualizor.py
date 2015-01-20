@@ -122,6 +122,21 @@ class Host(object):
 </domain>
     """
     host_libvirt_image_dir = "/var/lib/libvirt/images"
+    user_data_template_string = """#cloud-config
+users:
+ - default
+ - name: root
+  ssh-authorized-keys:
+{% for ssh_key in ssh_keys -%}
+   - {{ ssh_key|trim }}
+{% endfor %}
+runcmd:
+ - sed -i -e "s/^Defaults\s\+requiretty/# \\0/" ' /etc/sudoers
+"""
+    meta_data_template_string = """
+instance-id: id-install-server
+local-hostname: {{ hostname }}
+"""
 
     def __init__(self, conf, hostname, definition):
         self.conf = conf
@@ -159,23 +174,19 @@ class Host(object):
     def prepare_cloud_init(self):
 
         ssh_key_file = self.conf.pub_key_file
-        ssh_keys = open(ssh_key_file).readlines()
+        meta = {
+            'ssh_keys': open(ssh_key_file).readlines(),
+            'hostname': self.hostname
+        }
+        env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         contents = {
-            'user-data': '#cloud-config\nusers:\n' +
-                         ' - default\n' +
-                         ' - name: root\n' +
-                         '   ssh-authorized-keys:\n' +
-                         '    - ' + ('    - '.join(ssh_keys)) +
-                         'runcmd:\n' +
-                         ' - sed -i -e "s/^Defaults\s\+requiretty/# \\0/" ' +
-                         '/etc/sudoers\n',
-            'meta-data': 'instance-id: id-install-server\n' +
-                         'local-hostname: install-server\n'}
+            'user-data': env.from_string(Host.user_data_template_string),
+            'meta-data': env.from_string(Host.meta_data_template_string)}
         # TODO(Gonéri): use mktemp
         self._call("mkdir", "-p", "/tmp/mydata")
         for name in sorted(contents):
             fd = tempfile.NamedTemporaryFile()
-            fd.write(contents[name])
+            fd.write(contents[name].render(meta))
             fd.seek(0)
             fd.flush()
             self._push(fd.name, '/tmp/mydata/' + name)
