@@ -66,8 +66,6 @@ class Host(object):
   <currentmemory unit='KiB'>{{ memory }}</currentmemory>
   <os>
     <type arch='x86_64' machine='pc'>hvm</type>
-    <boot dev='network'/>
-    <boot dev='hd'/>
   </os>
   <features>
     <acpi/>
@@ -85,6 +83,9 @@ class Host(object):
       <driver name='qemu' type='qcow2'/>
       <source file='{{ disk.path }}'/>
       <target dev='{{ disk.name }}' bus='sata'/>
+{% if disk.boot_order is defined %}
+      <boot order='{{ disk.boot_order }}'/>
+{% endif %}
     </disk>
 {% endfor %}
 {% if use_cloud_init is defined %}
@@ -100,6 +101,9 @@ class Host(object):
       <mac address='{{ nic.mac }}'/>
       <source network='{{ nic.network_name }}'/>
       <model type='virtio'/>
+{% if nic.boot_order is defined %}
+      <boot order='{{ nic.boot_order }}'/>
+{% endif %}
     </interface>
 {% endif %}
 {% endfor %}
@@ -137,6 +141,9 @@ class Host(object):
 
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
+
+        definition['nics'][0]['boot_order'] = 1
+        definition['disks'][0]['boot_order'] = 2
 
         self.register_disks(definition)
         self.register_nics(definition)
@@ -204,12 +211,12 @@ class Host(object):
     def register_nics(self, definition):
         i = 0
         for info in definition['nics']:
-            nic = {
+            info.update({
                 'mac': info.get('mac', random_mac()),
                 'name': info.get('name', 'noname%i' % i),
                 'network_name': 'sps_default'
-            }
-            self.meta['nics'].append(nic)
+            })
+            self.meta['nics'].append(info)
             i += 1
 
     def dump_libvirt_xml(self):
