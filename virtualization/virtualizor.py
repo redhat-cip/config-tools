@@ -173,9 +173,9 @@ class Host(object):
                          'local-hostname: install-server\n'}
         # TODO(Gonéri): use mktemp
         self._call("mkdir", "-p", "/tmp/mydata")
-        for name, content in six.iteritems(contents):
+        for name in sorted(contents):
             fd = tempfile.NamedTemporaryFile()
-            fd.write(content)
+            fd.write(contents[name])
             fd.seek(0)
             fd.flush()
             self._push(fd.name, '/tmp/mydata/' + name)
