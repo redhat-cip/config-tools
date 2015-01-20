@@ -48,7 +48,8 @@ class TestVirtualizor(testtools.TestCase):
     def test_main(self, sub_call):
         import virtualizor
         img_dir = '/var/lib/libvirt/images'
-        virtualizor.main(['virt_platform.yml.sample', 'bar'])
+        virtualizor.main(['virt_platform.yml.sample', 'bar',
+                          '--pub-key-file', 'virt_platform.yml.sample'])
         sub_call.assert_has_calls([
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
                   img_dir + '/os-ci-test10-000.qcow2',
@@ -96,7 +97,8 @@ class TestVirtualizor(testtools.TestCase):
     def test_main_with_replace(self, sub_call):
         import virtualizor
         libvirt_conn.reset_mock()
-        virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar'])
+        virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
+                          '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
         self.assertEqual(libvirt_conn.createXML.call_count, 4)
