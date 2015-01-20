@@ -126,14 +126,12 @@ class Host(object):
 users:
  - default
  - name: jenkins
-  ssh-authorized-keys:
-{% for ssh_key in ssh_keys -%}
-   - {{ ssh_key|trim }}
+   ssh-authorized-keys:
+{% for ssh_key in ssh_keys %}   - {{ ssh_key|trim }}
 {% endfor %}
  - name: root
-  ssh-authorized-keys:
-{% for ssh_key in ssh_keys -%}
-   - {{ ssh_key|trim }}
+   ssh-authorized-keys:
+{% for ssh_key in ssh_keys %}   - {{ ssh_key|trim }}
 {% endfor %}
 runcmd:
  - sed -i -e 's/^Defaults\s\+requiretty/# \\0/' /etc/sudoers
@@ -150,6 +148,7 @@ write_files:
       IPADDR={{ ip }}
       NETWORK={{ network }}
       NETMASK={{ netmask }}
+
 """
     meta_data_template_string = """
 instance-id: id-install-server
