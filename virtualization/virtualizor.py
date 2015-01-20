@@ -73,7 +73,7 @@ class Host(object):
     <pae/>
   </features>
   <clock offset='utc'/>
-  <on_poweroff>destroy</on_poweroff>
+  <on_poweroff>restart</on_poweroff>
   <on_reboot>restart</on_reboot>
   <on_crash>restart</on_crash>
   <devices>
