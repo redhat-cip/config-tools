@@ -146,6 +146,7 @@ update_or_clone "$envgit" env
 puppetgit=$($ORIG/extract.py module "$yamlfile")
 puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$version/")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
+edeploygit=$($ORIG/extract.py edeploy "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
@@ -255,7 +256,7 @@ if [ -d env/$env ]; then
     done
 
     mkdir -p $TOP/var/lib/debootstrap
-    update_or_clone "git@github.com:enovance/edeploy.git" edeploy
+    update_or_clone "$edeploygit" edeploy
     cp -ar edeploy/metadata $TOP/var/lib/debootstrap
 fi
 
