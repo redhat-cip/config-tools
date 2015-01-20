@@ -136,11 +136,25 @@ users:
    - {{ ssh_key|trim }}
 {% endfor %}
 runcmd:
- - sed -i -e "s/^Defaults\s\+requiretty/# \\0/" ' /etc/sudoers
+ - sed -i -e 's/^Defaults\s\+requiretty/# \\0/' /etc/sudoers
+write_files:
+  - path: /etc/resolv.conf
+    content: |
+      nameserver 8.8.8.8
+      options rotate timeout:1
+  - path: /etc/sysconfig/network-scripts/ifcfg-eth0
+    content: |
+      DEVICE=eth0
+      BOOTPROTO=none
+      ONBOOT=yes
+      IPADDR={{ ip }}
+      NETWORK={{ network }}
+      NETMASK={{ netmask }}
 """
     meta_data_template_string = """
 instance-id: id-install-server
 local-hostname: {{ hostname }}
+
 """
 
     def __init__(self, conf, hostname, definition):
@@ -157,7 +171,10 @@ local-hostname: {{ hostname }}
             self.meta[k] = definition[k]
 
         if 'use_cloud_init' in definition:
-            self.prepare_cloud_init()
+            self.prepare_cloud_init(
+                ip=definition['nics'][0]['ip'],
+                network=definition['nics'][0]['network'],
+                netmask=definition['nics'][0]['netmask'])
 
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
@@ -176,12 +193,15 @@ local-hostname: {{ hostname }}
         subprocess.call(['ssh', 'root@%s' % self.conf.target_host] +
                         list(kargs))
 
-    def prepare_cloud_init(self):
+    def prepare_cloud_init(self, ip, network, netmask):
 
         ssh_key_file = self.conf.pub_key_file
         meta = {
             'ssh_keys': open(ssh_key_file).readlines(),
-            'hostname': self.hostname
+            'hostname': self.hostname,
+            'ip': ip,
+            'network': network,
+            'netmask': netmask
         }
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         contents = {
