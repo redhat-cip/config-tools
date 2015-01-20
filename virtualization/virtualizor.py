@@ -77,7 +77,7 @@ class Host(object):
   <on_reboot>restart</on_reboot>
   <on_crash>restart</on_crash>
   <devices>
-    <emulator>/usr/bin/qemu-kvm</emulator>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
 {% for disk in disks %}
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
