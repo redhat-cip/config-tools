@@ -125,6 +125,11 @@ class Host(object):
     user_data_template_string = """#cloud-config
 users:
  - default
+ - name: jenkins
+  ssh-authorized-keys:
+{% for ssh_key in ssh_keys -%}
+   - {{ ssh_key|trim }}
+{% endfor %}
  - name: root
   ssh-authorized-keys:
 {% for ssh_key in ssh_keys -%}
