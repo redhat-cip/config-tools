@@ -18,6 +18,7 @@
 import argparse
 import os.path
 import random
+import re
 import string
 import subprocess
 import sys
@@ -38,6 +39,20 @@ def random_mac():
         random.randint(0, 255),
         random.randint(0, 255),
         random.randint(0, 255))
+
+
+def canical_size(size):
+    """Convert size to GB or MB
+
+    Convert GiB to MB or return the original string.
+
+    """
+    gi = re.search('(\d+)Gi', size)
+    if gi:
+        new_size = "%iM" % (int(gi.group(1)) * 1024 * 1024 * 1024)
+    else:
+        new_size = size
+    return new_size
 
 
 def get_conf(argv=sys.argv):
@@ -231,11 +246,11 @@ local-hostname: {{ hostname }}
                            '/' + filename, info['size'])
                 self._call('qemu-img', 'resize', '-q',
                            Host.host_libvirt_image_dir + '/' + filename,
-                           info['size'])
+                           canical_size(info['size']))
             else:
                 self._call('qemu-img', 'create', '-q', '-f', 'qcow2',
                            Host.host_libvirt_image_dir + '/' + filename,
-                           info['size'])
+                           canical_size(info['size']))
 
             info.update({
                 'name': 'sd' + string.ascii_lowercase[cpt],
