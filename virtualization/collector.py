@@ -58,7 +58,17 @@ def _get_disks(specs):
     disks = []
     info = {}
     while matcher.match_spec(('disk', '$disk', 'size', '$gb'), specs, info):
-        disks_size = "%sG" % info['gb']
+        if info['gb'].startswith("gt"):
+            size = int(info['gb'][3:-1]) + 1
+        elif info['gb'].startswith("ge"):
+            size = int(info['gb'][3:-1])
+        elif info['gb'].startswith("lt"):
+            size = int(info['gb'][3:-1]) - 1
+        elif info['gb'].startswith("le"):
+            size = int(info['gb'][3:-1])
+        else:
+            size = info['gb']
+        disks_size = "%sGi" % size
         disks.append({"size": disks_size})
         info = {}
     return disks
