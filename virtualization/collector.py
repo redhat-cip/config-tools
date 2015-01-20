@@ -3,8 +3,6 @@
 #
 # Copyright (C) 2015 eNovance SAS <licensing@enovance.com>
 #
-# Author: Yassine Lamgarchal <yassine.lamgarchal@enovance.com>
-#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -36,7 +34,7 @@ def _get_content(path):
     try:
         with open(path, "r") as f:
             return f.read()
-    except (OSError, IOError) as e:
+    except (OSError, IOError):
         print("Error: cannot open or read file '%s'" % path)
         sys.exit(1)
 
@@ -160,8 +158,8 @@ def save_virt_platform(virt_platform, output_path):
     try:
         with open(output_file_path, 'w') as outfile:
             outfile.write(yaml.dump(virt_platform, default_flow_style=False))
-        print "Virtual platform generated successfully at '%s' !" % \
-              output_file_path
+        print("Virtual platform generated successfully at '%s' !" %
+              output_file_path)
     except (OSError, IOError) as e:
         print("Error: cannot write file '%s': %s" % (output_file_path, e))
         sys.exit(1)

@@ -16,8 +16,8 @@
 # under the License.
 
 import argparse
-import random
 import os.path
+import random
 import string
 import subprocess
 import sys
@@ -278,6 +278,7 @@ def main(argv=sys.argv[1:]):
     networks = hosts_definition.get('networks', {})
     networks['sps_default'] = Network.default_network_settings
     install_server_mac_addr = None
+    version = hosts_definition.get('version', 'RH7.0-I.1.2.1')
 
     for hostname, definition in six.iteritems(hosts_definition['hosts']):
         if 'profile' not in definition:
@@ -314,15 +315,16 @@ def main(argv=sys.argv[1:]):
 
     hosts = hosts_definition['hosts']
     existing_hosts = ([n.name() for n in conn.listAllDomains()])
-    for hostname, definition in six.iteritems(hosts):
-
+    for hostname in sorted(hosts):
+        definition = hosts[hostname]
         if definition['profile'] == 'install-server':
             definition['use_cloud_init'] = True
             definition['disks'] = [
                 {'name': 'sda',
                  'size': '30G',
                  'clone_from':
-                     '/var/lib/libvirt/images/install-server_original.qcow2'}
+                     '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
+                         version}
             ]
             if 'nics' not in definition:
                 definition['nics'] = [{'mac': install_server_mac_addr,
