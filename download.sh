@@ -163,7 +163,7 @@ ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
 pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
-edeployurl=$($ORIG/extract.py edeploy "$yamlfile"|sed -e "s/@VERSION@/$version/")
+rolesurl=$($ORIG/extract.py roles "$yamlfile"|sed -e "s/@VERSION@/$version/")
 jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
 scenario=$($ORIG/extract.py scenario "$yamlfile")
 
@@ -250,7 +250,7 @@ if [ -d env/$env ]; then
             continue
         fi
         (cd $ORIG/cache/$version
-         check_and_download $edeployurl/$role-$version.edeploy
+         check_and_download $rolesurl/$role-$version.edeploy
          cp $role-$version.edeploy* $TOP/var/www/install/$version/
         )
     done
