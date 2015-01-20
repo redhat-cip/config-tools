@@ -16,9 +16,8 @@
 
 import mock
 from mock import call
-import unittest
 import testtools
-import subprocess
+import unittest
 
 libvirt_conn = mock.Mock()
 libvirt_conn.listAllNetworks.return_value = [
@@ -32,18 +31,22 @@ class FakeLibvirt(object):
         return libvirt_conn
 
 
-with mock.patch.dict('sys.modules', {'libvirt': FakeLibvirt()}):
-    import virtualizor
-
-
 class TestVirtualizor(testtools.TestCase):
 
+    def setUp(self):
+        super(TestVirtualizor, self).setUp()
+        self.module_patcher = mock.patch.dict(
+            'sys.modules', {'libvirt': FakeLibvirt()})
+        self.module_patcher.start()
+
     def test_random_mac(self):
+        import virtualizor
         self.assertRegex(virtualizor.random_mac(),
                          '^([0-9a-fA-F]{2}:){5}([0-9a-fA-F]{2})$')
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main(self, sub_call):
+        import virtualizor
         img_dir = '/var/lib/libvirt/images'
         virtualizor.main(['virt_platform.yml.sample', 'bar'])
         sub_call.assert_has_calls([
@@ -78,7 +81,7 @@ class TestVirtualizor(testtools.TestCase):
                   img_dir + '/cloud-init.iso', '-volid', 'cidata', '-joliet',
                   '-rock', '/tmp/mydata/user-data', '/tmp/mydata/meta-data']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-f', 'qcow2',
-                  '-b', img_dir + '/install-server_original.qcow2',
+                  '-b', img_dir + '/install-server-RH7.0-I.1.3.0.img.qcow2',
                   img_dir + '/os-ci-test4-000.qcow2',
                   '30G']),
             call(['ssh', 'root@bar', 'qemu-img', 'resize', '-q',
@@ -91,6 +94,7 @@ class TestVirtualizor(testtools.TestCase):
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main_with_replace(self, sub_call):
+        import virtualizor
         libvirt_conn.reset_mock()
         virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar'])
         self.assertEqual(sub_call.call_count, 18)

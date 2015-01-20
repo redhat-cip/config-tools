@@ -3,8 +3,6 @@
 #
 # Copyright (C) 2015 eNovance SAS <licensing@enovance.com>
 #
-# Author: Yassine Lamgarchal <yassine.lamgarchal@enovance.com>
-#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -21,7 +19,7 @@ import os
 import sys
 import unittest
 
-from virtualization import collector
+import collector
 
 _MODULE_DIR = os.path.dirname(sys.modules[__name__].__file__)
 _CONFIG_PATH = "%s/datas/etc" % _MODULE_DIR
