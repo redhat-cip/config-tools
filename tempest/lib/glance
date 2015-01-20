@@ -19,8 +19,9 @@ function setup_glance(){
     # Download and import an image
     IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     if [ ! "$IMAGE_ID" ] ; then
+            wget -q $IMAGE_URL
             glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
-                --disk-format=$IMAGE_DISK_FORMAT --location $IMAGE_URL
+                --disk-format=$IMAGE_DISK_FORMAT --file cirros-0.3.1-x86_64-disk.img
             IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     fi
 
