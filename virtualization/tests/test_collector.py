@@ -54,8 +54,8 @@ class TestCollector(unittest.TestCase):
 
     def test_get_disks(self):
         actual = collector._get_disks(list(specs))
-        expected = [{"size": "100G"}, {"size": "200G"},
-                    {"size": "300G"}, {"size": "400G"}]
+        expected = [{"size": "100Gi"}, {"size": "200Gi"},
+                    {"size": "300Gi"}, {"size": "400Gi"}]
         self.assertEqual(actual, expected)
 
     def test_collect(self):

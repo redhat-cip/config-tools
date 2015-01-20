@@ -1,37 +1,37 @@
 hosts:
   os-ci-test10:
     disks:
-    - size: 10G
-    - size: 10G
-    - size: 10G
-    - size: 10G
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
     nics:
     - mac: d8:9d:67:1a:8f:58
     - mac: d8:9d:67:1a:8f:59
     profile: openstack-full
   os-ci-test11:
     disks:
-    - size: 10G
-    - size: 10G
-    - size: 10G
-    - size: 10G
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
     nics:
     - mac: d8:9d:67:1a:41:7c
     - mac: d8:9d:67:1a:41:7d
     profile: openstack-full
   os-ci-test12:
     disks:
-    - size: 10G
-    - size: 10G
-    - size: 10G
-    - size: 10G
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
+    - size: 10Gi
     nics:
     - mac: d8:9d:67:32:12:a4
     - mac: d8:9d:67:32:12:a5
     profile: openstack-full
   os-ci-test4:
     disks:
-    - size: 20G
+    - size: 20Gi
     nics:
     - ip: 10.151.68.48
       name: eth0
