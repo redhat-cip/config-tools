@@ -47,9 +47,9 @@ def canical_size(size):
     Convert GiB to MB or return the original string.
 
     """
-    gi = re.search('(\d+)Gi', size)
+    gi = re.search('^(\d+)Gi', size)
     if gi:
-        new_size = "%iM" % (int(gi.group(1)) * 1024 * 1024 * 1024)
+        new_size = "%iK" % (int(gi.group(1)) * 1024 * 1024)
     else:
         new_size = size
     return new_size
