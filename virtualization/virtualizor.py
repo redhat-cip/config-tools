@@ -80,9 +80,20 @@ class Host(object):
   <memory unit='KiB'>{{ memory }}</memory>
   <currentmemory unit='KiB'>{{ memory }}</currentmemory>
   <os>
+    <smbios mode='sysinfo'/>
     <type arch='x86_64' machine='pc'>hvm</type>
     <bios useserial='yes' rebootTimeout='2'/>
   </os>
+  <sysinfo type='smbios'>
+    <bios>
+      <entry name='vendor'>eNovance</entry>
+    </bios>
+    <system>
+      <entry name='manufacturer'>QEMU</entry>
+      <entry name='product'>virtualizor</entry>
+      <entry name='version'>1.0</entry>
+    </system>
+  </sysinfo>
   <features>
     <acpi/>
     <apic/>
