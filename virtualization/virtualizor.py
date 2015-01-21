@@ -196,7 +196,6 @@ runcmd:
  - /usr/bin/systemctl enable httpd
  - /usr/bin/systemctl enable dnsmasq
  - /usr/bin/systemctl restart network
- - /usr/bin/echo "10.151.68.3 edeploy-3nodes.poc.enocloud.com edeploy-3nodes" >> /etc/hosts # NOQA
  - /usr/sbin/sysctl -p
  - /usr/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
  - /bin/rm -f /etc/yum.repos.d/*.repo
