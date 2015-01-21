@@ -149,13 +149,17 @@ users:
    ssh-authorized-keys:
 {% for ssh_key in ssh_keys %}   - {{ ssh_key|trim }}
 {% endfor %}
-runcmd:
- - sed -i -e 's/^Defaults\s\+requiretty/# \\0/' /etc/sudoers
+
 write_files:
   - path: /etc/resolv.conf
     content: |
       nameserver 8.8.8.8
       options rotate timeout:1
+  - path: /etc/sudoers.d/jenkins-cloud-init
+    permissions: 0440
+    content: |
+      Defaults:jenkins !requiretty
+      jenkins ALL=(ALL) NOPASSWD:ALL
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     content: |
       DEVICE=eth0
@@ -165,6 +169,26 @@ write_files:
       NETWORK={{ network }}
       NETMASK={{ netmask }}
       GATEWAY={{ gateway }}
+  - path: /etc/sysconfig/network
+    content: |
+      NETWORKING=yes
+      NOZEROCONF=no
+      GATEWAY=10.10.0.254
+      HOSTNAME={{ hostname }}
+      GATEWAY={{ gateway }}
+  - path: /etc/sysctl.conf
+    content: |
+      net.ipv4.ip_forward = 1
+
+runcmd:
+ - sed -i -e 's/^Defaults\s\+requiretty/# \\0/' /etc/sudoers
+ - /usr/bin/systemctl enable httpd
+ - /usr/bin/systemctl enable dnsmasq
+ - /usr/bin/systemctl restart network
+ - /usr/bin/echo "10.151.68.3 edeploy-3nodes.poc.enocloud.com edeploy-3nodes" >> /etc/hosts # NOQA
+ - /usr/sbin/sysctl -p
+ - /usr/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+ - /bin/rm -f /etc/yum.repos.d/*.repo
 
 """
     meta_data_template_string = """
