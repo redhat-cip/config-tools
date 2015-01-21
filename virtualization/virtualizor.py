@@ -103,7 +103,7 @@ class Host(object):
 {% endif %}
     </disk>
 {% endfor %}
-{% if use_cloud_init is defined %}
+{% if is_install_server is defined %}
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
       <source file='/var/lib/libvirt/images/cloud-init.iso'/>
@@ -163,6 +163,7 @@ write_files:
       IPADDR={{ ip }}
       NETWORK={{ network }}
       NETMASK={{ netmask }}
+      GATEWAY={{ gateway }}
 
 """
     meta_data_template_string = """
@@ -171,24 +172,36 @@ local-hostname: {{ hostname }}
 
 """
 
-    def __init__(self, conf, hostname, definition):
+    def __init__(self, conf, definition, install_server_info):
         self.conf = conf
-        self.hostname = hostname
-        self.meta = {'hostname': hostname, 'uuid': str(uuid.uuid1()),
+        self.hostname = definition['hostname']
+        self.meta = {'hostname': definition['hostname'],
+                     'uuid': str(uuid.uuid1()),
                      'memory': 4194304,
                      'cpus': [], 'disks': [], 'nics': []}
 
         for k in ('uuid', 'serial', 'product_name',
-                  'memory', 'use_cloud_init'):
+                  'memory', 'is_install_server'):
             if k not in definition:
                 continue
             self.meta[k] = definition[k]
 
-        if 'use_cloud_init' in definition:
+        if definition['profile'] == 'install-server':
+            print("  This is the install-server")
+            self.meta['is_install_server'] = True
+            definition['disks'] = [
+                {'name': 'sda',
+                 'size': '30G',
+                 'clone_from':
+                     '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
+                         install_server_info['version']}
+            ]
+            definition['nics'][0].update({'mac': install_server_info['mac']})
             self.prepare_cloud_init(
-                ip=definition['nics'][0]['ip'],
-                network=definition['nics'][0]['network'],
-                netmask=definition['nics'][0]['netmask'])
+                ip=install_server_info['ip'],
+                network=install_server_info['network'],
+                netmask=install_server_info['netmask'],
+                gateway=install_server_info['gateway'])
 
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
@@ -207,7 +220,7 @@ local-hostname: {{ hostname }}
         subprocess.call(['ssh', 'root@%s' % self.conf.target_host] +
                         list(kargs))
 
-    def prepare_cloud_init(self, ip, network, netmask):
+    def prepare_cloud_init(self, ip, network, netmask, gateway):
 
         ssh_key_file = self.conf.pub_key_file
         meta = {
@@ -215,7 +228,8 @@ local-hostname: {{ hostname }}
             'hostname': self.hostname,
             'ip': ip,
             'network': network,
-            'netmask': netmask
+            'netmask': netmask,
+            'gateway': gateway
         }
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         contents = {
@@ -298,8 +312,6 @@ class Network(object):
 </network>
     """
 
-    default_network_settings = {}
-
     def __init__(self, name, definition):
         self.name = name
         self.meta = {
@@ -320,64 +332,61 @@ class Network(object):
         return self.template.render(self.meta)
 
 
+def get_install_server_info(conn, hosts_definition):
+    for hostname, definition in six.iteritems(hosts_definition['hosts']):
+        if definition.get('profile', '') == 'install-server':
+            break
+
+    print("install-server (%s)" % (hostname))
+    admin_nic_info = definition['nics'][0]
+    network = ipaddress.ip_network(
+        unicode(
+            admin_nic_info['network'] + '/' + admin_nic_info['netmask']))
+    admin_nic_info = definition['nics'][0]
+    return {
+        'mac': admin_nic_info.get('mac', random_mac()),
+        'hostname': hostname,
+        'ip': admin_nic_info['ip'],
+        'gateway': str(network.network_address + 1),
+        'netmask': str(network.netmask),
+        'network': str(network.network_address),
+        'version': hosts_definition.get('version', 'RH7.0-I.1.2.1'),
+    }
+
+
+def create_network(conn, netname, install_server_info):
+    net_definition = {'dhcp': {
+        'address': install_server_info['gateway'],
+        'netmask': install_server_info['netmask'],
+        'hosts': [{'mac': install_server_info['mac'],
+                   'name': install_server_info['hostname'],
+                   'ip': install_server_info['ip']}]}}
+    network = Network(netname, net_definition)
+    conn.networkCreateXML(network.dump_libvirt_xml())
+
+
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
 
+    netname = 'sps_default'
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
     conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
-    networks = hosts_definition.get('networks', {})
-    networks['sps_default'] = Network.default_network_settings
-    install_server_mac_addr = None
-    version = hosts_definition.get('version', 'RH7.0-I.1.2.1')
-
-    for hostname, definition in six.iteritems(hosts_definition['hosts']):
-        if 'profile' not in definition:
-            continue
-        if definition['profile'] != 'install-server':
-            continue
-        print("install-server (%s)" % (hostname))
-        admin_nic_info = definition['nics'][0]
-        if 'mac' in admin_nic_info:
-            install_server_mac_addr = admin_nic_info['mac']
-        else:
-            install_server_mac_addr = random_mac()
-        network = ipaddress.ip_network(
-            unicode(
-                admin_nic_info['network'] + '/' + admin_nic_info['netmask']))
-        networks['sps_default'] = {'dhcp': {
-            'address': str(network.network_address + 1),
-            'netmask': str(network.netmask),
-            'hosts': [{'mac': install_server_mac_addr,
-                       'name': hostname,
-                       'ip': admin_nic_info['ip']}]}}
+    install_server_info = get_install_server_info(conn, hosts_definition)
 
     existing_networks = ([n.name() for n in conn.listAllNetworks()])
-    for netname, definition in six.iteritems(networks):
-        if netname in existing_networks:
-            if conf.replace:
-                conn.networkLookupByName(netname).destroy()
-                print("Recreating network %s." % netname)
-            else:
-                print("Network %s already exist." % netname)
-                continue
-        network = Network(netname, definition)
-        conn.networkCreateXML(network.dump_libvirt_xml())
+    if netname in existing_networks:
+        if conf.replace:
+            conn.networkLookupByName(netname).destroy()
+            print("Cleaning network %s." % netname)
+            create_network(conn, netname, install_server_info)
+    else:
+        create_network(conn, netname, install_server_info)
 
     hosts = hosts_definition['hosts']
     existing_hosts = ([n.name() for n in conn.listAllDomains()])
     for hostname in sorted(hosts):
         definition = hosts[hostname]
-        if definition['profile'] == 'install-server':
-            definition['use_cloud_init'] = True
-            definition['disks'] = [
-                {'name': 'sda',
-                 'size': '30G',
-                 'clone_from':
-                     '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
-                         version}
-            ]
-            definition['nics'][0].update({'mac': install_server_mac_addr})
-
+        definition['hostname'] = hostname
         if hostname in existing_hosts:
             if conf.replace:
                 conn.lookupByName(hostname).destroy()
@@ -386,7 +395,7 @@ def main(argv=sys.argv[1:]):
             else:
                 print("Host %s already exist." % hostname)
                 continue
-        host = Host(conf, hostname, definition)
+        host = Host(conf, definition, install_server_info)
         conn.createXML(host.dump_libvirt_xml())
 
 
