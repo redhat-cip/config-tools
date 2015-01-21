@@ -81,6 +81,7 @@ class Host(object):
   <currentmemory unit='KiB'>{{ memory }}</currentmemory>
   <os>
     <type arch='x86_64' machine='pc'>hvm</type>
+    <bios useserial='yes' rebootTimeout='2'/>
   </os>
   <features>
     <acpi/>
