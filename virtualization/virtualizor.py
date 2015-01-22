@@ -109,7 +109,7 @@ class Host(object):
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
       <source file='{{ disk.path }}'/>
-      <target dev='{{ disk.name }}' bus='sata'/>
+      <target dev='{{ disk.name }}' bus='virtio'/>
 {% if disk.boot_order is defined %}
       <boot order='{{ disk.boot_order }}'/>
 {% endif %}
@@ -119,7 +119,7 @@ class Host(object):
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
       <source file='/var/lib/libvirt/images/cloud-init.iso'/>
-      <target dev='vda' bus='virtio'/>
+      <target dev='vdz' bus='virtio'/>
     </disk>
 {% endif %}
 {% for nic in nics %}
@@ -225,7 +225,7 @@ local-hostname: {{ hostname }}
             print("  This is the install-server")
             self.meta['is_install_server'] = True
             definition['disks'] = [
-                {'name': 'sda',
+                {'name': 'vda',
                  'size': '30G',
                  'clone_from':
                      '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
@@ -302,7 +302,7 @@ local-hostname: {{ hostname }}
                            canical_size(info['size']))
 
             info.update({
-                'name': 'sd' + string.ascii_lowercase[cpt],
+                'name': 'vd' + string.ascii_lowercase[cpt],
                 'path': Host.host_libvirt_image_dir + '/' + filename})
             self.meta['disks'].append(info)
             cpt += 1
