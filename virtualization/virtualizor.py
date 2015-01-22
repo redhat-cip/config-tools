@@ -49,7 +49,7 @@ def canical_size(size):
     """
     gi = re.search('^(\d+)Gi', size)
     if gi:
-        new_size = "%iK" % (int(gi.group(1)) * 1024 * 1024)
+        new_size = "%i" % (int(gi.group(1)) * 1000 ** 3)
     else:
         new_size = size
     return new_size
