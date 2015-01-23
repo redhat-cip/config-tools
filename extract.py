@@ -21,6 +21,8 @@
 
 from yaml import load, Loader
 
+from hardware import generate
+
 
 def _lookup_keys(keys, data, lookup_all):
     '''Axuliary function for extract_from_yaml.'''
@@ -52,6 +54,8 @@ lookup_all is True find all the values.
 The key can describe a hierarchical structure using '.' as separator
 and use * as a wildcard.'''
     variables = load(yamlstr, Loader=Loader)
+    if 'hosts' in variables:
+        variables['hosts'] = generate.generate_dict(variables['hosts'], '=')
     keys = key.split('.')
     return _lookup_keys(keys, variables, lookup_all)
 
