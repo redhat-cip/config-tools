@@ -1,4 +1,4 @@
-# Neutron FWaaS and VPNaaS are disabled in our provisionning script.
+# Neutron FWaaS and VPNaaS are disabled in Spinal Stack
 test_vpnaas_extensions
 test_fwaas_extensions
 test_neutron_firewall
@@ -39,3 +39,6 @@ test_servers.ServersAdminTestJSON.test_list_servers_filter_by_exist_host
 # Cinder Backup is disabled in Spinal Stack
 # http://git.io/kfTmcA
 test_volumes_backup
+
+# Nova Cells are disabled in Spinal Stack
+cells
