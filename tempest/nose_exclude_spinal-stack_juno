@@ -35,3 +35,7 @@ test_server_rescue.ServerRescueTestJSON.test_rescued_vm_add_remove_security_grou
 # Due to tenant isolation disabled
 # https://bugs.launchpad.net/tempest/+bug/1251448 (won't be fixed)
 test_servers.ServersAdminTestJSON.test_list_servers_filter_by_exist_host
+
+# Cinder Backup is disabled in Spinal Stack
+# http://git.io/kfTmcA
+test_volumes_backup
