@@ -42,3 +42,7 @@ test_volumes_backup
 
 # Nova Cells are disabled in Spinal Stack
 cells
+
+# Distro Packaging provide different version name
+# MismatchError: '2014.2.1-14.el7ost\n' != '2014.2.1\n'
+test_version_flag
