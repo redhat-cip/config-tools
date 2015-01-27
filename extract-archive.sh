@@ -67,6 +67,13 @@ if [ -r /etc/edeploy/state ]; then
     chown -R jenkins:jenkins ~jenkins/ || :
 fi
 
+# fix permissions for ssh keys
+for dir in $(getent passwd | cut -d: -f6); do
+    if [ -d $dir/.ssh/ ]; then
+        chmod 0600 $dir/.ssh/* || :
+    fi
+done
+
 # extract eDeploy roles for rsync
 mkdir -p /var/lib/debootstrap/install
 cd /var/www/install
