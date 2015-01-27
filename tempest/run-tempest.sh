@@ -39,7 +39,7 @@ if [ "$VERSION" ]; then
         grep -v -e '^#' -e '^$' $here/nose_exclude_${PROJECT}_${VERSION} > nose_exclude
         EXCLUDE="$(printf  "%s|" $(<nose_exclude))"
         NOSE_EXCLUDE="(${EXCLUDE::-1})"
-        testr_exclude='(?!.*(orchestration|'"${EXCLUDE::-1}"'))'
+        testr_exclude='(?!.*('"${EXCLUDE::-1}"'))'
         export NOSE_EXCLUDE
     fi
 fi
