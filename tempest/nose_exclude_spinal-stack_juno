@@ -46,3 +46,12 @@ cells
 # Distro Packaging provide different version name
 # MismatchError: '2014.2.1-14.el7ost\n' != '2014.2.1\n'
 test_version_flag
+
+# tempest is run from install-server which does not have Nova API configuration
+# so some nova-manage commands will fail since they require RPC & MySQL configuration.
+test_host_list
+test_debug_flag
+test_verbose_flag
+test_db_version
+test_db_sync
+test_cell_list
