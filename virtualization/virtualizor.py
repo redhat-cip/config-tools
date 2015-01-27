@@ -79,6 +79,7 @@ class Host(object):
   <uuid>{{ uuid }}</uuid>
   <memory unit='KiB'>{{ memory }}</memory>
   <currentmemory unit='KiB'>{{ memory }}</currentmemory>
+  <vcpu>{{ ncpus }}</vcpu>
   <os>
     <smbios mode='sysinfo'/>
     <type arch='x86_64' machine='pc'>hvm</type>
@@ -213,10 +214,11 @@ local-hostname: {{ hostname }}
         self.meta = {'hostname': definition['hostname'],
                      'uuid': str(uuid.uuid1()),
                      'memory': 4194304,
+                     'ncpus': 1,
                      'cpus': [], 'disks': [], 'nics': []}
 
         for k in ('uuid', 'serial', 'product_name',
-                  'memory', 'is_install_server'):
+                  'memory', 'ncpus', 'is_install_server'):
             if k not in definition:
                 continue
             self.meta[k] = definition[k]

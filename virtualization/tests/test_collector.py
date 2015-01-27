@@ -33,12 +33,13 @@ specs = [
     ('disk', '$disk3', 'slot', '$slot3'),
     ('disk', '$disk4', 'size', '400'),
     ('disk', '$disk4', 'slot', '$slot4'),
-    ('cpu', 'logical', 'number', "$nbcpu"),
+    ('cpu', 'logical', 'number', '8'),
     ('system', 'ipmi', 'channel', "$ipmi-channel"),
     ('system', 'product', 'name', 'ProLiant DL360p Gen8 (654081-B21)'),
     ('network', '$eth', 'serial', '$$mac'),
     ('network', '$eth1', 'serial', '$$mac1'),
-    ('system', 'product', 'serial', 'CZ3340P75T')
+    ('system', 'product', 'serial', 'CZ3340P75T'),
+    ('memory', 'total', 'size', '8589934592'),
 ]
 
 
@@ -48,6 +49,22 @@ class TestCollector(unittest.TestCase):
         actual = collector._get_disks(list(specs))
         expected = [{"size": "100Gi"}, {"size": "200Gi"},
                     {"size": "300Gi"}, {"size": "400Gi"}]
+        self.assertEqual(actual, expected)
+
+    def test_get_memory(self):
+        actual = collector._get_memory(list(specs))
+        expected = 8589934592
+        self.assertEqual(actual, expected)
+
+    def test_get_ncpus(self):
+        actual = collector._get_ncpus(list(specs))
+        expected = 8
+        self.assertEqual(actual, expected)
+
+    def test_get_memory_var(self):
+        actual = collector._get_memory(
+            [('memory', 'total', 'size', '$msize')])
+        expected = None
         self.assertEqual(actual, expected)
 
     @unittest.skip("Skipping, need a copy of the data")

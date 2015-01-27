@@ -90,6 +90,23 @@ def _is_in_cmdb(hostname, cmdb_machines):
     return False
 
 
+def _get_value(lines, spec, key):
+    info = {}
+    if (matcher.match_spec(spec, lines, info) and
+        key in info and info[key][0] != '$'):
+        return int(info[key])
+    else:
+        return None
+
+
+def _get_memory(specs):
+    return _get_value(specs, ('memory', 'total', 'size', '$size'), 'size')
+
+
+def _get_ncpus(specs):
+    return _get_value(specs, ('cpu', 'logical', 'number', '$ncpus'), 'ncpus')
+
+
 def collect(config_path):
     # check config directory path
     if not os.path.exists(config_path):
@@ -120,6 +137,10 @@ def collect(config_path):
         # get the number of disk and their size from the specs file
         disks = _get_disks(specs)
 
+        # get the memory size and the number of cpus
+        memory = _get_memory(specs)
+        ncpus = _get_ncpus(specs)
+
         # loop over the number of profile
         for _ in xrange(len(global_conf["hosts"])):
             # retrieve one configuration not yet assigned
@@ -136,6 +157,12 @@ def collect(config_path):
                 # add the profile
                 virt_platform["hosts"][hostname]["profile"] = \
                     global_conf["hosts"][hostname]["profile"]
+
+                if memory:
+                    virt_platform["hosts"][hostname]['memory'] = memory
+
+                if ncpus:
+                    virt_platform["hosts"][hostname]['ncpus'] = ncpus
 
                 if virt_platform["hosts"][hostname]["profile"] == \
                         "install-server":
