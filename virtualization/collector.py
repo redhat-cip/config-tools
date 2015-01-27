@@ -93,7 +93,7 @@ def _is_in_cmdb(hostname, cmdb_machines):
 def _get_value(lines, spec, key):
     info = {}
     if (matcher.match_spec(spec, lines, info) and
-        key in info and info[key][0] != '$'):
+            key in info and info[key][0] != '$'):
         return int(info[key])
     else:
         return None
