@@ -322,13 +322,17 @@ else
     # module CI in OpenStack Infra
     sudo bundle install
     sudo bundle exec rake spec_prep
+    sudo rm -rf ./puppet-module/spec/fixtures/modules/cloud
     cd ..
     if [ -n "$tag" -a "$tagged" = 1 ]; then
         sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
     fi
     if [ "$LOCAL" != 1 ]; then
         sudo rm -rf modules
-        cp -a ./puppet-module/spec/fixtures/modules/ .
+        cp -a ./puppet-module/spec/fixtures/modules .
+        sudo rm -rf ./puppet-module/spec/fixtures
+        mkdir -p ./modules/cloud
+        cp -a ./puppet-module/* modules/cloud
     fi
 fi
 cp -a modules $TOP/etc/puppet/
