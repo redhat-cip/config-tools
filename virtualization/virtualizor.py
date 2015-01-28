@@ -417,14 +417,20 @@ def main(argv=sys.argv[1:]):
         definition['hostname'] = hostname
         if hostname in existing_hosts:
             if conf.replace:
-                conn.lookupByName(hostname).destroy()
-                # TODO(Gonéri): remove the storages too
+                dom = conn.lookupByName(hostname)
+                if dom.info()[0] in [libvirt.VIR_DOMAIN_RUNNING,
+                                     libvirt.VIR_DOMAIN_PAUSED]:
+                    dom.destroy()
+                if dom.info()[0] in [libvirt.VIR_DOMAIN_SHUTOFF]:
+                    dom.undefine()
                 print("Recreating host %s." % hostname)
             else:
                 print("Host %s already exist." % hostname)
                 continue
         host = Host(conf, definition, install_server_info)
-        conn.createXML(host.dump_libvirt_xml())
+        conn.defineXML(host.dump_libvirt_xml())
+        dom = conn.lookupByName(hostname)
+        dom.create()
 
 
 if __name__ == '__main__':
