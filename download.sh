@@ -314,7 +314,6 @@ if [ -n "$puppetmodules" ];then
 else
     update_or_clone "$puppetgit" puppet-module
     git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
-    wget https://raw.githubusercontent.com/redhat-openstack/openstack-puppet-modules/enovance/Puppetfile -O ./puppet-module/Puppetfile
     if [ -n "$tag" -a "$tagged" = 1 ]; then
         sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
     fi
