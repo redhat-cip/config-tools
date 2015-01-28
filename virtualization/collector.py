@@ -100,7 +100,11 @@ def _get_value(lines, spec, key):
 
 
 def _get_memory(specs):
-    return _get_value(specs, ('memory', 'total', 'size', '$size'), 'size')
+    mem = _get_value(specs, ('memory', 'total', 'size', '$size'), 'size')
+    if mem:
+        return mem / 1024
+    else:
+        return None
 
 
 def _get_ncpus(specs):

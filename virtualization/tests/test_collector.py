@@ -53,7 +53,7 @@ class TestCollector(unittest.TestCase):
 
     def test_get_memory(self):
         actual = collector._get_memory(list(specs))
-        expected = 8589934592
+        expected = 8589934592 / 1024
         self.assertEqual(actual, expected)
 
     def test_get_ncpus(self):
