@@ -24,9 +24,20 @@ libvirt_conn.listAllNetworks.return_value = [
     mock.Mock(**{'name.return_value': 'sps_default'})]
 libvirt_conn.listAllDomains.return_value = [
     mock.Mock(**{'name.return_value': 'os-ci-test11'})]
+libvirt_conn.lookupByName.return_value = mock.Mock(**{
+    'info.return_value': [1], 'create.return_value': True})
 
 
 class FakeLibvirt(object):
+    VIR_DOMAIN_NOSTATE = 0
+    VIR_DOMAIN_RUNNING = 1
+    VIR_DOMAIN_BLOCKED = 2
+    VIR_DOMAIN_PAUSED = 3
+    VIR_DOMAIN_SHUTDOWN = 4
+    VIR_DOMAIN_SHUTOFF = 5
+    VIR_DOMAIN_CRASHED = 6
+    VIR_DOMAIN_PMSUSPENDED = 7
+
     def open(a, b):
         return libvirt_conn
 
@@ -91,7 +102,7 @@ class TestVirtualizor(testtools.TestCase):
         ])
         self.assertEqual(sub_call.call_count, 14)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 0)
-        self.assertEqual(libvirt_conn.createXML.call_count, 3)
+        self.assertEqual(libvirt_conn.defineXML.call_count, 3)
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main_with_replace(self, sub_call):
@@ -101,7 +112,7 @@ class TestVirtualizor(testtools.TestCase):
                           '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
-        self.assertEqual(libvirt_conn.createXML.call_count, 4)
+        self.assertEqual(libvirt_conn.defineXML.call_count, 4)
 
 if __name__ == '__main__':
     unittest.main()
