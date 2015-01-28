@@ -188,17 +188,8 @@ write_files:
       GATEWAY=10.10.0.254
       HOSTNAME={{ hostname }}
       GATEWAY={{ gateway }}
-  - path: /etc/sysctl.conf
-    content: |
-      net.ipv4.ip_forward = 1
 
 runcmd:
- - sed -i -e 's/^Defaults\s\+requiretty/# \\0/' /etc/sudoers
- - /usr/bin/systemctl enable httpd
- - /usr/bin/systemctl enable dnsmasq
- - /usr/bin/systemctl restart network
- - /usr/sbin/sysctl -p
- - /usr/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
  - /bin/rm -f /etc/yum.repos.d/*.repo
 
 """
