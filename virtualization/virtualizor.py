@@ -56,6 +56,11 @@ def canical_size(size):
 
 
 def get_conf(argv=sys.argv):
+    def check_prefix(value):
+        if not re.match('^[a-zA-Z\d]+$', value):
+            sys.stderr.write("Invalid value for --prefix parameter\n")
+            sys.exit(1)
+        return value
     parser = argparse.ArgumentParser(
         description='Deploy a virtual infrastructure.')
     parser.add_argument('--replace', action='store_true',
@@ -68,6 +73,9 @@ def get_conf(argv=sys.argv):
                         default=os.path.expanduser(
                             '~/.ssh/id_rsa.pub'),
                         help='SSH public key file.')
+    parser.add_argument('--prefix', default='default', type=check_prefix,
+                        help='prefix to put in the machine and network names '
+                             '(string).')
     conf = parser.parse_args(argv)
     return conf
 
@@ -383,20 +391,14 @@ def get_install_server_info(conn, hosts_definition):
 
 
 def create_network(conn, netname, install_server_info):
-    net_definition = {'dhcp': {
-        'address': install_server_info['gateway'],
-        'netmask': install_server_info['netmask'],
-        'hosts': [{'mac': install_server_info['mac'],
-                   'name': install_server_info['hostname'],
-                   'ip': install_server_info['ip']}]}}
-    network = Network(netname, net_definition)
+    network = Network(netname, {})
     conn.networkCreateXML(network.dump_libvirt_xml())
 
 
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
 
-    netname = 'sps_default'
+    netname = '%s_sps' % conf.prefix
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
     conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
     install_server_info = get_install_server_info(conn, hosts_definition)
@@ -414,10 +416,11 @@ def main(argv=sys.argv[1:]):
     existing_hosts = ([n.name() for n in conn.listAllDomains()])
     for hostname in sorted(hosts):
         definition = hosts[hostname]
-        definition['hostname'] = hostname
-        if hostname in existing_hosts:
+        hostname_with_prefix = "%s_%s" % (conf.prefix, hostname)
+        definition['hostname'] = hostname_with_prefix
+        if hostname_with_prefix in existing_hosts:
             if conf.replace:
-                dom = conn.lookupByName(hostname)
+                dom = conn.lookupByName(hostname_with_prefix)
                 if dom.info()[0] in [libvirt.VIR_DOMAIN_RUNNING,
                                      libvirt.VIR_DOMAIN_PAUSED]:
                     dom.destroy()

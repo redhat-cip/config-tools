@@ -21,9 +21,9 @@ import unittest
 
 libvirt_conn = mock.Mock()
 libvirt_conn.listAllNetworks.return_value = [
-    mock.Mock(**{'name.return_value': 'sps_default'})]
+    mock.Mock(**{'name.return_value': 'default_sps'})]
 libvirt_conn.listAllDomains.return_value = [
-    mock.Mock(**{'name.return_value': 'os-ci-test11'})]
+    mock.Mock(**{'name.return_value': 'default_os-ci-test11'})]
 libvirt_conn.lookupByName.return_value = mock.Mock(**{
     'info.return_value': [1], 'create.return_value': True})
 
@@ -63,28 +63,28 @@ class TestVirtualizor(testtools.TestCase):
                           '--pub-key-file', 'virt_platform.yml.sample'])
         sub_call.assert_has_calls([
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-000.qcow2',
+                  img_dir + '/default_os-ci-test10-000.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-001.qcow2',
+                  img_dir + '/default_os-ci-test10-001.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-002.qcow2',
+                  img_dir + '/default_os-ci-test10-002.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-003.qcow2',
+                  img_dir + '/default_os-ci-test10-003.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-000.qcow2',
+                  img_dir + '/default_os-ci-test12-000.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-001.qcow2',
+                  img_dir + '/default_os-ci-test12-001.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-002.qcow2',
+                  img_dir + '/default_os-ci-test12-002.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-003.qcow2',
+                  img_dir + '/default_os-ci-test12-003.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'mkdir', '-p', '/tmp/mydata']),
             call(['scp', '-r', mock.ANY, 'root@bar:/tmp/mydata/meta-data']),
@@ -94,10 +94,10 @@ class TestVirtualizor(testtools.TestCase):
                   '-rock', '/tmp/mydata/user-data', '/tmp/mydata/meta-data']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-f', 'qcow2',
                   '-b', img_dir + '/install-server-RH7.0-I.1.3.0.img.qcow2',
-                  img_dir + '/os-ci-test4-000.qcow2',
+                  img_dir + '/default_os-ci-test4-000.qcow2',
                   '30G']),
             call(['ssh', 'root@bar', 'qemu-img', 'resize', '-q',
-                  img_dir + '/os-ci-test4-000.qcow2',
+                  img_dir + '/default_os-ci-test4-000.qcow2',
                   '30G'])
         ])
         self.assertEqual(sub_call.call_count, 14)
