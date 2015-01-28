@@ -28,6 +28,10 @@ fi
 LOCAL=
 INST=
 
+if [ $(id -u) != 0 ]; then
+  SUDO=sudo
+fi
+
 while getopts li opt; do
     if [ $opt = l ]; then
         LOCAL=1
@@ -320,8 +324,8 @@ else
     cd puppet-module
     # Build Puppetfile & modules with Rake which is the same way as the
     # module CI in OpenStack Infra
-    sudo bundle install
-    sudo bundle exec rake spec_prep
+    $SUDO bundle install
+    $SUDO bundle exec rake spec_prep
     sudo rm -rf ./spec/fixtures/modules/cloud
     cd ..
     if [ -n "$tag" -a "$tagged" = 1 ]; then
