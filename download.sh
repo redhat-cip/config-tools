@@ -309,17 +309,26 @@ fi
 
 # Puppet modules
 
+# using sudo here because if this part has already been executed before,
+# spec/fixtures/modules will be owned by root.
+sudo rm -rf puppet-module
 if [ -n "$puppetmodules" ];then
     curl "$puppetmodules" | tar xz
 else
     update_or_clone "$puppetgit" puppet-module
     git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
+    cd puppet-module
+    # Build Puppetfile & modules with Rake which is the same way as the
+    # module CI in OpenStack Infra
+    sudo bundle install
+    sudo bundle exec rake spec_prep
+    cd ..
     if [ -n "$tag" -a "$tagged" = 1 ]; then
         sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
     fi
     if [ "$LOCAL" != 1 ]; then
-        rm -rf modules
-        PUPPETFILE=./puppet-module/Puppetfile PUPPETFILE_DIR=./modules r10k --verbose 3 puppetfile install
+        sudo rm -rf modules
+        cp -a ./puppet-module/spec/fixtures/modules/ .
     fi
 fi
 cp -a modules $TOP/etc/puppet/
