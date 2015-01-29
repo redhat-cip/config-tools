@@ -58,7 +58,7 @@ def canical_size(size):
 def get_conf(argv=sys.argv):
     def check_prefix(value):
         if not re.match('^[a-zA-Z\d]+$', value):
-            sys.stderr.write("Invalid value for --prefix parameter\n") 
+            sys.stderr.write("Invalid value for --prefix parameter\n")
             sys.exit(1)
         return value
     parser = argparse.ArgumentParser(
@@ -91,7 +91,7 @@ class Host(object):
   <os>
     <smbios mode='sysinfo'/>
     <type arch='x86_64' machine='pc'>hvm</type>
-    <bios useserial='yes' rebootTimeout='2'/>
+    <bios useserial='yes' rebootTimeout='5000'/>
   </os>
   <sysinfo type='smbios'>
     <bios>
