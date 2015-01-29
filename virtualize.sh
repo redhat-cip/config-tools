@@ -54,8 +54,8 @@ test_connectivity() {
         sleep 4
         i=$[i+1]
         if [[ $i -ge $TIMEOUT_ITERATION ]]; then
-	    echo "uname timeout on $host_name..."
-	    return 1
+            echo "uname timeout on $host_name..."
+            return 1
         fi
     done
     echo "Node $host_name is alive !"
@@ -103,7 +103,7 @@ declare -a assoc
 
 for node in $HOSTS; do
     (
-	echo "Testing $hostname"
+        echo "Testing $hostname"
         ip=$(./extract.py hosts.${node}.ip top/etc/config-tools/global.yml)
         test_connectivity $ip $node || exit 1
     ) &
@@ -119,10 +119,10 @@ for job in $JOBS; do
     wait $job
     ret=$?
     if [ $ret -eq 127 ]; then
-	echo "$job doesn't exist anymore"
+        echo "$job doesn't exist anymore"
     elif [ $ret -ne 0 ]; then
-	echo "${assoc[$job]} wasn't installed"
-	rc=1
+        echo "${assoc[$job]} wasn't installed"
+        rc=1
     fi
 done
 
