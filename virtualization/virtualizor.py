@@ -23,6 +23,7 @@ import string
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 
 import ipaddress
@@ -76,6 +77,9 @@ def get_conf(argv=sys.argv):
     parser.add_argument('--prefix', default='default', type=check_prefix,
                         help='prefix to put in the machine and network names '
                              '(string).')
+    parser.add_argument('--public_network', default='nat', type=str,
+                        help='name of the public network')
+
     conf = parser.parse_args(argv)
     return conf
 
@@ -189,6 +193,11 @@ write_files:
       NETWORK={{ network }}
       NETMASK={{ netmask }}
       GATEWAY={{ gateway }}
+  - path: /etc/sysconfig/network-scripts/ifcfg-eth1
+    content: |
+      DEVICE=eth1
+      BOOTPROTO=dhcp
+      ONBOOT=yes
   - path: /etc/sysconfig/network
     content: |
       NETWORKING=yes
@@ -232,7 +241,10 @@ local-hostname: {{ hostname }}
                      '/var/lib/libvirt/images/install-server-%s.img.qcow2' %
                          install_server_info['version']}
             ]
-            definition['nics'][0].update({'mac': install_server_info['mac']})
+            definition['nics'].append({
+                'mac': install_server_info['mac'],
+                'network_name': conf.public_network
+            })
             self.prepare_cloud_init(
                 ip=install_server_info['ip'],
                 network=install_server_info['network'],
@@ -242,11 +254,11 @@ local-hostname: {{ hostname }}
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         self.template = env.from_string(Host.host_template_string)
 
-        definition['nics'][0]['boot_order'] = 1
-        definition['disks'][0]['boot_order'] = 2
-
         self.register_disks(definition)
         self.register_nics(definition)
+
+        self.meta['nics'][0]['boot_order'] = 2
+        self.meta['disks'][0]['boot_order'] = 1
 
     def _push(self, source, dest):
         subprocess.call(['scp', '-r', source,
@@ -310,13 +322,13 @@ local-hostname: {{ hostname }}
 
     def register_nics(self, definition):
         i = 0
+
         for info in definition['nics']:
-            info.update({
+            self.meta['nics'].append({
                 'mac': info.get('mac', random_mac()),
                 'name': info.get('name', 'noname%i' % i),
-                'network_name': 'sps_default'
-            })
-            self.meta['nics'].append(info)
+                'network_name': info.get(
+                    'network_name', '%s_sps' % self.conf.prefix)})
             i += 1
 
     def dump_libvirt_xml(self):
@@ -390,27 +402,31 @@ def get_install_server_info(conn, hosts_definition):
     }
 
 
-def create_network(conn, netname, install_server_info):
-    network = Network(netname, {})
-    conn.networkCreateXML(network.dump_libvirt_xml())
+def create_networks(conn, conf, install_server_info):
+    net_definitions = {
+        ("%s_sps" % conf.prefix): {}
+    }
+
+    existing_networks = ([n.name() for n in conn.listAllNetworks()])
+    for netname in net_definitions:
+        if netname in existing_networks:
+            if conf.replace:
+                conn.networkLookupByName(netname).destroy()
+                print("Cleaning network %s." % netname)
+
+    for netname in net_definitions:
+        network = Network(netname, net_definitions[netname])
+        conn.networkCreateXML(network.dump_libvirt_xml())
 
 
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
 
-    netname = '%s_sps' % conf.prefix
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
     conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
     install_server_info = get_install_server_info(conn, hosts_definition)
 
-    existing_networks = ([n.name() for n in conn.listAllNetworks()])
-    if netname in existing_networks:
-        if conf.replace:
-            conn.networkLookupByName(netname).destroy()
-            print("Cleaning network %s." % netname)
-            create_network(conn, netname, install_server_info)
-    else:
-        create_network(conn, netname, install_server_info)
+    create_networks(conn, conf, install_server_info)
 
     hosts = hosts_definition['hosts']
     existing_hosts = ([n.name() for n in conn.listAllDomains()])
@@ -432,8 +448,18 @@ def main(argv=sys.argv[1:]):
                 continue
         host = Host(conf, definition, install_server_info)
         conn.defineXML(host.dump_libvirt_xml())
-        dom = conn.lookupByName(hostname)
+        dom = conn.lookupByName(hostname_with_prefix)
         dom.create()
+
+    lease_files = "/var/lib/libvirt/dnsmasq/%s.leases" % conf.public_network
+    while True:
+        for line in open(lease_files):
+            m = re.search(
+                "^\S+\s%s\s(\S+)\s" % install_server_info['mac'], line)
+            if m:
+                print(m.group(1))
+                exit(0)
+            time.sleep(2)
 
 
 if __name__ == '__main__':
