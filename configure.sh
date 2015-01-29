@@ -71,7 +71,7 @@ generate() {
     chmod 0644 $file
 }
 
-for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
+for f in /etc/puppet/steps.yml.tmpl /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
         echo "$f doesn't exist" 1>&2
         exit 1
@@ -265,7 +265,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             done
         fi
 
-        if verify-servers.sh $step; then
+        if verify-steps.sh $step; then
             RC=0
             break
         else
@@ -283,7 +283,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     fi
 done
 
-verify-servers.sh -x $LOGDIR
+verify-steps.sh
 
 # ensure logs are readable by Jenkins
 chmod -R 644 $LOGDIR/*
