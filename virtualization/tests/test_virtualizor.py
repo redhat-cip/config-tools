@@ -59,6 +59,7 @@ class TestVirtualizor(testtools.TestCase):
     def test_main(self, sub_call):
         import virtualizor
         img_dir = '/var/lib/libvirt/images'
+        virtualizor.wait_for_install_server = mock.Mock(return_value='1.2.3.4')
         virtualizor.main(['virt_platform.yml.sample', 'bar',
                           '--pub-key-file', 'virt_platform.yml.sample'])
         sub_call.assert_has_calls([
@@ -108,6 +109,7 @@ class TestVirtualizor(testtools.TestCase):
     def test_main_with_replace(self, sub_call):
         import virtualizor
         libvirt_conn.reset_mock()
+        virtualizor.wait_for_install_server = mock.Mock(return_value='1.2.3.4')
         virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
                           '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
