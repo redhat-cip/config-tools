@@ -91,7 +91,7 @@ class Host(object):
   <os>
     <smbios mode='sysinfo'/>
     <type arch='x86_64' machine='pc'>hvm</type>
-    <bios useserial='yes' rebootTimeout='2'/>
+    <bios useserial='yes' rebootTimeout='5000'/>
   </os>
   <sysinfo type='smbios'>
     <bios>
