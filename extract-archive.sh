@@ -36,6 +36,7 @@ if [ -f $TARBALL_ARCHIVE ]; then
     rm -rf /etc/edeploy/*
     tar xf /tmp/archive.tar --no-same-owner -C /
 fi
+
 chown -R $SUDO_USER /etc/serverspec
 chown -R $SUDO_USER /opt/tempest-scripts
 
