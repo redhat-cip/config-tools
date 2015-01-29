@@ -22,6 +22,7 @@ set -x
 ORIG=$(cd $(dirname $0); pwd)
 . $ORIG/functions
 
+TARBALL_ARCHIVE="/tmp/archive.tar"
 SUDO_USER=${SUDO_USER:=root}
 
 if [ -r /etc/redhat-release ]; then
@@ -30,9 +31,11 @@ else
     USER=www-data
 fi
 
-rm -rf /etc/edeploy/*
 
-tar xf /tmp/archive.tar --no-same-owner -C /
+if [ -f $TARBALL_ARCHIVE ]; then
+    rm -rf /etc/edeploy/*
+    tar xf /tmp/archive.tar --no-same-owner -C /
+fi
 chown -R $SUDO_USER /etc/serverspec
 chown -R $SUDO_USER /opt/tempest-scripts
 
