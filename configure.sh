@@ -161,7 +161,7 @@ EOF
         n=$(($n + 1)))
     else
         (echo "Configure Puppet environment on ${h} node:"
-        tee /etc/puppet/manifest.pp <<EOF
+        tee /tmp/manifest.pp <<EOF
 Exec {
   path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
 }
@@ -171,10 +171,13 @@ EOF
 type=${PROF_BY_HOST[$h]}
 EOF
         scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-        scp $SSHOPTS /etc/puppet/manifest.pp $USER@$h.$DOMAIN:/etc/puppet/manifest.pp
-        scp -r $SSHOPTS /etc/puppet/modules $USER@$h.$DOMAIN:/etc/puppet/
+        scp $SSHOPTS /tmp/manifest.pp $USER@$h.$DOMAIN:/tmp/manifest.pp
+        scp -r $SSHOPTS /etc/puppet/modules $USER@$h.$DOMAIN:/tmp
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/modules
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/modules /etc/puppet/modules
         ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
         ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/manifest.pp /etc/puppet/manifest.pp
         n=$(($n + 1)))
     fi
 done
@@ -203,10 +206,12 @@ if [ $STEP -eq 0 ]; then
         chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
         if [ $h != $(hostname -s) ]; then
-          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
+          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
+          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
         fi
     done
     puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee  $LOGDIR/puppet-master.step0.log
@@ -230,7 +235,8 @@ if [ $STEP -eq 0 ]; then
     for h in $HOSTS; do
         if [ $h != $(hostname -s) ]; then
             (echo "Provisioning Puppet agent on ${h} node:"
-             scp $SSHOPTS /etc/puppet/hiera.yaml $USER@$h.$DOMAIN:/etc/puppet/hiera.yaml
+             scp $SSHOPTS /etc/puppet/hiera.yaml $USER@$h.$DOMAIN:/tmp/hiera.yaml
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
              scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/resolv.conf /tmp/hosts /etc
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step0.log
@@ -263,10 +269,12 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
         chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
         if [ $h != $(hostname -s) ]; then
-          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
+          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
+          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
         fi
     done
 
