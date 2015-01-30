@@ -149,16 +149,30 @@ for h in $HOSTS; do
     if [ $h = $(hostname -s) ]; then
         (echo "Configure Puppet environment on ${h} node:"
          mkdir -p /etc/facter/facts.d
+         cat > /etc/puppet/manifest.pp<<EOF
+Exec {
+  path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
+}
+hiera_include('classes')
+EOF
          cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
         n=$(($n + 1)))
     else
         (echo "Configure Puppet environment on ${h} node:"
+        tee /etc/puppet/manifest.pp <<EOF
+Exec {
+  path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
+}
+hiera_include('classes')
+EOF
         tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
         scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
+        scp $SSHOPTS /etc/puppet/manifest.pp $USER@$h.$DOMAIN:/etc/puppet/manifest.pp
+        scp -r $SSHOPTS /etc/puppet/modules $USER@$h.$DOMAIN:/etc/puppet/
         ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
         ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
         n=$(($n + 1)))
@@ -172,12 +186,33 @@ done
 if [ $STEP -eq 0 ]; then
     configure_hostname
     generate 0 /etc/puppet/data/common.yaml
-    # TODO (spredzy): See why it needs
-    # to be run twice for passenger to
-    # catch up
-    puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee $LOGDIR/puppet-master.step0.log
-    puppet apply -e 'include ::cloud::install::puppetdb' | tee $LOGDIR/puppet-master.step0.log
-    puppet apply /etc/puppet/modules/cloud/scripts/bootstrap_post_puppetdb.pp | tee $LOGDIR/puppet-master.step0.log
+    for template in $(cat /etc/config-tools/templates); do
+        generate 0 $template
+    done
+    for p in $PROFILES; do
+        generate 0 /etc/puppet/data/type.yaml profile=$p
+        mkdir -p /etc/puppet/data/$p
+        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+    done
+    for h in $HOSTS; do
+        generate 0 /etc/puppet/data/fqdn.yaml host=$h
+        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
+        # hack to fix %{hiera} without ""
+        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        rm /etc/puppet/data/fqdn.yaml
+        if [ $h != $(hostname -s) ]; then
+          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+        fi
+    done
+    puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee  $LOGDIR/puppet-master.step0.log
+    puppet apply -e 'include ::cloud::install::puppetdb::server' | tee  $LOGDIR/puppet-master.step0.log
+    puppet apply -e 'include ::cloud::install::puppetdb::config' | tee  $LOGDIR/puppet-master.step0.log
+    sleep 30
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         STEP=1
         echo $STEP > $CDIR/step
@@ -195,15 +230,10 @@ if [ $STEP -eq 0 ]; then
     for h in $HOSTS; do
         if [ $h != $(hostname -s) ]; then
             (echo "Provisioning Puppet agent on ${h} node:"
+             scp $SSHOPTS /etc/puppet/hiera.yaml $USER@$h.$DOMAIN:/etc/puppet/hiera.yaml
              scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/resolv.conf /tmp/hosts /etc
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo augtool << EOT
-set /files/etc/puppet/puppet.conf/agent/pluginsync true
-set /files/etc/puppet/puppet.conf/agent/certname $h.$DOMAIN
-set /files/etc/puppet/puppet.conf/agent/server $MASTER
-rm /files/etc/puppet/puppet.conf/main/templatedir
-save
-EOT
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step0.log
 )
         fi
     done
@@ -219,6 +249,11 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     for template in $(cat /etc/config-tools/templates); do
         generate $step $template
     done
+    for p in $PROFILES; do
+        generate $step /etc/puppet/data/type.yaml profile=$p
+        mkdir -p /etc/puppet/data/$p
+        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+    done
     for h in $HOSTS; do
         generate $step /etc/puppet/data/fqdn.yaml host=$h
         mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
@@ -227,11 +262,12 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
         sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
-    done
-    for p in $PROFILES; do
-        generate $step /etc/puppet/data/type.yaml profile=$p
-        mkdir -p /etc/puppet/data/$p
-        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+        if [ $h != $(hostname -s) ]; then
+          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/etc/puppet/data/${PROF_BY_HOST[$h]}/
+        fi
     done
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
@@ -241,19 +277,15 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
             echo "Run Puppet on $h node (step ${step}, try $loop):"
             if run_parallel $step; then
                 if [ $h = $(hostname -s) ]; then
-                    pkill -9 puppet || true
-                    puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
+                    puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
-                    ssh $SSHOPTS $USER@$h sudo pkill -9 puppet || true
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
+                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
                 if [ $h = $(hostname -s) ]; then
-                    pkill -9 puppet || true
-                    puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
+                    puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
-                    ssh $SSHOPTS $USER@$h sudo pkill -9 puppet || true
-                    ssh $SSHOPTS $USER@$h sudo -i puppet agent $PUPPETOPTS 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
+                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 fi
             fi
         done
