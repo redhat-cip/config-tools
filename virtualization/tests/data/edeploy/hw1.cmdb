@@ -1,0 +1,5 @@
+# -*- python -*-
+
+generate({'hostname': 'node1-4',
+          'm': 'dddd'
+      })

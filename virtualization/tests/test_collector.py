@@ -16,66 +16,25 @@
 # under the License.
 
 import os
-import sys
 import unittest
 
 import collector
 
-_MODULE_DIR = os.path.dirname(sys.modules[__name__].__file__)
-_CONFIG_PATH = "%s/datas/etc" % _MODULE_DIR
-
-specs = [
-    ('disk', '$disk1', 'size', '100'),
-    ('disk', '$disk1', 'slot', '$slot1'),
-    ('disk', '$disk2', 'size', '200'),
-    ('disk', '$disk2', 'slot', '$slot2'),
-    ('disk', '$disk3', 'size', '300'),
-    ('disk', '$disk3', 'slot', '$slot3'),
-    ('disk', '$disk4', 'size', '400'),
-    ('disk', '$disk4', 'slot', '$slot4'),
-    ('cpu', 'logical', 'number', '8'),
-    ('system', 'ipmi', 'channel', "$ipmi-channel"),
-    ('system', 'product', 'name', 'ProLiant DL360p Gen8 (654081-B21)'),
-    ('network', '$eth', 'serial', '$$mac'),
-    ('network', '$eth1', 'serial', '$$mac1'),
-    ('system', 'product', 'serial', 'CZ3340P75T'),
-    ('memory', 'total', 'size', '8589934592'),
-]
+_MODULE_DIR = os.path.dirname(__file__)
+_CONFIG_PATH = "%s/data" % _MODULE_DIR
 
 
 class TestCollector(unittest.TestCase):
 
-    def test_get_disks(self):
-        actual = collector._get_disks(list(specs))
-        expected = [{"size": "100Gi"}, {"size": "200Gi"},
-                    {"size": "300Gi"}, {"size": "400Gi"}]
-        self.assertEqual(actual, expected)
-
-    def test_get_memory(self):
-        actual = collector._get_memory(list(specs))
-        expected = 8589934592 / 1024
-        self.assertEqual(actual, expected)
-
-    def test_get_ncpus(self):
-        actual = collector._get_ncpus(list(specs))
-        expected = 8
-        self.assertEqual(actual, expected)
-
-    def test_get_memory_var(self):
-        actual = collector._get_memory(
-            [('memory', 'total', 'size', '$msize')])
-        expected = None
-        self.assertEqual(actual, expected)
-
-    @unittest.skip("Skipping, need a copy of the data")
     def test_collect(self):
         virt_platform = collector.collect(_CONFIG_PATH)
         self.assertTrue("hosts" in virt_platform)
         self.assertEqual(len(virt_platform["hosts"]), 4)
 
-        for host in ['os-ci-test10', 'os-ci-test11', 'os-ci-test12']:
+        for host in ['node1', 'node2', 'node3']:
             self.assertTrue("disks" in virt_platform["hosts"][host])
-            self.assertTrue("nics" in virt_platform["hosts"][host])
+            self.assertEqual(virt_platform["hosts"][host]["nics"][0]['mac'],
+                             'dddd')
 
 if __name__ == "__main__":
     unittest.main()
