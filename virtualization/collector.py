@@ -15,11 +15,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from hardware.generate import generate  # noqa
-from hardware.generate import generate_dict  # noqa
-from hardware import matcher
+from hardware import generate
+from hardware import state
 
-import copy
 import netaddr
 import os
 import sys
@@ -28,21 +26,6 @@ import argparse
 import yaml
 
 _VERSION = "0.0.1"
-
-
-def _get_content(path):
-    try:
-        with open(path, "r") as f:
-            return f.read()
-    except (OSError, IOError):
-        print("Error: cannot open or read file '%s'" % path)
-        sys.exit(1)
-
-
-def _eval_python_file(path):
-    file_content = _get_content(path)
-
-    return eval(file_content)
 
 
 def _get_yaml_content(path):
@@ -54,127 +37,34 @@ def _get_yaml_content(path):
         sys.exit(1)
 
 
-def _get_disks(specs):
-    disks = []
-    info = {}
-    while matcher.match_spec(('disk', '$disk', 'size', '$gb'), specs, info):
-        if info['gb'].startswith("gt"):
-            size = int(info['gb'][3:-1]) + 1
-        elif info['gb'].startswith("ge"):
-            size = int(info['gb'][3:-1])
-        elif info['gb'].startswith("lt"):
-            size = int(info['gb'][3:-1]) - 1
-        elif info['gb'].startswith("le"):
-            size = int(info['gb'][3:-1])
-        else:
-            size = info['gb']
-        disks_size = "%sGi" % size
-        disks.append({"size": disks_size})
-        info = {}
-    return disks
-
-
-def _get_nics(global_host):
-
-    nics = []
-    for mac in global_host["cmdb"]:
-        if mac.startswith("mac"):
-            nics.append({"mac": global_host["cmdb"][mac]})
-    return nics
-
-
-def _is_in_cmdb(hostname, cmdb_machines):
-    for machine in cmdb_machines:
-        if machine["hostname"] == hostname:
-            return True
-    return False
-
-
-def _get_value(lines, spec, key):
-    info = {}
-    if (matcher.match_spec(spec, lines, info) and
-            key in info and info[key][0] != '$'):
-        return int(info[key])
-    else:
-        return None
-
-
-def _get_memory(specs):
-    mem = _get_value(specs, ('memory', 'total', 'size', '$size'), 'size')
-    if mem:
-        return mem / 1024
-    else:
-        return None
-
-
-def _get_ncpus(specs):
-    return _get_value(specs, ('cpu', 'logical', 'number', '$ncpus'), 'ncpus')
-
-
 def collect(config_path):
     # check config directory path
     if not os.path.exists(config_path):
         print("Error: --config-dir='%s' does not exist." % config_path)
         sys.exit(1)
 
-    # get state file
-    state_profiles = _eval_python_file("%s/edeploy/state" % config_path)
+    # get state object
+    state_obj = state.State()
+    state_obj.load(os.path.join(config_path, 'edeploy') + '/')
 
     # get global conf
     global_conf = _get_yaml_content("%s/config-tools/global.yml" % config_path)
     # expand keys prefixed by "="
-    global_conf["hosts"] = generate_dict(global_conf["hosts"], "=")
+    global_conf["hosts"] = generate.generate_dict(global_conf["hosts"], "=")
 
     # the virtual configuration of each host
     virt_platform = {"hosts": {}}
 
-    for profile_name, _ in state_profiles:
+    for hostname in global_conf["hosts"]:
+        # construct the host virtual configuration
+        virt_platform["hosts"][hostname] = state_obj.hardware_info(hostname)
 
-        # source the cmdb file
-        cmdb_file_path = "%s/edeploy/%s.cmdb" % (config_path, profile_name)
-        cmdb_machines = _eval_python_file(cmdb_file_path)
+        # add the profile
+        virt_platform["hosts"][hostname]["profile"] = \
+            global_conf["hosts"][hostname]["profile"]
 
-        # source the specs file
-        spec_file_path = "%s/edeploy/%s.specs" % (config_path, profile_name)
-        specs = _eval_python_file(spec_file_path)
-
-        # get the number of disk and their size from the specs file
-        disks = _get_disks(specs)
-
-        # get the memory size and the number of cpus
-        memory = _get_memory(specs)
-        ncpus = _get_ncpus(specs)
-
-        # loop over the number of profile
-        for _ in xrange(len(global_conf["hosts"])):
-            # retrieve one configuration not yet assigned
-            for hostname in global_conf["hosts"]:
-                if hostname in virt_platform["hosts"]:
-                    continue
-                if not _is_in_cmdb(hostname, cmdb_machines):
-                    continue
-                # construct the host virtual configuration
-                virt_platform["hosts"][hostname] = {}
-                # add the disks
-                virt_platform["hosts"][hostname]["disks"] = \
-                    copy.deepcopy(disks)
-                # add the profile
-                virt_platform["hosts"][hostname]["profile"] = \
-                    global_conf["hosts"][hostname]["profile"]
-
-                if memory:
-                    virt_platform["hosts"][hostname]['memory'] = memory
-
-                if ncpus:
-                    virt_platform["hosts"][hostname]['ncpus'] = ncpus
-
-                if virt_platform["hosts"][hostname]["profile"] == \
-                        "install-server":
-                    break
-                # add the nics
-                virt_platform["hosts"][hostname]["nics"] = \
-                    _get_nics(global_conf["hosts"][hostname])
-                break
+    # release the lock obtained during the load call
+    state_obj.unlock()
 
     # so far, the nodes are described excepted the install-server
     # the code below adds the install-server from the global conf.

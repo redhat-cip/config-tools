@@ -1,4 +1,4 @@
-hardware>=0.6
+hardware>=0.8
 ipaddress
 jinja2
 PyYAML
