@@ -422,20 +422,33 @@ def create_networks(conn, conf, install_server_info):
     }
 
     existing_networks = ([n.name() for n in conn.listAllNetworks()])
+    from pprint import pprint
+    pprint(existing_networks)
     for netname in net_definitions:
-        if netname in existing_networks:
-            if conf.replace:
-                conn.networkLookupByName(netname).destroy()
-                print("Cleaning network %s." % netname)
+        exists = netname in existing_networks
+        if exists and conf.replace:
+            conn.networkLookupByName(netname).destroy()
+            print("Cleaning network %s." % netname)
+            exists = False
 
-    for netname in net_definitions:
-        network = Network(netname, net_definitions[netname])
-        conn.networkCreateXML(network.dump_libvirt_xml())
+        if not exists:
+            network = Network(netname, net_definitions[netname])
+            conn.networkCreateXML(network.dump_libvirt_xml())
+
+
+def wait_for_install_server(lease_file, mac):
+    while True:
+        for line in open(lease_file):
+            m = re.search(
+                "^\S+\s%s\s(\S+)\s" % mac, line)
+            if m:
+                print(m.group(1))
+                exit(0)
+            time.sleep(2)
 
 
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
-
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
     conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
     install_server_info = get_install_server_info(conn, hosts_definition)
@@ -448,32 +461,26 @@ def main(argv=sys.argv[1:]):
         definition = hosts[hostname]
         hostname_with_prefix = "%s_%s" % (conf.prefix, hostname)
         definition['hostname'] = hostname_with_prefix
-        if hostname_with_prefix in existing_hosts:
-            if conf.replace:
-                dom = conn.lookupByName(hostname_with_prefix)
-                if dom.info()[0] in [libvirt.VIR_DOMAIN_RUNNING,
-                                     libvirt.VIR_DOMAIN_PAUSED]:
-                    dom.destroy()
-                if dom.info()[0] in [libvirt.VIR_DOMAIN_SHUTOFF]:
-                    dom.undefine()
-                print("Recreating host %s." % hostname)
-            else:
-                print("Host %s already exist." % hostname)
-                continue
-        host = Host(conf, definition, install_server_info)
-        conn.defineXML(host.dump_libvirt_xml())
-        dom = conn.lookupByName(hostname_with_prefix)
-        dom.create()
+        exists = hostname_with_prefix in existing_hosts
+        if exists and conf.replace:
+            dom = conn.lookupByName(hostname_with_prefix)
+            if dom.info()[0] in [libvirt.VIR_DOMAIN_RUNNING,
+                                 libvirt.VIR_DOMAIN_PAUSED]:
+                dom.destroy()
+            if dom.info()[0] in [libvirt.VIR_DOMAIN_SHUTOFF]:
+                dom.undefine()
+            exists = False
+        if not exists:
+            host = Host(conf, definition, install_server_info)
+            conn.defineXML(host.dump_libvirt_xml())
+            dom = conn.lookupByName(hostname_with_prefix)
+            dom.create()
 
-    lease_files = "/var/lib/libvirt/dnsmasq/%s.leases" % conf.public_network
-    while True:
-        for line in open(lease_files):
-            m = re.search(
-                "^\S+\s%s\s(\S+)\s" % install_server_info['mac'], line)
-            if m:
-                print(m.group(1))
-                exit(0)
-            time.sleep(2)
+    ip = wait_for_install_server(
+        lease_file="/var/lib/libvirt/dnsmasq/%s.leases" % conf.public_network,
+        mac=install_server_info['mac'])
+
+    print("Install-server up and running with IP: %s" % ip)
 
 
 if __name__ == '__main__':
