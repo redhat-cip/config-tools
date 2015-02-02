@@ -221,6 +221,7 @@ write_files:
 
 runcmd:
  - /bin/rm -f /etc/yum.repos.d/*.repo
+ - /usr/bin/systemctl restart network
 
 """
     meta_data_template_string = """
