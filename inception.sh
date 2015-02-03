@@ -27,8 +27,8 @@ fi
 
 if [ "$1" = "-u" ]; then
     upgrade=1
-    shift
 fi
+shift
 
 dist="$1"
 release="$2"
