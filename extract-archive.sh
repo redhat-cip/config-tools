@@ -42,7 +42,8 @@ chown -R $SUDO_USER /opt/tempest-scripts
 
 if [ ${SUDO_USER} != root ]; then
     mkdir -p /root/.ssh
-    cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+    sudo_user_ssh_authorized_keys=$(eval echo ~${SUDO_USER}/.ssh/authorized_keys )
+    cp ${sudo_user_ssh_authorized_keys} /root/.ssh/
 fi
 
 if [ -d /etc/jenkins_jobs/jobs ]; then
