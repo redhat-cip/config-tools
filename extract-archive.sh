@@ -72,10 +72,9 @@ if [ -r /etc/edeploy/state ]; then
 fi
 
 # fix permissions for ssh keys
-for dir in $(getent passwd | cut -d: -f6); do
-    if [ -d $dir/.ssh/ ]; then
-        chmod 0600 $dir/.ssh/* || :
-    fi
+for user in root jenkins; do
+    user_ssh_dir=$(eval echo ~${user}/.ssh)
+    find ${user_ssh_dir} -type f -exec chmod 0600 {} \;
 done
 
 # extract eDeploy roles for rsync
