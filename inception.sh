@@ -120,7 +120,7 @@ if ! heat stack-show ${stackname}; then
         $ORIG/generate.py 0 $CFG top/etc/config-tools/infra/heat.yaml.tmpl floating_network_id=$pubnet > heat.yaml
 
     # we don't create the stack in case of upgrade
-    if [ ! -z "$upgrade" ]; then
+    if [ -z "$upgrade" ]; then
         heat stack-create --parameters="dist=$dist;release=$release" -f heat.yaml ${stackname}
         while heat stack-show ${stackname} | fgrep CREATE_IN_PROGRESS; do
             sleep 5
