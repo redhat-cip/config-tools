@@ -159,7 +159,7 @@ else
     for privip in $(grep '    ip:' $CFG | sed 's/    ip: //'); do
         ssh -A $SSHOPTS $user@$ip sudo ping -c 1 $privip
         ssh -A $SSHOPTS $user@$ip ssh $SSHOPTS $privip uname -a
-        ssh -A $SSHOPTS $user@$ip ssh $SSHOPTS $privip 'echo -e "RSERV=${ip}\nRSERV_PORT=873" | sudo tee -a /var/lib/edeploy/conf'
+        ssh -A $SSHOPTS $user@$ip ssh $SSHOPTS $privip 'echo -e "RSERV=$ip\nRSERV_PORT=873" | sudo tee -a /var/lib/edeploy/conf'
     done
     MASTER=$ip ${ORIG}/send.sh
 fi
