@@ -70,6 +70,12 @@ if [ -r /etc/edeploy/state ]; then
     chown -R jenkins:jenkins ~jenkins/ || :
 fi
 
+# fix permissions for ssh keys
+for user in root jenkins; do
+    user_ssh_dir=$(eval echo ~${user}/.ssh)
+    find ${user_ssh_dir} -type f -exec chmod 0600 {} \;
+done
+
 # extract eDeploy roles for rsync
 mkdir -p /var/lib/debootstrap/install
 cd /var/www/install
