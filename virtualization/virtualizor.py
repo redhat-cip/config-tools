@@ -97,6 +97,47 @@ def get_conf(argv=sys.argv):
     return conf
 
 
+class Hypervisor(object):
+    def __init__(self, target_host):
+        self.target_host = target_host
+        self.conn = libvirt.open('qemu+ssh://root@%s/system' % target_host)
+
+    def create_networks(self, conf, install_server_info):
+        net_definitions = {
+            ("%s_sps" % conf.prefix): {}
+        }
+
+        existing_networks = ([n.name() for n in self.conn.listAllNetworks()])
+        for netname in net_definitions:
+            exists = netname in existing_networks
+            if exists and conf.replace:
+                self.conn.networkLookupByName(netname).destroy()
+                print("Cleaning network %s." % netname)
+                exists = False
+            if not exists:
+                network = Network(netname, net_definitions[netname])
+                self.conn.networkCreateXML(network.dump_libvirt_xml())
+
+    def wait_for_install_server(self, lease_file, mac):
+        while True:
+            stdout = subprocess.check_output([
+                'ssh', 'root@%s' % self.target_host, 'cat', lease_file])
+            for line in stdout.split('\n'):
+                m = re.search(
+                    "^\S+\s%s\s(\S+)\s" % mac, line)
+                if m:
+                    return(m.group(1))
+            time.sleep(2)
+
+    def push(self, source, dest):
+        subprocess.call(['scp', '-r', source,
+                         'root@%s' % self.target_host + ':' + dest])
+
+    def call(self, *kargs):
+        subprocess.call(['ssh', 'root@%s' % self.target_host] +
+                        list(kargs))
+
+
 class Host(object):
     host_template_string = """
 <domain type='kvm'>
@@ -230,7 +271,8 @@ local-hostname: {{ hostname }}
 
 """
 
-    def __init__(self, conf, definition, install_server_info):
+    def __init__(self, hypervisor, conf, definition, install_server_info):
+        self.hypervisor = hypervisor
         self.conf = conf
         self.hostname = definition['hostname']
         self.meta = {'hostname': definition['hostname'],
@@ -274,14 +316,6 @@ local-hostname: {{ hostname }}
         self.meta['nics'][0]['boot_order'] = 2
         self.meta['disks'][0]['boot_order'] = 1
 
-    def _push(self, source, dest):
-        subprocess.call(['scp', '-r', source,
-                         'root@%s' % self.conf.target_host + ':' + dest])
-
-    def _call(self, *kargs):
-        subprocess.call(['ssh', 'root@%s' % self.conf.target_host] +
-                        list(kargs))
-
     def prepare_cloud_init(self, ip, network, netmask, gateway):
 
         ssh_key_file = self.conf.pub_key_file
@@ -298,35 +332,39 @@ local-hostname: {{ hostname }}
             'user-data': env.from_string(Host.user_data_template_string),
             'meta-data': env.from_string(Host.meta_data_template_string)}
         # TODO(Gonéri): use mktemp
-        self._call("mkdir", "-p", "/tmp/mydata")
+        self.hypervisor.call("mkdir", "-p", "/tmp/mydata")
         for name in sorted(contents):
             fd = tempfile.NamedTemporaryFile()
             fd.write(contents[name].render(meta))
             fd.seek(0)
             fd.flush()
-            self._push(fd.name, '/tmp/mydata/' + name)
+            self.hypervisor.push(fd.name, '/tmp/mydata/' + name)
 
-        self._call('genisoimage', '-quiet', '-output',
-                   Host.host_libvirt_image_dir + '/cloud-init.iso',
-                   '-volid', 'cidata', '-joliet', '-rock',
-                   '/tmp/mydata/user-data', '/tmp/mydata/meta-data')
+        self.hypervisor.call(
+            'genisoimage', '-quiet', '-output',
+            Host.host_libvirt_image_dir + '/cloud-init.iso',
+            '-volid', 'cidata', '-joliet', '-rock',
+            '/tmp/mydata/user-data', '/tmp/mydata/meta-data')
 
     def register_disks(self, definition):
         cpt = 0
         for info in definition['disks']:
             filename = "%s-%03d.qcow2" % (self.hostname, cpt)
             if 'clone_from' in info:
-                self._call('qemu-img', 'create', '-f', 'qcow2',
-                           '-b', info['clone_from'],
-                           Host.host_libvirt_image_dir +
-                           '/' + filename, info['size'])
-                self._call('qemu-img', 'resize', '-q',
-                           Host.host_libvirt_image_dir + '/' + filename,
-                           canical_size(info['size']))
+                self.hypervisor.call(
+                    'qemu-img', 'create', '-f', 'qcow2',
+                    '-b', info['clone_from'],
+                    Host.host_libvirt_image_dir + '/' + filename,
+                    info['size'])
+                self.hypervisor.call(
+                    'qemu-img', 'resize', '-q',
+                    Host.host_libvirt_image_dir + '/' + filename,
+                    canical_size(info['size']))
             else:
-                self._call('qemu-img', 'create', '-q', '-f', 'qcow2',
-                           Host.host_libvirt_image_dir + '/' + filename,
-                           canical_size(info['size']))
+                self.hypervisor.call(
+                    'qemu-img', 'create', '-q', '-f', 'qcow2',
+                    Host.host_libvirt_image_dir + '/' + filename,
+                    canical_size(info['size']))
 
             info.update({
                 'name': 'vd' + string.ascii_lowercase[cpt],
@@ -394,7 +432,7 @@ class Network(object):
         return self.template.render(self.meta)
 
 
-def get_install_server_info(conn, hosts_definition):
+def get_install_server_info(hosts_definition):
     for hostname, definition in six.iteritems(hosts_definition['hosts']):
         if definition.get('profile', '') == 'install-server':
             break
@@ -416,51 +454,22 @@ def get_install_server_info(conn, hosts_definition):
     }
 
 
-def create_networks(conn, conf, install_server_info):
-    net_definitions = {
-        ("%s_sps" % conf.prefix): {}
-    }
-
-    existing_networks = ([n.name() for n in conn.listAllNetworks()])
-    for netname in net_definitions:
-        exists = netname in existing_networks
-        if exists and conf.replace:
-            conn.networkLookupByName(netname).destroy()
-            print("Cleaning network %s." % netname)
-            exists = False
-        if not exists:
-            network = Network(netname, net_definitions[netname])
-            conn.networkCreateXML(network.dump_libvirt_xml())
-
-
-def wait_for_install_server(lease_file, mac):
-    while True:
-        for line in open(lease_file):
-            m = re.search(
-                "^\S+\s%s\s(\S+)\s" % mac, line)
-            if m:
-                print(m.group(1))
-                exit(0)
-            time.sleep(2)
-
-
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
-    conn = libvirt.open('qemu+ssh://root@%s/system' % conf.target_host)
-    install_server_info = get_install_server_info(conn, hosts_definition)
-
-    create_networks(conn, conf, install_server_info)
+    hypervisor = Hypervisor(conf.target_host)
+    install_server_info = get_install_server_info(hosts_definition)
+    hypervisor.create_networks(conf, install_server_info)
 
     hosts = hosts_definition['hosts']
-    existing_hosts = ([n.name() for n in conn.listAllDomains()])
+    existing_hosts = ([n.name() for n in hypervisor.conn.listAllDomains()])
     for hostname in sorted(hosts):
         definition = hosts[hostname]
         hostname_with_prefix = "%s_%s" % (conf.prefix, hostname)
         definition['hostname'] = hostname_with_prefix
         exists = hostname_with_prefix in existing_hosts
         if exists and conf.replace:
-            dom = conn.lookupByName(hostname_with_prefix)
+            dom = hypervisor.conn.lookupByName(hostname_with_prefix)
             if dom.info()[0] in [libvirt.VIR_DOMAIN_RUNNING,
                                  libvirt.VIR_DOMAIN_PAUSED]:
                 dom.destroy()
@@ -468,12 +477,12 @@ def main(argv=sys.argv[1:]):
                 dom.undefine()
             exists = False
         if not exists:
-            host = Host(conf, definition, install_server_info)
-            conn.defineXML(host.dump_libvirt_xml())
-            dom = conn.lookupByName(hostname_with_prefix)
+            host = Host(hypervisor, conf, definition, install_server_info)
+            hypervisor.conn.defineXML(host.dump_libvirt_xml())
+            dom = hypervisor.conn.lookupByName(hostname_with_prefix)
             dom.create()
 
-    ip = wait_for_install_server(
+    ip = hypervisor.wait_for_install_server(
         lease_file="/var/lib/libvirt/dnsmasq/%s.leases" % conf.public_network,
         mac=install_server_info['mac'])
 
