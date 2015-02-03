@@ -41,10 +41,12 @@ SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyCh
 test_connectivity() {
     set +x
     local i=0
+    local install_server_id=$1
     local host_ip=$1
     while true; do
         echo -n "."
-        ssh $SSHOPTS jenkins@$host_ip uname -a > /dev/null 2>&1 && break
+        ssh $SSHOPTS jenkins@$install_server \
+            ssh $SSHOPTS jenkins@$host_ip uname -a > /dev/null 2>&1 && break
         sleep 4
         i=$[i+1]
         if [[ $i -ge $TIMEOUT_ITERATION ]]; then
@@ -84,6 +86,7 @@ ssh $SSHOPTS root@$installserverip "echo -e 'RSERV=localhost\nRSERV_PORT=873' >>
 
 ssh $SSHOPTS root@$installserverip /tmp/extract-archive.sh
 ssh $SSHOPTS root@$installserverip rm /tmp/extract-archive.sh /tmp/functions
+ssh $SSHOPTS root@$installserverip "ssh-keygen -y -f ~jenkins/.ssh/id_rsa >> ~jenkins/.ssh/authorized_keys"
 ssh $SSHOPTS root@$installserverip service dnsmasq restart
 ssh $SSHOPTS root@$installserverip service httpd restart
 ssh $SSHOPTS root@$installserverip service rsyncd restart
@@ -97,7 +100,7 @@ for node in $HOSTS; do
     (
         echo "Testing $hostname"
         ip=$(${ORIG}/extract.py hosts.${node}.ip top/etc/config-tools/global.yml)
-        test_connectivity $ip $node || exit 1
+        test_connectivity $installserverip $ip $node || exit 1
     ) &
     JOBS="$JOBS $!"
     assoc[$!]=$hostname
