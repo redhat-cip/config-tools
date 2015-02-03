@@ -7,7 +7,7 @@ step is validated by serverspec tests before going to the next
 step. If the tests of a step fail, puppet is called again on all the
 nodes.
 
-Pre-requesites
+Prerequisites
 ++++++++++++++
 
 You need puppet already installed on all the nodes and on the puppet
@@ -35,7 +35,7 @@ Jinja2 templates in ``/etc/puppet/manifest/site.pp.tmpl``,
 
 Configuration is centralized in ``/etc/config-tools/global.yaml``.
 
-Provisionning
+Provisioning
 +++++++++++++
 
 To provision the needed files, you can use the ``provision.sh`` script
