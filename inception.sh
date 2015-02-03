@@ -25,11 +25,31 @@ else
     flag=
 fi
 
+if [ "$1" = "-u" ]; then
+    upgrade=1
+    shift
+fi
+
 dist="$1"
 release="$2"
 deployfile="$3"
 remote="$4"
 imageurl="$5"
+
+case $dist in
+  D*)
+    RSYNC=rsync
+    WEBSERVER=apache2
+    ;;
+  RH*|C*)
+    RSYNC=rsyncd
+    WEBSERVER=httpd
+    ;;
+  *)
+    echo "unsupported distro $dist" 1>&2
+    exit 1
+    ;;
+esac
 
 if [ -z "dist" -o -z "$release" -o -z "$deployfile" -o -z "$remote" -o -z "$imageurl" ]; then
     echo "$0 [-l] <dist> <release> <deployment file url> <remote> <image url>" 1>&2
@@ -98,11 +118,15 @@ if ! heat stack-show ${stackname}; then
 
     if [ -r top/etc/config-tools/infra/heat.yaml.tmpl ]; then
         $ORIG/generate.py 0 $CFG top/etc/config-tools/infra/heat.yaml.tmpl floating_network_id=$pubnet > heat.yaml
-        heat stack-create --parameters="dist=$dist;release=$release" -f heat.yaml ${stackname}
 
+    # we don't create the stack in case of upgrade
+    if [ ! -z "$upgrade" ]; then
+        heat stack-create --parameters="dist=$dist;release=$release" -f heat.yaml ${stackname}
         while heat stack-show ${stackname} | fgrep CREATE_IN_PROGRESS; do
             sleep 5
         done
+    fi
+
     else
         echo "no heat.yaml.tmpl template in infra" 1>&2
         exit 1
@@ -129,8 +153,8 @@ else
     sleep 50
     ssh $SSHOPTS $user@$ip uname -a
     ssh $SSHOPTS $user@$ip sudo service dnsmasq restart
-    ssh $SSHOPTS $user@$ip sudo service httpd restart
-    ssh $SSHOPTS $user@$ip sudo service rsyncd restart
+    ssh $SSHOPTS $user@$ip sudo service $WEBSERVER restart
+    ssh $SSHOPTS $user@$ip sudo service $RSYNC restart
 
     for privip in $(grep '    ip:' $CFG | sed 's/    ip: //'); do
         ssh -A $SSHOPTS $user@$ip sudo ping -c 1 $privip
