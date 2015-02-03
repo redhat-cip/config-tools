@@ -18,17 +18,17 @@
 
 stackname=${stackname:=spinal-stack}
 
-if [ "$1" = "-l" ]; then
-    flag=-l
-    shift
-else
-    flag=
-fi
-
-if [ "$1" = "-u" ]; then
-    upgrade=1
-fi
-shift
+while getopts lu opt; do
+    if [ $opt = l ]; then
+        flag=-l
+        shift
+    elif [ $opt = u ]; then
+        upgrade=1
+        shift
+    else
+        flag=
+    fi
+done
 
 dist="$1"
 release="$2"
