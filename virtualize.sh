@@ -127,6 +127,13 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
         grep "Your browser will reload automatically when Jenkins is read"; do
     sleep 1;
 done
+
+# Wait for the first job to finish
+ssh $SSHOPTS root@$installserverip "
+    while true; do
+        test -f /var/lib/jenkins/jobs/puppet/builds/1/build.xml && break;
+        sleep 1;
+    done"
 #ssh $SSHOPTS -A root@$installserverip configure.sh
 
 # virtualize.sh ends here
