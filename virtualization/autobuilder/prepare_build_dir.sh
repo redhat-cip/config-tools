@@ -14,7 +14,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-LOG_FILE="/srv/html/logs/$USER/build.txt"
 [ -z $HOME ] && exit 1
 [ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 date -R > $LOG_FILE
@@ -43,8 +42,12 @@ mkdir venv
 virtualenv --system-site-packages venv # site-package: libvirt-python
 source venv/bin/activate
 pip install -rconfig-tools/virtualization/requirements.txt
+pip install python-swiftclient
+pip install python-keystoneclient
 
 cd $HOME/building
-$HOME/config-tools/virtualize.sh localhost &> $LOG_FILE &
+[ -d logs ] && rm -r logs
+mkdir logs
+$HOME/config-tools/virtualize.sh localhost &> logs/build.txt &
 
 echo $! > $HOME/build.pid

@@ -58,6 +58,27 @@ test_connectivity() {
     return 0
 }
 
+upload_logs() {
+    [ -f ~/openrc ] || return
+    [ -f ~/virtualizerc ] || return
+
+    source ~/openrc
+    source ~/virtualizerc
+    BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
+    CONTAINER=${CONTAINER:-"unknown_platform"}
+    log_base_dir="logs/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
+    for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
+        mkdir -p ${log_base_dir}/$(dirname ${path})
+        echo "path: ${path}"
+        echo "log_base_dir: ${log_base_dir}"
+        scp $SSHOPTS -r root@$installserverip:$path ${log_base_dir}/${path}
+    done
+    swift upload --object-name ${CONTAINER} logs
+    swift post -r '.r:*' ${CONTAINER}
+    swift post -m 'web-listings: true' ${CONTAINER}
+}
+
+
 if [ -n "$SSH_AUTH_SOCK" ]; then
     ssh-add -L > pubfile
     pubfile=pubfile
@@ -134,6 +155,9 @@ ssh $SSHOPTS root@$installserverip "
         test -f /var/lib/jenkins/jobs/puppet/builds/1/build.xml && break;
         sleep 1;
     done"
+
+upload_logs
+
 #ssh $SSHOPTS -A root@$installserverip configure.sh
 
 # virtualize.sh ends here
