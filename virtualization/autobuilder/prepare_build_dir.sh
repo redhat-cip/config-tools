@@ -14,6 +14,17 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+#
+# This script is an example of a post-xfer hook for rsyncd.conf. For example:
+# [demo-incoming]
+#        comment = incoming
+#        read only = false
+#        timeout = 300
+#        uid = demo
+#        gid = demo
+#        path = /home/demo/incoming
+#        post-xfer exec = su - demo -c /usr/local/bin/prepare_build_dir.sh
+
 [ -z $HOME ] && exit 1
 [ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 date -R > $LOG_FILE
