@@ -146,12 +146,24 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
     sleep 1;
 done
 
+(
+    while true; do
+        curl -q -o .consoleText.part \
+             http://$installserverip:8282/job/puppet/lastBuild/consoleText
+        mv .consoleText.part ${LOG_DIR}/jenkins.txt > /dev/null 2>&1
+        sleep 1
+    done
+) >/dev/null 2>&1 &
+refresh_jenkins_job=$!
+
 # Wait for the first job to finish
 ssh $SSHOPTS root@$installserverip "
     while true; do
         test -f /var/lib/jenkins/jobs/puppet/builds/1/build.xml && break;
         sleep 1;
     done"
+
+kill ${refresh_jenkins_job}
 
 upload_logs
 
