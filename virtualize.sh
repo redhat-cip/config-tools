@@ -35,6 +35,7 @@ virthost=$1
 
 # Default values if not set by user env
 TIMEOUT_ITERATION=${TIMEOUT_ITERATION:-"150"}
+LOG_DIR=${LOG_DIR:-"$(pwd)/logs"}
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
@@ -64,14 +65,14 @@ upload_logs() {
     source ~/openrc
     BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
     CONTAINER=${CONTAINER:-"unknown_platform"}
-    log_base_dir="logs/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
+    log_base_dir="${LOG_DIR}/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
     for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
         mkdir -p ${log_base_dir}/$(dirname ${path})
         echo "path: ${path}"
         echo "log_base_dir: ${log_base_dir}"
         scp $SSHOPTS -r root@$installserverip:$path ${log_base_dir}/${path}
     done
-    swift upload --object-name ${CONTAINER} logs
+    swift upload --object-name ${CONTAINER} ${LOG_DIR}
     swift post -r '.r:*' ${CONTAINER}
     swift post -m 'web-listings: true' ${CONTAINER}
 }

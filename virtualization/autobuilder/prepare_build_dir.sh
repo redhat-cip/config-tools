@@ -25,11 +25,16 @@
 #        path = /home/demo/incoming
 #        post-xfer exec = su - demo -c /usr/local/bin/prepare_build_dir.sh
 
+cd $HOME/building
+LOG_DIR="/srv/html/logs/${USER}/"
+[ -d ${LOG_DIR} ] || mkdir ${LOG_DIR}
+find ${LOG_DIR} -mindepth 1 -exec rm -rf {} \;
+
 [ -z $HOME ] && exit 1
 [ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
-date -R > $LOG_FILE
+date -R > $LOG_DIR/build.txt
 pkill -P $(cat $HOME/build.pid)
-[ -d $HOME/building ] && rm -r $HOME/building
+[ -d $HOME/building ] && rm -rf $HOME/building
 cp -R $HOME/incoming $HOME/building
 
 cd $HOME
@@ -56,9 +61,8 @@ pip install -rconfig-tools/virtualization/requirements.txt
 pip install python-swiftclient
 pip install python-keystoneclient
 
+
 cd $HOME/building
-[ -d logs ] && rm -r logs
-mkdir logs
-$HOME/config-tools/virtualize.sh localhost &> logs/build.txt &
+$HOME/config-tools/virtualize.sh localhost &> ${LOG_DIR}/build.txt &
 
 echo $! > $HOME/build.pid
