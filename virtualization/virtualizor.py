@@ -118,16 +118,12 @@ class Hypervisor(object):
                 network = Network(netname, net_definitions[netname])
                 self.conn.networkCreateXML(network.dump_libvirt_xml())
 
-    def wait_for_install_server(self, lease_file, mac):
+    def wait_for_install_server(self, hypervisor, mac):
         while True:
-            stdout = subprocess.check_output([
-                'ssh', 'root@%s' % self.target_host, 'cat', lease_file])
-            for line in stdout.split('\n'):
-                m = re.search(
-                    "^\S+\s%s\s(\S+)\s" % mac, line)
-                if m:
-                    return(m.group(1))
-            time.sleep(2)
+            for lease in hypervisor.public_net.DHCPLeases():
+                if lease['mac'] == mac:
+                    return lease['ipaddr']
+            time.sleep(1)
 
     def push(self, source, dest):
         subprocess.call(['scp', '-r', source,
@@ -457,7 +453,7 @@ def get_install_server_info(hosts_definition):
 def main(argv=sys.argv[1:]):
     conf = get_conf(argv)
     hosts_definition = yaml.load(open(conf.input_file, 'r'))
-    hypervisor = Hypervisor(conf.target_host)
+    hypervisor = Hypervisor(conf)
     install_server_info = get_install_server_info(hosts_definition)
     hypervisor.create_networks(conf, install_server_info)
 
@@ -481,10 +477,12 @@ def main(argv=sys.argv[1:]):
             hypervisor.conn.defineXML(host.dump_libvirt_xml())
             dom = hypervisor.conn.lookupByName(hostname_with_prefix)
             dom.create()
+        else:
+            print("a host called %s is already defined, skipping "
+                  "(see: --replace)." % hostname_with_prefix)
 
     ip = hypervisor.wait_for_install_server(
-        lease_file="/var/lib/libvirt/dnsmasq/%s.leases" % conf.public_network,
-        mac=install_server_info['mac'])
+        hypervisor, install_server_info['mac'])
 
     print("Install-server up and running with IP: %s" % ip)
 

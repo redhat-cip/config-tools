@@ -26,6 +26,9 @@ libvirt_conn.listAllDomains.return_value = [
     mock.Mock(**{'name.return_value': 'default_os-ci-test11'})]
 libvirt_conn.lookupByName.return_value = mock.Mock(**{
     'info.return_value': [1], 'create.return_value': True})
+libvirt_conn.networkLookupByName.return_value = mock.Mock(**{
+    'DHCPLeases.return_value': [{'mac': '52:54:00:01:02:03',
+                                 'ipaddr': '1.2.3.4'}]})
 
 
 class FakeLibvirt(object):
@@ -49,6 +52,10 @@ class TestVirtualizor(testtools.TestCase):
         self.module_patcher = mock.patch.dict(
             'sys.modules', {'libvirt': FakeLibvirt()})
         self.module_patcher.start()
+        import virtualizor
+        self.virtualizor = virtualizor
+        self.virtualizor.random_mac = mock.Mock(
+            return_value='52:54:00:01:02:03')
 
     def test_random_mac(self):
         import virtualizor
@@ -57,11 +64,9 @@ class TestVirtualizor(testtools.TestCase):
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main(self, sub_call):
-        import virtualizor
+
         img_dir = '/var/lib/libvirt/images'
-        virtualizor.Hypervisor.wait_for_install_server = mock.Mock(
-            return_value='1.2.3.4')
-        virtualizor.main(['virt_platform.yml.sample', 'bar',
+        self.virtualizor.main(['virt_platform.yml.sample', 'bar',
                           '--pub-key-file', 'virt_platform.yml.sample'])
         sub_call.assert_has_calls([
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
@@ -108,15 +113,13 @@ class TestVirtualizor(testtools.TestCase):
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main_with_replace(self, sub_call):
-        import virtualizor
         libvirt_conn.reset_mock()
-        virtualizor.Hypervisor.wait_for_install_server = mock.Mock(
-            return_value='1.2.3.4')
-        virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
-                          '--pub-key-file', 'virt_platform.yml.sample'])
+        self.virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
+                               '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
         self.assertEqual(libvirt_conn.defineXML.call_count, 4)
+
 
 if __name__ == '__main__':
     unittest.main()
