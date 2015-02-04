@@ -64,6 +64,7 @@ def get_conf(argv=sys.argv):
             sys.exit(1)
         return value
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Deploy a virtual infrastructure.')
     parser.add_argument('--replace', action='store_true',
                         help='existing conflicting resources will be remove '
