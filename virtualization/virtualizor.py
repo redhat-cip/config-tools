@@ -88,7 +88,7 @@ def get_conf(argv=sys.argv):
                         'another virtualizor instance. Thanks to this '
                         'parameter, the user can run as virtualizor as '
                         'needed on the same machine.')
-    parser.add_argument('--public_network', default='nat', type=str,
+    parser.add_argument('--public_network', default='default', type=str,
                         help='allow the user to pass the name of a libvirt '
                         'NATed network that will be used as a public network '
                         'for the install-server. This public network will by '
