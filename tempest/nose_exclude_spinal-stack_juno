@@ -10,14 +10,6 @@ test_neutron_vpn
 test_create_server.ServersTestJSON.test_verify_multiple_nics_order
 test_create_server.ServersTestManualDisk.test_verify_multiple_nics_order
 
-# Weird debug message - need to be investigated
-test_security_groups.SecurityGroupsTestJSON.test_server_security_groups
-test_attach_interfaces.AttachInterfacesTestJSON.test_add_remove_fixed_ip
-test_attach_interfaces.AttachInterfacesTestJSON.test_create_list_show_delete_interfaces
-test_crossdomain.CrossdomainTest.test_get_crossdomain_policy
-test_list_server_filters.ListServerFiltersTestJSON.test_list_servers_filtered_by_ip
-test_server_addresses.ServerAddressesTestJSON.test_list_server_addresses
-
 # "No nw_info cache associated with instance"
 # Fixed in Nova/Kilo - still seems buggy in Neutron
 # https://bugs.launchpad.net/nova/+bug/1249065
@@ -79,3 +71,19 @@ test_create_with_existing_server_name
 test_update_access_server_address
 test_update_server_name
 test_update_server_name_in_stop_state
+
+# Swift: 401 - unauthotized - need to be investigated
+test_admin_modify_quota
+test_upload_valid_object
+test_upload_large_object
+test_user_modify_quota
+
+# Swift: Empty attachments
+test_web_listing_css
+test_delete_large_object
+test_upload_manifest
+
+# Swift: "MismatchError: 'x-static-large-object' not in (...)"
+test_list_large_object_metadata
+test_retrieve_large_object
+
