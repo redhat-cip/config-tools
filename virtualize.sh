@@ -35,8 +35,6 @@ virthost=$1
 
 # Default values if not set by user env
 TIMEOUT_ITERATION=${TIMEOUT_ITERATION:-"150"}
-NGINX_PROXY=${NGINX_PROXY:-"no"}
-
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
@@ -77,7 +75,6 @@ upload_logs() {
     swift post -r '.r:*' ${CONTAINER}
     swift post -m 'web-listings: true' ${CONTAINER}
 }
-
 
 if [ -n "$SSH_AUTH_SOCK" ]; then
     ssh-add -L > pubfile
@@ -148,22 +145,6 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
         grep "Your browser will reload automatically when Jenkins is read"; do
     sleep 1;
 done
-
-if [ $NGINX_PROXY = "yes" ]; then
-    echo "location /$USER {
-        proxy_pass       http://$installserverip:8282/job/puppet/lastBuild/consoleFull;
-        proxy_set_header Host      \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_connect_timeout   150;
-        proxy_send_timeout      100;
-        proxy_read_timeout      100;
-        proxy_buffers           4 32k;
-        client_max_body_size    8m;
-        client_body_buffer_size 128k;
-    }" > /tmp/$$.conf
-    scp /tmp/$$.conf root@$installserverip:/etc/nginx/default.d/$USER.conf
-    ssh root@$installserverip systemctl restart nginx.service
-fi
 
 # Wait for the first job to finish
 ssh $SSHOPTS root@$installserverip "
