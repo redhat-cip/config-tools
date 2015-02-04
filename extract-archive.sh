@@ -22,6 +22,7 @@ set -x
 ORIG=$(cd $(dirname $0); pwd)
 . $ORIG/functions
 
+TARBALL_ARCHIVE="/tmp/archive.tar"
 SUDO_USER=${SUDO_USER:=root}
 
 if [ -r /etc/redhat-release ]; then
@@ -30,9 +31,11 @@ else
     USER=www-data
 fi
 
-rm -rf /etc/edeploy/*
 
-tar xf /tmp/archive.tar --no-same-owner -C /
+if [ -f $TARBALL_ARCHIVE ]; then
+    rm -rf /etc/edeploy/*
+    tar xf $TARBALL_ARCHIVE --no-same-owner -C /
+fi
 chown -R $SUDO_USER /etc/serverspec
 chown -R $SUDO_USER /opt/tempest-scripts
 
@@ -66,6 +69,12 @@ if [ -r /etc/edeploy/state ]; then
     chown -h $USER:$USER /etc/edeploy/*.cmdb /etc/edeploy/state /var/lib/pxemngr/pxemngr.sqlite3 /var/lib/tftpboot/pxelinux.cfg/* || :
     chown -R jenkins:jenkins ~jenkins/ || :
 fi
+
+# fix permissions for ssh keys
+for user in root jenkins; do
+    user_ssh_dir=$(eval echo ~${user}/.ssh)
+    find ${user_ssh_dir} -type f -exec chmod 0600 {} \;
+done
 
 # extract eDeploy roles for rsync
 mkdir -p /var/lib/debootstrap/install
