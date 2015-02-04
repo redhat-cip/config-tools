@@ -53,9 +53,7 @@ git checkout -b goneri-wip goneri/goneri-wip
 
 cd $HOME
 
-[ -d venv ] && rm -r venv
-mkdir venv
-virtualenv --system-site-packages venv # site-package: libvirt-python
+[ -d venv ] || virtualenv --system-site-packages venv # site-package: libvirt-python
 source venv/bin/activate
 pip install -rconfig-tools/virtualization/requirements.txt
 pip install python-swiftclient
