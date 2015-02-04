@@ -33,7 +33,7 @@ import libvirt
 import six
 import yaml
 
-# from pprint import pprint
+logging.basicConfig(level=logging.DEBUG)
 
 
 def random_mac():
@@ -122,7 +122,7 @@ class Hypervisor(object):
             exists = netname in existing_networks
             if exists and conf.replace:
                 self.conn.networkLookupByName(netname).destroy()
-                print("Cleaning network %s." % netname)
+                logging.info("Cleaning network %s." % netname)
                 exists = False
             if not exists:
                 network = Network(netname, net_definitions[netname])
@@ -297,7 +297,7 @@ local-hostname: {{ hostname }}
             self.meta[k] = definition[k]
 
         if definition['profile'] == 'install-server':
-            print("  This is the install-server")
+            logging.info("  This is the install-server")
             self.meta['is_install_server'] = True
             definition['disks'] = [
                 {'name': 'vda',
@@ -446,7 +446,7 @@ def get_install_server_info(hosts_definition):
         if definition.get('profile', '') == 'install-server':
             break
 
-    print("install-server (%s)" % (hostname))
+    logging.info("install-server (%s)" % (hostname))
     admin_nic_info = definition['nics'][0]
     network = ipaddress.ip_network(
         unicode(
@@ -491,13 +491,13 @@ def main(argv=sys.argv[1:]):
             dom = hypervisor.conn.lookupByName(hostname_with_prefix)
             dom.create()
         else:
-            print("a host called %s is already defined, skipping "
-                  "(see: --replace)." % hostname_with_prefix)
+            logging.info("a host called %s is already defined, skipping "
+                         "(see: --replace)." % hostname_with_prefix)
 
     ip = hypervisor.wait_for_install_server(
         hypervisor, install_server_info['mac'])
 
-    print("Install-server up and running with IP: %s" % ip)
+    logging.info("Install-server up and running with IP: %s" % ip)
 
 
 if __name__ == '__main__':
