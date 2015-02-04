@@ -56,6 +56,7 @@ class TestVirtualizor(testtools.TestCase):
         self.virtualizor = virtualizor
         self.virtualizor.random_mac = mock.Mock(
             return_value='52:54:00:01:02:03')
+        libvirt_conn.reset_mock()
 
     def test_random_mac(self):
         import virtualizor
@@ -113,7 +114,6 @@ class TestVirtualizor(testtools.TestCase):
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main_with_replace(self, sub_call):
-        libvirt_conn.reset_mock()
         self.virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
                                '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
