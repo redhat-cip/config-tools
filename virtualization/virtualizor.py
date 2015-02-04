@@ -136,7 +136,7 @@ class Hypervisor(object):
             time.sleep(1)
 
     def push(self, source, dest):
-        subprocess.call(['scp', '-r', source,
+        subprocess.call(['scp', '-q', '-r', source,
                          'root@%s' % self.target_host + ':' + dest])
 
     def call(self, *kargs):
@@ -361,7 +361,7 @@ local-hostname: {{ hostname }}
             filename = "%s-%03d.qcow2" % (self.hostname, cpt)
             if 'clone_from' in info:
                 self.hypervisor.call(
-                    'qemu-img', 'create', '-f', 'qcow2',
+                    'qemu-img', 'create', '-q', '-f', 'qcow2',
                     '-b', info['clone_from'],
                     Host.host_libvirt_image_dir + '/' + filename,
                     info['size'])
