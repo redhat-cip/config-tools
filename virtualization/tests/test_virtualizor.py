@@ -44,6 +44,9 @@ class FakeLibvirt(object):
     def open(a, b):
         return libvirt_conn
 
+    class libvirtError(Exception):
+        pass
+
 
 class TestVirtualizor(testtools.TestCase):
 
@@ -56,6 +59,7 @@ class TestVirtualizor(testtools.TestCase):
         self.virtualizor = virtualizor
         self.virtualizor.random_mac = mock.Mock(
             return_value='52:54:00:01:02:03')
+        self.virtualizor.logging = mock.Mock()
         libvirt_conn.reset_mock()
 
     def test_random_mac(self):
@@ -119,6 +123,16 @@ class TestVirtualizor(testtools.TestCase):
         self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
         self.assertEqual(libvirt_conn.defineXML.call_count, 4)
+
+    @mock.patch('virtualizor.subprocess.call')
+    def test_main_with_wrong_public_network(self, sub_call):
+        def raise_libvirt_exception(a):
+            raise self.virtualizor.libvirt.libvirtError()
+        libvirt_conn.networkLookupByName = raise_libvirt_exception
+        self.assertRaises(self.virtualizor.Hypervisor.MissingPublicNetwork,
+                          self.virtualizor.main,
+                          ['--public_network', 'nothing',
+                           'virt_platform.yml.sample', 'bar'])
 
 
 if __name__ == '__main__':

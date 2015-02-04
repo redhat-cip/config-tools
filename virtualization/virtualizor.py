@@ -16,6 +16,7 @@
 # under the License.
 
 import argparse
+import logging
 import os.path
 import random
 import re
@@ -98,9 +99,18 @@ def get_conf(argv=sys.argv):
 
 
 class Hypervisor(object):
-    def __init__(self, target_host):
-        self.target_host = target_host
-        self.conn = libvirt.open('qemu+ssh://root@%s/system' % target_host)
+    def __init__(self, conf):
+        self.target_host = conf.target_host
+        self.conn = libvirt.open('qemu+ssh://root@%s/system' %
+                                 conf.target_host)
+
+        try:
+            self.public_net = self.conn.networkLookupByName(
+                conf.public_network)
+        except libvirt.libvirtError:
+            logging.error("public_network %s should be active and have "
+                          "internal DHCP turned on." % (conf.public_network))
+            raise self.MissingPublicNetwork()
 
     def create_networks(self, conf, install_server_info):
         net_definitions = {
@@ -132,6 +142,9 @@ class Hypervisor(object):
     def call(self, *kargs):
         subprocess.call(['ssh', 'root@%s' % self.target_host] +
                         list(kargs))
+
+    class MissingPublicNetwork(Exception):
+        pass
 
 
 class Host(object):
