@@ -21,14 +21,31 @@ import unittest
 
 libvirt_conn = mock.Mock()
 libvirt_conn.listAllNetworks.return_value = [
-    mock.Mock(**{'name.return_value': 'sps_default'})]
+    mock.Mock(**{'name.return_value': 'default_sps'})]
 libvirt_conn.listAllDomains.return_value = [
-    mock.Mock(**{'name.return_value': 'os-ci-test11'})]
+    mock.Mock(**{'name.return_value': 'default_os-ci-test11'})]
+libvirt_conn.lookupByName.return_value = mock.Mock(**{
+    'info.return_value': [1], 'create.return_value': True})
+libvirt_conn.networkLookupByName.return_value = mock.Mock(**{
+    'DHCPLeases.return_value': [{'mac': '52:54:00:01:02:03',
+                                 'ipaddr': '1.2.3.4'}]})
 
 
 class FakeLibvirt(object):
+    VIR_DOMAIN_NOSTATE = 0
+    VIR_DOMAIN_RUNNING = 1
+    VIR_DOMAIN_BLOCKED = 2
+    VIR_DOMAIN_PAUSED = 3
+    VIR_DOMAIN_SHUTDOWN = 4
+    VIR_DOMAIN_SHUTOFF = 5
+    VIR_DOMAIN_CRASHED = 6
+    VIR_DOMAIN_PMSUSPENDED = 7
+
     def open(a, b):
         return libvirt_conn
+
+    class libvirtError(Exception):
+        pass
 
 
 class TestVirtualizor(testtools.TestCase):
@@ -38,6 +55,12 @@ class TestVirtualizor(testtools.TestCase):
         self.module_patcher = mock.patch.dict(
             'sys.modules', {'libvirt': FakeLibvirt()})
         self.module_patcher.start()
+        import virtualizor
+        self.virtualizor = virtualizor
+        self.virtualizor.random_mac = mock.Mock(
+            return_value='52:54:00:01:02:03')
+        self.virtualizor.logging = mock.Mock()
+        libvirt_conn.reset_mock()
 
     def test_random_mac(self):
         import virtualizor
@@ -46,62 +69,73 @@ class TestVirtualizor(testtools.TestCase):
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main(self, sub_call):
-        import virtualizor
+
         img_dir = '/var/lib/libvirt/images'
-        virtualizor.main(['virt_platform.yml.sample', 'bar',
+        self.virtualizor.main(['virt_platform.yml.sample', 'bar',
                           '--pub-key-file', 'virt_platform.yml.sample'])
         sub_call.assert_has_calls([
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-000.qcow2',
+                  img_dir + '/default_os-ci-test10-000.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-001.qcow2',
+                  img_dir + '/default_os-ci-test10-001.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-002.qcow2',
+                  img_dir + '/default_os-ci-test10-002.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test10-003.qcow2',
+                  img_dir + '/default_os-ci-test10-003.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-000.qcow2',
+                  img_dir + '/default_os-ci-test12-000.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-001.qcow2',
+                  img_dir + '/default_os-ci-test12-001.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-002.qcow2',
+                  img_dir + '/default_os-ci-test12-002.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
-                  img_dir + '/os-ci-test12-003.qcow2',
+                  img_dir + '/default_os-ci-test12-003.qcow2',
                   '10000000000']),
             call(['ssh', 'root@bar', 'mkdir', '-p', '/tmp/mydata']),
-            call(['scp', '-r', mock.ANY, 'root@bar:/tmp/mydata/meta-data']),
-            call(['scp', '-r', mock.ANY, 'root@bar:/tmp/mydata/user-data']),
+            call(['scp', '-q', '-r', mock.ANY,
+                  'root@bar:/tmp/mydata/meta-data']),
+            call(['scp', '-q', '-r', mock.ANY,
+                  'root@bar:/tmp/mydata/user-data']),
             call(['ssh', 'root@bar', 'genisoimage', '-quiet', '-output',
                   img_dir + '/cloud-init.iso', '-volid', 'cidata', '-joliet',
                   '-rock', '/tmp/mydata/user-data', '/tmp/mydata/meta-data']),
-            call(['ssh', 'root@bar', 'qemu-img', 'create', '-f', 'qcow2',
+            call(['ssh', 'root@bar', 'qemu-img', 'create', '-q', '-f', 'qcow2',
                   '-b', img_dir + '/install-server-RH7.0-I.1.3.0.img.qcow2',
-                  img_dir + '/os-ci-test4-000.qcow2',
+                  img_dir + '/default_os-ci-test4-000.qcow2',
                   '30G']),
             call(['ssh', 'root@bar', 'qemu-img', 'resize', '-q',
-                  img_dir + '/os-ci-test4-000.qcow2',
+                  img_dir + '/default_os-ci-test4-000.qcow2',
                   '30G'])
         ])
         self.assertEqual(sub_call.call_count, 14)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 0)
-        self.assertEqual(libvirt_conn.createXML.call_count, 3)
+        self.assertEqual(libvirt_conn.defineXML.call_count, 3)
 
     @mock.patch('virtualizor.subprocess.call')
     def test_main_with_replace(self, sub_call):
-        import virtualizor
-        libvirt_conn.reset_mock()
-        virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
-                          '--pub-key-file', 'virt_platform.yml.sample'])
+        self.virtualizor.main(['--replace', 'virt_platform.yml.sample', 'bar',
+                               '--pub-key-file', 'virt_platform.yml.sample'])
         self.assertEqual(sub_call.call_count, 18)
         self.assertEqual(libvirt_conn.networkCreateXML.call_count, 1)
-        self.assertEqual(libvirt_conn.createXML.call_count, 4)
+        self.assertEqual(libvirt_conn.defineXML.call_count, 4)
+
+    @mock.patch('virtualizor.subprocess.call')
+    def test_main_with_wrong_public_network(self, sub_call):
+        def raise_libvirt_exception(a):
+            raise self.virtualizor.libvirt.libvirtError()
+        libvirt_conn.networkLookupByName = raise_libvirt_exception
+        self.assertRaises(self.virtualizor.Hypervisor.MissingPublicNetwork,
+                          self.virtualizor.main,
+                          ['--public_network', 'nothing',
+                           'virt_platform.yml.sample', 'bar'])
+
 
 if __name__ == '__main__':
     unittest.main()

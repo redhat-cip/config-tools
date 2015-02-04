@@ -22,6 +22,7 @@ set -x
 ORIG=$(cd $(dirname $0); pwd)
 . $ORIG/functions
 
+TARBALL_ARCHIVE="/tmp/archive.tar"
 SUDO_USER=${SUDO_USER:=root}
 
 if [ -r /etc/redhat-release ]; then
@@ -30,15 +31,19 @@ else
     USER=www-data
 fi
 
-rm -rf /etc/edeploy/*
 
-tar xf /tmp/archive.tar --no-same-owner -C /
+if [ -f $TARBALL_ARCHIVE ]; then
+    rm -rf /etc/edeploy/*
+    tar xf /tmp/archive.tar --no-same-owner -C /
+fi
+
 chown -R $SUDO_USER /etc/serverspec
 chown -R $SUDO_USER /opt/tempest-scripts
 
 if [ ${SUDO_USER} != root ]; then
     mkdir -p /root/.ssh
-    cp $(getent passwd $SUDO_USER | cut -d: -f6)/.ssh/authorized_keys /root/.ssh/
+    sudo_user_ssh_authorized_keys=$(eval echo ~${SUDO_USER}/.ssh/authorized_keys )
+    cp ${sudo_user_ssh_authorized_keys} /root/.ssh/
 fi
 
 if [ -d /etc/jenkins_jobs/jobs ]; then
@@ -68,10 +73,9 @@ if [ -r /etc/edeploy/state ]; then
 fi
 
 # fix permissions for ssh keys
-for dir in $(getent passwd | cut -d: -f6); do
-    if [ -d $dir/.ssh/ ]; then
-        chmod 0600 $dir/.ssh/* || :
-    fi
+for user in root jenkins; do
+    user_ssh_dir=$(eval echo ~${user}/.ssh)
+    find ${user_ssh_dir} -type f -exec chmod 0600 {} \;
 done
 
 # extract eDeploy roles for rsync

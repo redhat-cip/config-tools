@@ -20,56 +20,64 @@ set -e
 set -x
 
 ORIG=$(cd $(dirname $0); pwd)
+PREFIX=$USER
 
-if [ $# != 6 ]; then
-    echo "Usage: $0 <tag> <deployement git url> <release> <OS version> <libvirt host> <install server hostname>"
+if [ $# != 1 ]; then
+    echo "Usage: $0 <libvirt host>"
     echo
-    echo "ex: $0 I.1.3.1 file:///home/fred/testenv/virt-RH7.0.yml I.1.3.0 RH7.0 192.168.100.12 os-ci-test4"
+    echo "ex: $0 192.168.100.12"
     exit 1
 fi
 
-tag=$1
-deployment=$2
-stable=$3
-version=$4-$stable
-virthost=$5
-installserver=$6
+virthost=$1
+[ -f ~/virtualizerc ] && source ~/virtualizerc
 
 
 # Default values if not set by user env
-if [ -z "$TIMEOUT_ITERATION" ]; then
-    TIMEOUT_ITERATION=150
-fi
+TIMEOUT_ITERATION=${TIMEOUT_ITERATION:-"150"}
+NGINX_PROXY=${NGINX_PROXY:-"no"}
+
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
 test_connectivity() {
     set +x
     local i=0
+    local install_server_id=$1
     local host_ip=$1
-    local host_name=$2
     while true; do
         echo -n "."
-        ssh $SSHOPTS jenkins@$host_ip uname -a > /dev/null 2>&1 && break
+        ssh $SSHOPTS jenkins@$install_server \
+            ssh $SSHOPTS jenkins@$host_ip uname -a > /dev/null 2>&1 && break
         sleep 4
         i=$[i+1]
         if [[ $i -ge $TIMEOUT_ITERATION ]]; then
-	    echo "uname timeout on $host_name..."
-	    return 1
+            echo "uname timeout on ${host_ip}..."
+            return 1
         fi
     done
     echo "Node $host_name is alive !"
     return 0
 }
 
-$ORIG/download.sh $tag $deployment version=$version stable=$stable
+upload_logs() {
+    [ -f ~/openrc ] || return
 
-installserverip=$($ORIG/extract.py hosts.${installserver}.ip top/etc/config-tools/global.yml)
+    source ~/openrc
+    BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
+    CONTAINER=${CONTAINER:-"unknown_platform"}
+    log_base_dir="logs/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
+    for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
+        mkdir -p ${log_base_dir}/$(dirname ${path})
+        echo "path: ${path}"
+        echo "log_base_dir: ${log_base_dir}"
+        scp $SSHOPTS -r root@$installserverip:$path ${log_base_dir}/${path}
+    done
+    swift upload --object-name ${CONTAINER} logs
+    swift post -r '.r:*' ${CONTAINER}
+    swift post -m 'web-listings: true' ${CONTAINER}
+}
 
-if ! ssh $SSHOPTS root@$virthost test -r /var/lib/libvirt/images/install-server-$version.img.qcow2; then
-    edeployurl=$($ORIG/extract.py roles "env/$(basename $deployment)"|sed -e "s/@VERSION@/$version/")
-    ssh $SSHOPTS root@$virthost wget -q -O /var/lib/libvirt/images/install-server-$version.img.qcow2 $edeployurl/install-server-$version.img.qcow2
-fi
 
 if [ -n "$SSH_AUTH_SOCK" ]; then
     ssh-add -L > pubfile
@@ -78,20 +86,28 @@ else
     pubfile=~/.ssh/id_rsa.pub
 fi
 
-$ORIG/virtualization/collector.py --sps-version $version --config-dir top/etc
+$ORIG/virtualization/virtualizor.py virt_platform.yml $virthost --replace --prefix ${PREFIX} --public_network nat --replace --pub-key-file $pubfile
+installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ ${PREFIX}_/ {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases")
 
-$ORIG/virtualization/virtualizor.py --replace --pub-key-file $pubfile virt_platform.yml $virthost
-
-ssh-keygen -f "$HOME/.ssh/known_hosts" -R $installserverip
-
-test_connectivity $installserverip $installserver
+retry=0
+while ! rsync -e "ssh $SSHOPTS" --quiet -av --no-owner top/ root@$installserverip:/; do
+    if [ $((retry++)) -gt 300 ]; then
+        echo "reached max retries"
+    else
+        echo "install-server ($installserverip) not ready yet. waiting..."
+    fi
+    sleep 10
+    echo -n .
+done
 
 set -x
-
-MASTER=$installserverip ./send.sh
+scp $SSHOPTS extract-archive.sh functions root@$installserverip:/tmp
 
 ssh $SSHOPTS root@$installserverip "echo -e 'RSERV=localhost\nRSERV_PORT=873' >> /var/lib/edeploy/conf"
 
+ssh $SSHOPTS root@$installserverip /tmp/extract-archive.sh
+ssh $SSHOPTS root@$installserverip rm /tmp/extract-archive.sh /tmp/functions
+ssh $SSHOPTS root@$installserverip "ssh-keygen -y -f ~jenkins/.ssh/id_rsa >> ~jenkins/.ssh/authorized_keys"
 ssh $SSHOPTS root@$installserverip service dnsmasq restart
 ssh $SSHOPTS root@$installserverip service httpd restart
 ssh $SSHOPTS root@$installserverip service rsyncd restart
@@ -103,9 +119,9 @@ declare -a assoc
 
 for node in $HOSTS; do
     (
-	echo "Testing $hostname"
-        ip=$(./extract.py hosts.${node}.ip top/etc/config-tools/global.yml)
-        test_connectivity $ip $node || exit 1
+        echo "Testing $hostname"
+        ip=$(${ORIG}/extract.py hosts.${node}.ip top/etc/config-tools/global.yml)
+        test_connectivity $installserverip $ip $node || exit 1
     ) &
     JOBS="$JOBS $!"
     assoc[$!]=$hostname
@@ -119,16 +135,45 @@ for job in $JOBS; do
     wait $job
     ret=$?
     if [ $ret -eq 127 ]; then
-	echo "$job doesn't exist anymore"
+        echo "$job doesn't exist anymore"
     elif [ $ret -ne 0 ]; then
-	echo "${assoc[$job]} wasn't installed"
-	rc=1
+        echo "${assoc[$job]} wasn't installed"
+        rc=1
     fi
 done
 
 set -e
 
-curl http://$installserverip:8282/job/puppet/build
+while curl --silent http://$installserverip:8282/job/puppet/build|\
+        grep "Your browser will reload automatically when Jenkins is read"; do
+    sleep 1;
+done
+
+if [ $NGINX_PROXY = "yes" ]; then
+    echo "location /$USER {
+        proxy_pass       http://$installserverip:8282/job/puppet/lastBuild/consoleFull;
+        proxy_set_header Host      \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_connect_timeout   150;
+        proxy_send_timeout      100;
+        proxy_read_timeout      100;
+        proxy_buffers           4 32k;
+        client_max_body_size    8m;
+        client_body_buffer_size 128k;
+    }" > /tmp/$$.conf
+    scp /tmp/$$.conf root@$installserverip:/etc/nginx/default.d/$USER.conf
+    ssh root@$installserverip systemctl restart nginx.service
+fi
+
+# Wait for the first job to finish
+ssh $SSHOPTS root@$installserverip "
+    while true; do
+        test -f /var/lib/jenkins/jobs/puppet/builds/1/build.xml && break;
+        sleep 1;
+    done"
+
+upload_logs
+
 #ssh $SSHOPTS -A root@$installserverip configure.sh
 
 # virtualize.sh ends here
