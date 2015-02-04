@@ -30,11 +30,13 @@ if [ $# != 1 ]; then
 fi
 
 virthost=$1
+[ -f ~/virtualizerc ] && source ~/virtualizerc
+
 
 # Default values if not set by user env
-if [ -z "$TIMEOUT_ITERATION" ]; then
-    TIMEOUT_ITERATION=150
-fi
+TIMEOUT_ITERATION=${TIMEOUT_ITERATION:-"150"}
+NGINX_PROXY=${NGINX_PROXY:-"no"}
+
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
@@ -60,10 +62,8 @@ test_connectivity() {
 
 upload_logs() {
     [ -f ~/openrc ] || return
-    [ -f ~/virtualizerc ] || return
 
     source ~/openrc
-    source ~/virtualizerc
     BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
     CONTAINER=${CONTAINER:-"unknown_platform"}
     log_base_dir="logs/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
@@ -148,6 +148,22 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
         grep "Your browser will reload automatically when Jenkins is read"; do
     sleep 1;
 done
+
+if [ $NGINX_PROXY = "yes" ]; then
+    echo "location /$USER {
+        proxy_pass       http://$installserverip:8282/job/puppet/lastBuild/consoleFull;
+        proxy_set_header Host      \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_connect_timeout   150;
+        proxy_send_timeout      100;
+        proxy_read_timeout      100;
+        proxy_buffers           4 32k;
+        client_max_body_size    8m;
+        client_body_buffer_size 128k;
+    }" > /tmp/$$.conf
+    scp /tmp/$$.conf root@$installserverip:/etc/nginx/default.d/$USER.conf
+    ssh root@$installserverip systemctl restart nginx.service
+fi
 
 # Wait for the first job to finish
 ssh $SSHOPTS root@$installserverip "
