@@ -88,7 +88,8 @@ else
 fi
 
 $ORIG/virtualization/virtualizor.py virt_platform.yml $virthost --replace --prefix ${PREFIX} --public_network nat --replace --pub-key-file $pubfile
-installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ ${PREFIX}_/ {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases")
+# TODO(Gonéri): We need a better solution to pass the IP from virtualizor.
+installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ os-ci-test4/ {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases"|head -n 1)
 
 retry=0
 while ! rsync -e "ssh $SSHOPTS" --quiet -av --no-owner top/ root@$installserverip:/; do
