@@ -151,7 +151,7 @@ class Hypervisor(object):
 class Host(object):
     host_template_string = """
 <domain type='kvm'>
-  <name>{{ hostname }}</name>
+  <name>{{ hostname_with_prefix }}</name>
   <uuid>{{ uuid }}</uuid>
   <memory unit='KiB'>{{ memory }}</memory>
   <currentmemory unit='KiB'>{{ memory }}</currentmemory>
@@ -291,7 +291,10 @@ local-hostname: {{ hostname }}
         self.hypervisor = hypervisor
         self.conf = conf
         self.hostname = definition['hostname']
+        self.hostname_with_prefix = definition['hostname_with_prefix']
         self.meta = {'hostname': definition['hostname'],
+                     'hostname_with_prefix':
+                         definition['hostname_with_prefix'],
                      'uuid': str(uuid.uuid1()),
                      'memory': 4194304,
                      'ncpus': 1,
@@ -365,7 +368,7 @@ local-hostname: {{ hostname }}
     def register_disks(self, definition):
         cpt = 0
         for info in definition['disks']:
-            filename = "%s-%03d.qcow2" % (self.hostname, cpt)
+            filename = "%s-%03d.qcow2" % (self.hostname_with_prefix, cpt)
             if 'clone_from' in info:
                 self.hypervisor.call(
                     'qemu-img', 'create', '-q', '-f', 'qcow2',
@@ -482,7 +485,8 @@ def main(argv=sys.argv[1:]):
     for hostname in sorted(hosts):
         definition = hosts[hostname]
         hostname_with_prefix = "%s_%s" % (conf.prefix, hostname)
-        definition['hostname'] = hostname_with_prefix
+        definition['hostname'] = hostname
+        definition['hostname_with_prefix'] = hostname_with_prefix
         exists = hostname_with_prefix in existing_hosts
         if exists and conf.replace:
             dom = hypervisor.conn.lookupByName(hostname_with_prefix)
