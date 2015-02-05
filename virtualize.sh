@@ -35,8 +35,7 @@ virthost=$1
 
 # Default values if not set by user env
 TIMEOUT_ITERATION=${TIMEOUT_ITERATION:-"150"}
-NGINX_PROXY=${NGINX_PROXY:-"no"}
-
+LOG_DIR=${LOG_DIR:-"$(pwd)/logs"}
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
@@ -66,18 +65,18 @@ upload_logs() {
     source ~/openrc
     BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
     CONTAINER=${CONTAINER:-"unknown_platform"}
-    log_base_dir="logs/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
     for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
-        mkdir -p ${log_base_dir}/$(dirname ${path})
+        mkdir -p ${LOG_DIR}/$(dirname ${path})
         echo "path: ${path}"
         echo "log_base_dir: ${log_base_dir}"
-        scp $SSHOPTS -r root@$installserverip:$path ${log_base_dir}/${path}
+        scp $SSHOPTS -r root@$installserverip:$path ${LOG_DIR}/${path}
     done
-    swift upload --object-name ${CONTAINER} logs
+    for file in $(find ${LOG_DIR} -type f -printf "%P\n"); do
+        swift upload --object-name ${BUILD_PLATFORM}/${USER}/$(date +%Y%m%d-%H%M)/${file} ${CONTAINER} ${LOG_DIR}/${file}
+    done
     swift post -r '.r:*' ${CONTAINER}
     swift post -m 'web-listings: true' ${CONTAINER}
 }
-
 
 if [ -n "$SSH_AUTH_SOCK" ]; then
     ssh-add -L > pubfile
@@ -149,21 +148,15 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
     sleep 1;
 done
 
-if [ $NGINX_PROXY = "yes" ]; then
-    echo "location /$USER {
-        proxy_pass       http://$installserverip:8282/job/puppet/lastBuild/consoleFull;
-        proxy_set_header Host      \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_connect_timeout   150;
-        proxy_send_timeout      100;
-        proxy_read_timeout      100;
-        proxy_buffers           4 32k;
-        client_max_body_size    8m;
-        client_body_buffer_size 128k;
-    }" > /tmp/$$.conf
-    scp /tmp/$$.conf root@$installserverip:/etc/nginx/default.d/$USER.conf
-    ssh root@$installserverip systemctl restart nginx.service
-fi
+(
+    while true; do
+        curl -q -o .consoleText.part \
+             http://$installserverip:8282/job/puppet/lastBuild/consoleText
+        mv .consoleText.part ${LOG_DIR}/jenkins.txt > /dev/null 2>&1
+        sleep 1
+    done
+) >/dev/null 2>&1 &
+refresh_jenkins_job=$!
 
 # Wait for the first job to finish
 ssh $SSHOPTS root@$installserverip "
@@ -171,6 +164,8 @@ ssh $SSHOPTS root@$installserverip "
         test -f /var/lib/jenkins/jobs/puppet/builds/1/build.xml && break;
         sleep 1;
     done"
+
+kill ${refresh_jenkins_job}
 
 upload_logs
 

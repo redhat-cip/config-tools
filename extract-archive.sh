@@ -37,8 +37,8 @@ if [ -f $TARBALL_ARCHIVE ]; then
     tar xf /tmp/archive.tar --no-same-owner -C /
 fi
 
-chown -R $SUDO_USER /etc/serverspec
-chown -R $SUDO_USER /opt/tempest-scripts
+[ -d /etc/serverspec ] && chown -R $SUDO_USER /etc/serverspec
+[ -d /opt/tempest-scripts ] && chown -R $SUDO_USER /opt/tempest-scripts
 
 if [ ${SUDO_USER} != root ]; then
     mkdir -p /root/.ssh
