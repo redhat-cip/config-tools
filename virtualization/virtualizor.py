@@ -256,7 +256,9 @@ write_files:
       IPADDR={{ ip }}
       NETWORK={{ network }}
       NETMASK={{ netmask }}
-      GATEWAY={{ gateway }}
+# Do not set the default GW to avoid conflict
+# with the outgoing route on eth1
+#      GATEWAY={{ gateway }}
   - path: /etc/sysconfig/network-scripts/ifcfg-eth1
     content: |
       DEVICE=eth1
@@ -266,9 +268,11 @@ write_files:
     content: |
       NETWORKING=yes
       NOZEROCONF=no
-      GATEWAY=10.10.0.254
       HOSTNAME={{ hostname }}
-      GATEWAY={{ gateway }}
+#      GATEWAY={{ gateway }}
+  - path: /etc/sysctl.conf
+    content: |
+      net.ipv4.ip_forward = 1
 
 runcmd:
  - /bin/rm -f /etc/yum.repos.d/*.repo
