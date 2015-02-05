@@ -275,6 +275,8 @@ write_files:
       net.ipv4.ip_forward = 1
 
 runcmd:
+ - /usr/sbin/sysctl -p
+ - /usr/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
  - /bin/rm -f /etc/yum.repos.d/*.repo
  - /usr/bin/systemctl restart network
 
