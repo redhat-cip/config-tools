@@ -26,7 +26,7 @@
 #        post-xfer exec = su - demo -c /usr/local/bin/prepare_build_dir.sh
 
 cd $HOME/building
-LOG_DIR="/srv/html/logs/${USER}/"
+export LOG_DIR="/srv/html/logs/${USER}/"
 [ -d ${LOG_DIR} ] || mkdir ${LOG_DIR}
 find ${LOG_DIR} -mindepth 1 -exec rm -rf {} \;
 

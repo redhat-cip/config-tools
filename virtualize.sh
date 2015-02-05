@@ -65,14 +65,15 @@ upload_logs() {
     source ~/openrc
     BUILD_PLATFORM=${BUILD_PLATFORM:-"unknown_platform"}
     CONTAINER=${CONTAINER:-"unknown_platform"}
-    log_base_dir="${LOG_DIR}/$BUILD_PLATFORM/$USER/$(date +%Y%m%d-%H%M)"
     for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
-        mkdir -p ${log_base_dir}/$(dirname ${path})
+        mkdir -p ${LOG_DIR}/$(dirname ${path})
         echo "path: ${path}"
         echo "log_base_dir: ${log_base_dir}"
-        scp $SSHOPTS -r root@$installserverip:$path ${log_base_dir}/${path}
+        scp $SSHOPTS -r root@$installserverip:$path ${LOG_DIR}/${path}
     done
-    swift upload --object-name ${CONTAINER} ${LOG_DIR}
+    for file in $(find ${LOG_DIR} -type f -printf "%P\n"); do
+        swift upload --object-name ${BUILD_PLATFORM}/${USER}/$(date +%Y%m%d-%H%M)/${file} ${CONTAINER} ${LOG_DIR}/${file}
+    done
     swift post -r '.r:*' ${CONTAINER}
     swift post -m 'web-listings: true' ${CONTAINER}
 }
