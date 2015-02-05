@@ -73,6 +73,7 @@ test_update_server_name
 test_update_server_name_in_stop_state
 test_attach_volumes_with_nonexistent_volume_id
 test_snapshot_create_with_volume_in_use
+test_volumes_actions
 
 # Swift: 401 - unauthotized - need to be investigated
 test_admin_modify_quota
