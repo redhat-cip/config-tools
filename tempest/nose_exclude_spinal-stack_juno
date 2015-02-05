@@ -74,6 +74,35 @@ test_update_server_name_in_stop_state
 test_attach_volumes_with_nonexistent_volume_id
 test_snapshot_create_with_volume_in_use
 test_volumes_actions
+# setUp classes:
+tempest.api.orchestration.stacks.test_templates
+tempest.api.compute.admin.test_servers
+tempest.api.compute.admin.test_servers_negative
+tempest.api.compute.admin.test_simple_tenant_usage
+tempest.api.compute.floating_ips.test_floating_ips_actions
+tempest.api.compute.floating_ips.test_floating_ips_actions_negative
+tempest.api.compute.floating_ips.test_list_floating_ips
+tempest.api.compute.images.test_images_oneserver
+tempest.api.compute.images.test_images_oneserver_negative
+tempest.api.compute.images.test_list_image_filters
+tempest.api.compute.servers.test_create_server
+tempest.api.compute.servers.test_create_server
+tempest.api.compute.servers.test_disk_config
+tempest.api.compute.servers.test_instance_actions
+tempest.api.compute.servers.test_instance_actions_negative
+tempest.api.compute.servers.test_list_server_filters
+tempest.api.compute.servers.test_list_servers_negative
+tempest.api.compute.servers.test_server_actions
+tempest.api.compute.servers.test_server_addresses
+tempest.api.compute.servers.test_server_addresses_negative
+tempest.api.compute.servers.test_server_metadata
+tempest.api.compute.servers.test_server_metadata_negative
+tempest.api.compute.servers.test_server_password
+tempest.api.compute.servers.test_server_rescue
+tempest.api.compute.servers.test_server_rescue_negative
+tempest.api.compute.servers.test_servers_negative
+tempest.api.compute.servers.test_virtual_interfaces
+tempest.api.compute.test_authorization
 
 # Swift: 401 - unauthotized - need to be investigated
 test_admin_modify_quota
