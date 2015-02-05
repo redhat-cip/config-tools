@@ -43,6 +43,7 @@ setup_keystone_user_role(){
     # set unlimited security groups limits for all created tenants
     for tenant_id in $tenant_admin_id $tenant_demo_id $tenant_alt_demo_id; do
       neutron quota-update --tenant_id $tenant_id --security-group -1
+      neutron quota-update --tenant_id $tenant_id --network -1
     done
 
     # create demo users
