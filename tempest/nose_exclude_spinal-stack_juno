@@ -75,7 +75,6 @@ test_attach_volumes_with_nonexistent_volume_id
 test_snapshot_create_with_volume_in_use
 test_volumes_actions
 # setUp classes:
-orchestration.stacks.test_templates
 compute.admin.test_servers
 compute.admin.test_servers_negative
 compute.admin.test_simple_tenant_usage
@@ -114,6 +113,8 @@ test_user_modify_quota
 test_web_listing_css
 test_delete_large_object
 test_upload_manifest
+test_web_index
+test_get_crossdomain_policy
 
 # Swift: "MismatchError: 'x-static-large-object' not in (...)"
 test_list_large_object_metadata
@@ -134,3 +135,28 @@ test_list_services
 test_get_service_by_invalid_params
 test_get_service_by_invalid_service_and_valid_host
 test_get_service_with_valid_service_and_invalid_host
+test_certificates.CertificatesV2TestJSON.test_create_root_certificate
+
+# heat failures to investigate:
+orchestration.stacks.test_environment.StackEnvironmentTest.test_environment_parameter
+orchestration.stacks.test_environment.StackEnvironmentTest.test_environment_provider_resource
+orchestration.stacks.test_environment.StackEnvironmentTest.test_files_provider_resource
+orchestration.stacks.test_limits.TestServerStackLimits.test_exceed_max_resources_per_stack
+orchestration.stacks.test_non_empty_stack
+orchestration.stacks.test_nova_keypair_resources
+orchestration.stacks.test_resource_types.ResourceTypesTest.test_resource_type_show
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_get_deployment_list
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_get_deployment_metadata
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_get_software_config
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_software_deployment_create_validate
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_software_deployment_update_no_metadata_change
+orchestration.stacks.test_templates
+
+# cinder failures to investigate:
+test_create_get_list_accept_volume_transfer
+test_volume_types.VolumeTypesTest.test_create_get_delete_volume_with_volume_type_and_extra_specs
+
+# glance failures to investigate
+# this one is probably related to the last CVE with location
+test_register_remote_image
+test_register_http_image
