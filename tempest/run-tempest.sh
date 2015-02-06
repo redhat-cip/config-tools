@@ -13,6 +13,8 @@ set -x
 
 here=$(dirname $(readlink -m $0))
 
+source $here/lib/javelin
+
 tests_to_run=""
 while getopts "v:p:" opt; do
     case $opt in
@@ -57,6 +59,16 @@ export NOSE_WITH_XUNIT=1
 export NOSE_XUNIT_FILE=tempest_xunit.xml
 
 cd /usr/share/openstack-tempest-juno/
+
+# Quick check using Javelin
+if javelin_check_resources; then
+    # Resources exist, we're running sanity after an upgrade
+    # We can safely delete them
+    javelin_destroy_resources
+else
+    javelin_create_resources
+fi
+
 if [ ! "$custom_tests_to_run" ]; then
   TESTRARGS='(?!.*\[.*\bslow\b.*\])(^tempest\.(api|cli)'$testr_exclude')'
 else

@@ -1,0 +1,64 @@
+#!/bin/bash -x
+#---------------------------------------------------------------
+# Project         : Javelin
+# File            : javelin
+# Copyright       : (C) 2015 by
+# Author          : Joe H. Rahme
+# Created On      : Jan 23 2015
+# Purpose         : Use Javelin for testing
+#---------------------------------------------------------------
+
+source /etc/config-tools/openrc.sh
+
+tempest_dir="/usr/share/openstack-tempest-juno"
+resourcefile="javelin-resource.yml"
+
+
+javelin_get_or_create_resourcefile () {
+    if [ ! -r "$resourcefile" ]; then
+	cat > "$resourcefile" <<EOF
+tenants:
+  - javelin
+  - discuss
+
+users:
+  - name: javelin
+    pass: gungnir
+    tenant: javelin
+  - name: javelin2
+    pass: gungnir2
+    tenant: discuss
+
+EOF
+    fi
+
+    echo "$resourcefile"
+}
+
+javelin_cleanup() {
+    rm "$resourcefile"
+}
+
+javelin_cmd() {
+
+    local cmd=$1
+
+    if [ "$cmd" != "create" -a "$cmd" != "destroy" -a "$cmd" != "check"]; then
+	echo "Invalid $cmd"
+	return 1
+    fi
+
+    javelin2 -d . -r "$(javelin_get_or_create_resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
+}
+
+javelin_check_resources() {
+    return javelin_cmd check
+}
+
+javelin_create_resources() {
+    javelin_cmd create
+}
+
+javelin_destroy_resources() {
+    javelin_cmd destroy
+}
