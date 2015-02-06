@@ -67,8 +67,6 @@ upload_logs() {
     CONTAINER=${CONTAINER:-"unknown_platform"}
     for path in /var/lib/edeploy/logs /var/log  /var/lib/jenkins/jobs/puppet/workspace; do
         mkdir -p ${LOG_DIR}/$(dirname ${path})
-        echo "path: ${path}"
-        echo "log_base_dir: ${log_base_dir}"
         scp $SSHOPTS -r root@$installserverip:$path ${LOG_DIR}/${path}
     done
     find ${LOG_DIR} -type f -exec chmod 644 '{}' \;
@@ -151,15 +149,16 @@ while curl --silent http://$installserverip:8282/job/puppet/build|\
     sleep 1;
 done
 
+
+jenkins_log_file="/var/lib/jenkins/jobs/puppet/builds/1/log"
 (
-    while true; do
-        curl -q -o .consoleText.part \
-             http://$installserverip:8282/job/puppet/lastBuild/consoleText
-        mv .consoleText.part ${LOG_DIR}/jenkins.txt > /dev/null 2>&1
-        sleep 1
-    done
-) >/dev/null 2>&1 &
-refresh_jenkins_job=$!
+    ssh $SSHOPTS root@$installserverip "
+while true; do
+    [ -f $jenkins_log_file ] && tail -f $jenkins_log_file
+    sleep 1
+done"
+) &
+tail_job=$!
 
 # Wait for the first job to finish
 ssh $SSHOPTS root@$installserverip "
@@ -168,7 +167,7 @@ ssh $SSHOPTS root@$installserverip "
         sleep 1;
     done"
 
-kill ${refresh_jenkins_job}
+kill ${tail_job}
 
 upload_logs
 
