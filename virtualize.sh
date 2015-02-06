@@ -39,26 +39,6 @@ LOG_DIR=${LOG_DIR:-"$(pwd)/logs"}
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null"
 
-test_connectivity() {
-    set +x
-    local i=0
-    local install_server_id=$1
-    local host_ip=$1
-    while true; do
-        echo -n "."
-        ssh $SSHOPTS jenkins@$install_server \
-            ssh $SSHOPTS jenkins@$host_ip uname -a > /dev/null 2>&1 && break
-        sleep 4
-        i=$[i+1]
-        if [[ $i -ge $TIMEOUT_ITERATION ]]; then
-            echo "uname timeout on ${host_ip}..."
-            return 1
-        fi
-    done
-    echo "Node $host_name is alive !"
-    return 0
-}
-
 upload_logs() {
     [ -f ~/openrc ] || return
 
@@ -100,7 +80,7 @@ while ! rsync -e "ssh $SSHOPTS" --quiet -av --no-owner top/ root@$installserveri
     echo -n .
 done
 
-set -x
+set -eux
 scp $SSHOPTS extract-archive.sh functions root@$installserverip:/tmp
 
 ssh $SSHOPTS root@$installserverip "echo -e 'RSERV=localhost\nRSERV_PORT=873' >> /var/lib/edeploy/conf"
@@ -112,37 +92,26 @@ ssh $SSHOPTS root@$installserverip service dnsmasq restart
 ssh $SSHOPTS root@$installserverip service httpd restart
 ssh $SSHOPTS root@$installserverip service rsyncd restart
 
-. top/etc/config-tools/config
 
-JOBS=
-declare -a assoc
-
-for node in $HOSTS; do
-    (
-        echo "Testing $hostname"
-        ip=$(${ORIG}/extract.py hosts.${node}.ip top/etc/config-tools/global.yml)
-        test_connectivity $installserverip $ip $node || exit 1
-    ) &
-    JOBS="$JOBS $!"
-    assoc[$!]=$hostname
-done
-
-set -x
-set +e
-
-rc=0
-for job in $JOBS; do
-    wait $job
-    ret=$?
-    if [ $ret -eq 127 ]; then
-        echo "$job doesn't exist anymore"
-    elif [ $ret -ne 0 ]; then
-        echo "${assoc[$job]} wasn't installed"
-        rc=1
+ssh $SSHOPTS root@$installserverip "
+. /etc/config-tools/config
+retry=0
+while true; do
+    if [  \$retry -gt $TIMEOUT_ITERATION ]; then
+        echo 'Timeout'
+        exit 1
     fi
+    ((retry++))
+    for node in \$HOSTS; do
+        sleep 1
+        echo -n .
+        ssh $SSHOPTS jenkins@\$node uname > /dev/null 2>&1|| continue 2
+    done
+    break
 done
+"
 
-set -e
+
 
 while curl --silent http://$installserverip:8282/job/puppet/build|\
         grep "Your browser will reload automatically when Jenkins is read"; do
