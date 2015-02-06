@@ -74,7 +74,7 @@ upload_logs() {
     find ${LOG_DIR} -type f -exec chmod 644 '{}' \;
     find ${LOG_DIR} -type d -exec chmod 755 '{}' \;
     for file in $(find ${LOG_DIR} -type f -printf "%P\n"); do
-        swift upload --object-name ${BUILD_PLATFORM}/${USER}/$(date +%Y%m%d-%H%M)/${file} ${CONTAINER} ${LOG_DIR}/${file}
+        swift upload --object-name ${BUILD_PLATFORM}/${PREFIX}/$(date +%Y%m%d-%H%M)/${file} ${CONTAINER} ${LOG_DIR}/${file}
     done
     swift post -r '.r:*' ${CONTAINER}
     swift post -m 'web-listings: true' ${CONTAINER}
