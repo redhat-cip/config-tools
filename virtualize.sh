@@ -92,6 +92,7 @@ retry=0
 while ! rsync -e "ssh $SSHOPTS" --quiet -av --no-owner top/ root@$installserverip:/; do
     if [ $((retry++)) -gt 300 ]; then
         echo "reached max retries"
+	exit 1
     else
         echo "install-server ($installserverip) not ready yet. waiting..."
     fi
