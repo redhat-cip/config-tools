@@ -61,6 +61,6 @@ pip install python-keystoneclient
 
 
 cd $HOME/building
-$HOME/config-tools/virtualize.sh localhost &> ${LOG_DIR}/build.txt &
+$HOME/config-tools/virtualize.sh localhost &>> ${LOG_DIR}/build.txt &
 
 echo $! > $HOME/build.pid
