@@ -39,6 +39,7 @@ fi
 
 [ -d /etc/serverspec ] && chown -R $SUDO_USER /etc/serverspec
 [ -d /opt/tempest-scripts ] && chown -R $SUDO_USER /opt/tempest-scripts
+[ -f /etc/ssl/certs/puppetdb.pem ] && chown root:root /etc/ssl/certs/puppetdb.pem && chmod 0400 /etc/ssl/certs/puppetdb.pem
 
 if [ ${SUDO_USER} != root ]; then
     mkdir -p /root/.ssh

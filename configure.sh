@@ -182,9 +182,9 @@ EOF
     fi
 done
 
-######################################################################
-# Step 0: provision the puppet master and the certificates on the nodes
-######################################################################
+#######################################################################
+# Step 0: provision the nodes for Puppet configuration & certificates #
+#######################################################################
 
 if [ $STEP -eq 0 ]; then
     configure_hostname
@@ -214,6 +214,11 @@ if [ $STEP -eq 0 ]; then
           ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
         fi
     done
+    if ! test -f /etc/ssl/certs/puppetdb.pem ; then
+      echo "/etc/ssl/certs/puppetdb.pem file is missing so PuppetDB cannot be configured."
+      echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
+      exit 1
+    fi
     puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee  $LOGDIR/puppet-master.step0.log
     puppet apply -e 'include ::cloud::install::puppetdb::server' | tee  $LOGDIR/puppet-master.step0.log
     puppet apply -e 'include ::cloud::install::puppetdb::config' | tee  $LOGDIR/puppet-master.step0.log
