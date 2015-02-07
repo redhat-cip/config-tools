@@ -222,6 +222,8 @@ if [ $STEP -eq 0 ]; then
     puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee  $LOGDIR/puppet-master.step0.log
     puppet apply -e 'include ::cloud::install::puppetdb::server' | tee  $LOGDIR/puppet-master.step0.log
     puppet apply -e 'include ::cloud::install::puppetdb::config' | tee  $LOGDIR/puppet-master.step0.log
+    # Last puppet apply restart PuppetDB service, which takes ~ 15 seconds to start.
+    # let's wait 30 seconds to be sure PuppetDB is started and we can run Puppet on all the nodes
     sleep 30
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         STEP=1
