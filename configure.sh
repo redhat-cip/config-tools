@@ -244,7 +244,7 @@ if [ $STEP -eq 0 ]; then
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
              scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/resolv.conf /tmp/hosts /etc
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step0.log
+             ssh $SSHOPTS $USER@$h.$DOMAIN sudo -i puppet apply /etc/puppet/manifest.pp | tee $LOGDIR/$h.step0.log 2>&1 &
 )
         fi
     done
