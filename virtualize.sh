@@ -22,14 +22,16 @@ set -x
 ORIG=$(cd $(dirname $0); pwd)
 PREFIX=$USER
 
-if [ $# != 1 ]; then
-    echo "Usage: $0 <libvirt host>"
+if [ $# != 2 ]; then
+    echo "Usage: $0 <deployment yaml url> <libvirt host>"
     echo
-    echo "ex: $0 192.168.100.12"
+    echo "ex: $0 file:///home/fred/openstack-yaml-testenv/deployment-3nodes-virt-RH7.0.yml 192.168.100.12"
     exit 1
 fi
 
-virthost=$1
+deployment="$1"
+virthost=$2
+platform=virt_platform.yml
 [ -f ~/virtualizerc ] && source ~/virtualizerc
 
 
@@ -65,7 +67,14 @@ else
     pubfile=~/.ssh/id_rsa.pub
 fi
 
-$ORIG/virtualization/virtualizor.py virt_platform.yml $virthost --replace --prefix ${PREFIX} --public_network nat --replace --pub-key-file $pubfile
+version=$($ORIG/extract.py version "$platform")
+
+if ! ssh $SSHOPTS root@$virthost test -r /var/lib/libvirt/images/install-server-$version.img.qcow2; then
+    edeployurl=$($ORIG/extract.py roles "env/$(basename $deployment)"|sed -e "s/@VERSION@/$version/")
+    ssh $SSHOPTS root@$virthost wget -q -O /var/lib/libvirt/images/install-server-$version.img.qcow2 $edeployurl/install-server-$version.img.qcow2
+fi
+
+$ORIG/virtualization/virtualizor.py "$platform" $virthost --replace --prefix ${PREFIX} --public_network nat --replace --pub-key-file $pubfile
 # TODO(Gonéri): We need a better solution to pass the IP from virtualizor.
 installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ os-ci-test4/ {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases"|head -n 1)
 
