@@ -47,6 +47,7 @@ PARALLELSTEPS='none'
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no \
       -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey \
       -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no \
+      -oGSSAPIAuthentication=no \
       -oConnectTimeout=3 -oUserKnownHostsFile=/dev/null"
 
 if [ -r $JENKINS_HOME/.ssh/id_rsa ]; then
@@ -77,6 +78,8 @@ for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/pu
         exit 1
     fi
 done
+
+start=$(date '+%s')
 
 generate 0 $CDIR/config
 
@@ -145,11 +148,12 @@ configure_hostname() {
 # provide them with the correct values during
 # puppet run
 #
+n=0
 for h in $HOSTS; do
     if [ $h = $(hostname -s) ]; then
-        (echo "Configure Puppet environment on ${h} node:"
-         mkdir -p /etc/facter/facts.d
-         cat > /etc/puppet/manifest.pp<<EOF
+        echo "Configure Puppet environment on ${h} node:"
+        mkdir -p /etc/facter/facts.d
+        cat > /etc/puppet/manifest.pp<<EOF
 Exec {
   path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
 }
@@ -158,9 +162,9 @@ EOF
          cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-        n=$(($n + 1)))
     else
-        (echo "Configure Puppet environment on ${h} node:"
+        echo "Configure Puppet environment on ${h} node:"
+        (
         tee /tmp/manifest.pp <<EOF
 Exec {
   path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
@@ -170,23 +174,35 @@ EOF
         tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
-        scp $SSHOPTS /tmp/environment.txt.$h $USER@$h.$DOMAIN:/tmp/environment.txt
-        scp $SSHOPTS /tmp/manifest.pp $USER@$h.$DOMAIN:/tmp/manifest.pp
-        scp -r $SSHOPTS /etc/puppet/modules $USER@$h.$DOMAIN:/tmp
-        ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/modules
-        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/modules /etc/puppet/modules
-        ssh $SSHOPTS $USER@$h.$DOMAIN sudo mkdir -p /etc/facter/facts.d
-        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/environment.txt /etc/facter/facts.d
-        ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/manifest.pp /etc/puppet/manifest.pp
-        n=$(($n + 1)))
+        scp -r $SSHOPTS /tmp/environment.txt.$h /tmp/manifest.pp /etc/puppet/modules $USER@$h.$DOMAIN:/tmp
+        ssh $SSHOPTS $USER@$h.$DOMAIN "
+set -e
+sudo rm -rf /etc/puppet/modules
+sudo cp -r /tmp/modules /etc/puppet/modules
+sudo mkdir -p /etc/facter/facts.d
+sudo cp /tmp/environment.txt.$h /etc/facter/facts.d/environment.txt
+sudo cp /tmp/manifest.pp /etc/puppet/manifest.pp
+"
+        ) > $LOGDIR/$h.init.log 2>&1 &
+        n=$(($n + 1))
     fi
 done
+
+while [ $n -ne 0 ]; do
+    wait
+    n=$(($n - 1))
+done
+
+elapsed=$(($(date '+%s') - $start))
+
+echo "step init took $(($elapsed / 60)) mn"
 
 #######################################################################
 # Step 0: provision the nodes for Puppet configuration & certificates #
 #######################################################################
 
 if [ $STEP -eq 0 ]; then
+    start=$(date '+%s')
     configure_hostname
     generate 0 /etc/puppet/data/common.yaml
     for template in $(cat /etc/config-tools/templates); do
@@ -205,19 +221,11 @@ if [ $STEP -eq 0 ]; then
         sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
-        if [ $h != $(hostname -s) ]; then
-          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
-          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
-        fi
     done
     if ! test -f /etc/ssl/certs/puppetdb.pem ; then
-      echo "/etc/ssl/certs/puppetdb.pem file is missing so PuppetDB cannot be configured."
-      echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
-      exit 1
+        echo "/etc/ssl/certs/puppetdb.pem file is missing so PuppetDB cannot be configured."
+        echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
+        exit 1
     fi
     puppet apply /etc/puppet/modules/cloud/scripts/bootstrap.pp | tee  $LOGDIR/puppet-master.step0.log
     puppet apply -e 'include ::cloud::install::puppetdb::server' | tee  $LOGDIR/puppet-master.step0.log
@@ -232,24 +240,38 @@ if [ $STEP -eq 0 ]; then
         exit 1
     fi
 
-    # clean known_hosts
+    n=0
     for h in $HOSTS; do
         ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h} || :
         ssh-keygen -f "$HOME/.ssh/known_hosts" -R ${h}.$DOMAIN || :
-    done
-
-    n=0
-    for h in $HOSTS; do
         if [ $h != $(hostname -s) ]; then
-            (echo "Provisioning Puppet agent on ${h} node:"
-             scp $SSHOPTS /etc/puppet/hiera.yaml $USER@$h.$DOMAIN:/tmp/hiera.yaml
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
-             scp $SSHOPTS /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp /tmp/resolv.conf /tmp/hosts /etc
-             ssh $SSHOPTS $USER@$h.$DOMAIN sudo -i puppet apply /etc/puppet/manifest.pp | tee $LOGDIR/$h.step0.log 2>&1 &
-)
+            n=$(($n + 1))
+            echo "Provisioning Puppet agent on ${h} node"
+            (
+             ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
+             scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
+             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+             scp $SSHOPTS /etc/puppet/hiera.yaml /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
+             ssh $SSHOPTS $USER@$h.$DOMAIN "
+set -e
+sudo rm -rf /etc/puppet/data
+sudo cp -r /tmp/data /etc/puppet/data
+sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
+sudo cp /tmp/resolv.conf /tmp/hosts /etc
+sudo -i puppet apply /etc/puppet/manifest.pp"
+            ) > $LOGDIR/$h.step0.log 2>&1 &
         fi
     done
+
+    while [ $n -ne 0 ]; do
+        wait
+        n=$(($n - 1))
+    done
+
+    elapsed=$(($(date '+%s') - $start))
+
+    echo "step 0 took $(($elapsed / 60)) mn"
 fi
 
 ######################################################################
