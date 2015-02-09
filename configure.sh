@@ -222,8 +222,8 @@ if [ $STEP -eq 0 ]; then
         chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
         rm /etc/puppet/data/fqdn.yaml
     done
-    if ! test -f /etc/ssl/certs/puppetdb.pem ; then
-        echo "/etc/ssl/certs/puppetdb.pem file is missing so PuppetDB cannot be configured."
+    if ! test -f /etc/puppet/ssl/puppetdb.pem ; then
+        echo "/etc/puppet/ssl/puppetdb.pem file is missing so PuppetDB cannot be configured."
         echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
         exit 1
     fi
