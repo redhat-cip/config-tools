@@ -300,9 +300,10 @@ if [ -n "$ansiblegit" ]; then
     clone "$ansiblegit" ansible
     mkdir -p $TOP/etc/ansible
     if [ -z "$stable" ]; then
-      echo "Please indicate to provision.sh stable=<latest stable release>."
+        echo "Please indicate to download.sh stable=<latest stable release>."
+    else
+        cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
     fi
-    cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
 fi
 
 # hosts
