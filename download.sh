@@ -150,7 +150,7 @@ update_or_clone "$envgit" env
 puppetgit=$($ORIG/extract.py module "$yamlfile")
 puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$version/")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
-edeploygit=$($ORIG/extract.py edeploy "$yamlfile")
+edeploygit=$($ORIG/extract.py edeploy_repo "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
 envyml=${env}.yml
 infragit=$($ORIG/extract.py infrastructure "$yamlfile")
@@ -167,7 +167,7 @@ ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
 pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
-rolesurl=$($ORIG/extract.py roles "$yamlfile"|sed -e "s/@VERSION@/$version/")
+rolesurl=$($ORIG/extract.py edeploy "$yamlfile"|sed -e "s/@VERSION@/$version/")
 jenkinsgit=$($ORIG/extract.py jenkins "$yamlfile")
 scenario=$($ORIG/extract.py scenario "$yamlfile")
 
