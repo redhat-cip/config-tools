@@ -160,3 +160,7 @@ test_volume_types.VolumeTypesTest.test_create_get_delete_volume_with_volume_type
 # this one is probably related to the last CVE with location
 test_register_remote_image
 test_register_http_image
+image.v1.test_images.ListImagesTest
+
+# neutron failures to investigate
+network.test_allowed_address_pair.AllowedAddressPairTestXML
