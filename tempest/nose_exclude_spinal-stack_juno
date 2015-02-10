@@ -50,29 +50,32 @@ test_cell_list
 
 # "Multiple possible networks found, use a Network ID to be more specific."
 # https://bugs.launchpad.net/tempest/+bug/1250866
+test_add_remove_fixed_ip
+test_admin_delete_servers_of_others
 test_aggregate_add_host_create_server_with_az
-test_delete_saving_image
+test_attach_volumes_with_nonexistent_volume_id
 test_create_image_from_deleted_server
 test_create_image_from_stopped_server
-test_server_security_groups
-test_add_remove_fixed_ip
 test_create_list_show_delete_interfaces
-test_admin_delete_servers_of_others
-test_delete_server_while_in_error_state
+test_create_server_with_ipv6_addr_only
+test_create_specify_keypair
+test_create_with_existing_server_name
 test_delete_active_server
+test_delete_saving_image
 test_delete_server_while_in_attached_volume
+test_delete_server_while_in_error_state
 test_delete_server_while_in_pause_state
 test_delete_server_while_in_shelved_state
 test_delete_server_while_in_shutoff_state
 test_delete_server_while_in_suspended_state
-test_create_server_with_ipv6_addr_only
-test_create_specify_keypair
-test_create_with_existing_server_name
+test_invalid_host_for_migration
+test_list_get_volume_attachments
+test_live_block_migration
+test_server_security_groups
+test_snapshot_create_with_volume_in_use
 test_update_access_server_address
 test_update_server_name
 test_update_server_name_in_stop_state
-test_attach_volumes_with_nonexistent_volume_id
-test_snapshot_create_with_volume_in_use
 test_volumes_actions
 # setUp classes:
 compute.admin.test_servers
@@ -154,7 +157,8 @@ orchestration.stacks.test_templates
 
 # cinder failures to investigate:
 test_create_get_list_accept_volume_transfer
-test_volume_types.VolumeTypesTest.test_create_get_delete_volume_with_volume_type_and_extra_specs
+test_create_get_delete_volume_with_volume_type_and_extra_specs
+
 
 # glance failures to investigate
 # this one is probably related to the last CVE with location
@@ -164,3 +168,4 @@ image.v1.test_images.ListImagesTest
 
 # neutron failures to investigate
 network.test_allowed_address_pair.AllowedAddressPairTestXML
+test_external_network_visibility
