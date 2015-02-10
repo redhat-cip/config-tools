@@ -33,7 +33,7 @@ fi
 
 
 if [ -f $TARBALL_ARCHIVE ]; then
-    rm -rf /etc/edeploy/*
+    rm -rf /etc/edeploy/* /etc/puppet/modules/* /etc/puppet/data/* /etc/ansible/* /etc/serverspec/* /opt/tempest-scripts/*
     tar xf /tmp/archive.tar --no-same-owner -C /
 fi
 
