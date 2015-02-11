@@ -72,6 +72,12 @@ generate() {
     chmod 0644 $file
 }
 
+erlang_cookie=$(${ORIG}/extract.py config.erlang_cookie $CFG)
+if [ -z "$erlang_cookie" ]; then
+  echo "erlang_cookie is a new required parameter in your environment."
+  echo "Please read carefully http://spinalstack.enovance.com/en/latest/deploy/components/rabbitmq.html#upgrade-from-i-1-3-0-to-j-1-0-0"
+fi
+
 for f in /etc/serverspec/arch.yml.tmpl /etc/puppet/data/common.yaml.tmpl /etc/puppet/data/fqdn.yaml.tmpl /etc/puppet/data/type.yaml.tmpl $CFG $CDIR/config.tmpl; do
     if [ ! -r $f ]; then
         echo "$f doesn't exist" 1>&2
