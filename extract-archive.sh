@@ -87,7 +87,7 @@ for version in $(ls -d *-*); do
         filename=$(basename $path)
         base=$(echo $filename|sed "s/-$version.edeploy//")
         mkdir -p /var/lib/debootstrap/install/$version/$base
-        tar xf $path -C /var/lib/debootstrap/install/$version/$base
+        tar xf $path --xattrs -C /var/lib/debootstrap/install/$version/$base
     done
 done
 
