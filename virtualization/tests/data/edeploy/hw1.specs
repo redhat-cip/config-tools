@@ -1,7 +1,0 @@
-# -*- python -*-
-
-[
-    ('disk', '$disk', 'size', '20'),
-    ('network', '$eth', 'serial', '$$m'),
-    ('network', '$eth2', 'serial', 'aa:bb:cc'),
-]

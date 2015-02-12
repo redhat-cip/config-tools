@@ -1,5 +1,0 @@
-hardware>=0.8
-ipaddress
-jinja2
-PyYAML
-six
