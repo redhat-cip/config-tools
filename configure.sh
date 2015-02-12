@@ -358,7 +358,10 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     fi
 done
 
-verify-servers.sh -x $LOGDIR
+last_step=$(cat $CDIR/step)
+if [ $last_step -gt 1 ]; then
+    verify-servers.sh -x $LOGDIR
+fi
 
 # ensure logs are readable by Jenkins
 chmod -R 644 $LOGDIR/*
