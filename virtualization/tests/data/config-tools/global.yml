@@ -1,9 +1,0 @@
-hosts:
-  node4:
-    profile: install-server
-    ip: 192.168.68.48
-  =node1-3:
-    profile: openstack-full
-    =ip: 192.168.68.68-70
-config:
-  admin_network: 192.168.68.0/24
