@@ -29,6 +29,13 @@ if [ -r /etc/redhat-release ]; then
     USER=apache
 else
     USER=www-data
+    # workaround for Debian old tar package which doesn't support --xattrs
+    # can be dropped after J.1.0.0 released
+    if ! tar --usage | egrep 'xattrs'; then
+      curl -o /tmp/tar.dev http://ftp.debian.org/debian/pool/main/t/tar/tar_1.27.1-1~bpo70+1_amd64.deb
+      dpkg -i /tmp/tar.deb
+      rm -f /tmp/tar.deb
+    fi
 fi
 
 
