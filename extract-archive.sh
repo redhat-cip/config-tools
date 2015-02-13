@@ -75,8 +75,9 @@ fi
 
 # fix permissions for ssh keys
 for user in root jenkins; do
-    user_ssh_dir=$(eval echo ~${user}/.ssh)
-    find ${user_ssh_dir} -type f -exec chmod 0600 {} \;
+    user_dir=$(eval echo ~${user})
+    chmod 700 ${user_dir} ${user_dir}/.ssh
+    find ${user_dir}/.ssh -type f -exec chmod 0600 {} \;
 done
 
 # extract eDeploy roles for rsync
