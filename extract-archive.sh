@@ -29,7 +29,7 @@ if [ -r /etc/redhat-release ]; then
     USER=apache
 else
     USER=www-data
-    # workaround for Debian old tar package which doesn't support --xattrs
+    # workaround for Debian old tar package which doesn't support --xattrs and --selinux
     # can be dropped after J.1.0.0 released
     if ! tar --usage | egrep 'xattrs'; then
       curl -o /tmp/tar.dev http://ftp.debian.org/debian/pool/main/t/tar/tar_1.27.1-1~bpo70+1_amd64.deb
@@ -95,7 +95,7 @@ for version in $(ls -d *-*); do
         filename=$(basename $path)
         base=$(echo $filename|sed "s/-$version.edeploy//")
         mkdir -p /var/lib/debootstrap/install/$version/$base
-        tar xf $path --xattrs -C /var/lib/debootstrap/install/$version/$base
+        tar xf $path --xattrs --selinux -C /var/lib/debootstrap/install/$version/$base
     done
 done
 
