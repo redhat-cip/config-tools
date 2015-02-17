@@ -32,7 +32,7 @@ else
     # workaround for Debian old tar package which doesn't support --xattrs and --selinux
     # can be dropped after J.1.0.0 released
     if ! tar --usage | egrep 'xattrs'; then
-      curl -o /tmp/tar.dev http://ftp.debian.org/debian/pool/main/t/tar/tar_1.27.1-1~bpo70+1_amd64.deb
+      curl -o /tmp/tar.deb http://ftp.debian.org/debian/pool/main/t/tar/tar_1.27.1-1~bpo70+1_amd64.deb
       dpkg -i /tmp/tar.deb
       rm -f /tmp/tar.deb
     fi
