@@ -140,7 +140,8 @@ if ! heat stack-show ${stackname} | fgrep CREATE_COMPLETE; then
     heat stack-show ${stackname}
     exit 1
 else
-    ip=$(heat output-show ${stackname} output_public_ip|sed 's/"//g')
+    ip=$(heat output-show ${stackname} output_install_server_public_ip|sed 's/"//g')
+    vip_ip=$(heat output-show ${stackname} output_vip_public_ip|sed 's/"//g')
     user=$(${ORIG}/extract.py config.remote_user $CFG)
 
     # wait a bit that the install-server is up and running
@@ -149,6 +150,13 @@ else
       echo "The floating IP $ip is unreachable"
       exit 1
     fi
+    if ! timeout 200 sh -c "while ! ping -w 1 -c 1 $vip_ip; do sleep 1; done"; then
+      echo "The floating IP $vip_ip is unreachable"
+      exit 1
+    fi
+    echo "Install-server will be reachable at $ip"
+    echo "OpenStack VIP will be reachable at $vip_ip"
+
     # wait a bit that the openstack-full is up and running
     sleep 50
     ssh $SSHOPTS $user@$ip uname -a
