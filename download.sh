@@ -234,8 +234,11 @@ if [ -d env/$env ]; then
         exit 1
     fi
     rsync -a env/$env/ $TOP/
-    # use find to avoid breaking symlinks
-    sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $(find $TOP/etc/edeploy/ -type f)
+
+    if [ -d env/$env/etc/edeploy ]; then
+      # use find to avoid breaking symlinks
+      sed -i -e "s/@VERSION@/$version/" -e "s/@ROLE@/$role/" $(find $TOP/etc/edeploy/ -type f)
+    fi
 
     mkdir -p $ORIG/cache/$version
 
