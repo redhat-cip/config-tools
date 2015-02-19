@@ -181,7 +181,7 @@ EOF
 type=${PROF_BY_HOST[$h]}
 EOF
         scp -r $SSHOPTS /tmp/environment.txt.$h /tmp/manifest.pp /etc/puppet/modules $USER@$h.$DOMAIN:/tmp
-        ssh $SSHOPTS $USER@$h.$DOMAIN "
+        ssh -tt $SSHOPTS $USER@$h.$DOMAIN "
 set -e
 sudo rm -rf /etc/puppet/modules
 sudo cp -r /tmp/modules /etc/puppet/modules
@@ -259,7 +259,7 @@ if [ $STEP -eq 0 ]; then
              scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
              scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
              scp $SSHOPTS /etc/puppet/hiera.yaml /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
-             ssh $SSHOPTS $USER@$h.$DOMAIN "
+             ssh -tt $SSHOPTS $USER@$h.$DOMAIN "
 set -e
 sudo rm -rf /etc/puppet/data
 sudo cp -r /tmp/data /etc/puppet/data
@@ -308,8 +308,8 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
           scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
           scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
           scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
+          ssh -tt $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
+          ssh -tt $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
         fi
     done
 
@@ -322,13 +322,13 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
                 if [ $h = $(hostname -s) ]; then
                     puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
+                    ssh -tt $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
                 fi
             else
                 if [ $h = $(hostname -s) ]; then
                     puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
+                    ssh -tt $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
                 fi
             fi
         done
