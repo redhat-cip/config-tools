@@ -163,7 +163,6 @@ if [ -z "$version" ]; then
     version=$($ORIG/extract.py version "$yamlfile")
 fi
 
-ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
 pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
@@ -298,15 +297,11 @@ hiera_include('classes')
 EOF
 
 # Ansible
-
-if [ -n "$ansiblegit" ]; then
-    clone "$ansiblegit" ansible
-    mkdir -p $TOP/etc/ansible
-    if [ -z "$stable" ]; then
-        echo "Please indicate to download.sh stable=<latest stable release>."
-    else
-        cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
-    fi
+mkdir -p $TOP/etc/ansible
+if [ -z "$stable" ]; then
+    echo "Please indicate to download.sh stable=<latest stable release>."
+else
+    cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
 fi
 
 # hosts
