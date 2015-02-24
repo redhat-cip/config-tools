@@ -306,7 +306,7 @@ else
     cp infra/upgrade/files/* $TOP/etc/ansible/roles/$p/files
     cat infra/upgrade/snippets/edeploy.yaml > $TOP/etc/ansible/roles/tasks/${p}.yaml
     for role in $($ORIG/extract.py -a "profiles.${p}.steps.*" $TOP/etc/config-tools/global.yml); do
-      for class in $(echo "$role" | fgrep cloud | tr -d "'" | tr -d '{' | tr -d '}' | tr -d ']' | tr -d '[' | tr -d ','); do
+      for class in $(echo "$role" | fgrep cloud | tr -d "'{}[],"); do
         for snippet in $($ORIG/extract.py -a "${class}.snippet" infra/upgrade/upgrade.yaml); do
           cat infra/upgrade/snippets/${snippet}.yaml >> $TOP/etc/ansible/roles/tasks/${p}.yaml
         done
