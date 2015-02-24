@@ -301,11 +301,11 @@ mkdir -p $TOP/etc/ansible
 for p in $PROFILES; do
   mkdir -p $TOP/etc/ansible/roles/$p/tasks $TOP/etc/ansible/roles/$p/files
   cp infra/upgrade/files/* $TOP/etc/ansible/roles/$p/files
-  cat infra/upgrade/snippets/edeploy.yaml > $TOP/etc/ansible/roles/tasks/${p}.yaml
+  cat infra/upgrade/snippets/edeploy.yaml > $TOP/etc/ansible/roles/${p}/tasks/main.yaml
   for role in $($ORIG/extract.py -a "profiles.${p}.steps.*" $TOP/etc/config-tools/global.yml); do
     for class in $(echo "$role" | fgrep cloud | tr -d "'{}[],"); do
       for snippet in $($ORIG/extract.py -a "${class}.snippet" infra/upgrade/upgrade.yaml); do
-        cat infra/upgrade/snippets/${snippet}.yaml >> $TOP/etc/ansible/roles/tasks/${p}.yaml
+        cat infra/upgrade/snippets/${snippet}.yaml >> $TOP/etc/ansible/roles/${p}/tasks/main.yaml
       done
     done
   done
