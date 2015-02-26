@@ -306,6 +306,7 @@ for p in $PROFILES; do
     for class in $(echo "$role" | fgrep cloud | tr -d "'{}[],"); do
       for snippet in $($ORIG/extract.py -a "${class}.snippet" infra/upgrade/upgrade.yaml); do
         cat infra/upgrade/snippets/${snippet}.yaml >> $TOP/etc/ansible/roles/${p}/tasks/main.yaml
+        sed -i "s/fakehostgroup/$p/g" $TOP/etc/ansible/roles/${p}/tasks/main.yaml
       done
     done
   done
