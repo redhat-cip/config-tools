@@ -112,6 +112,10 @@ test_upload_valid_object
 test_upload_large_object
 test_user_modify_quota
 
+# Swift - need to be investigated
+test_account_bulk.BulkTest.test_bulk_delete_by_POST
+test_object_services.ObjectTest.test_object_upload_in_segments
+
 # Swift: Empty attachments
 test_web_listing_css
 test_delete_large_object
@@ -187,6 +191,7 @@ test_ports.PortsTestXML
 test_ports.PortsTestJSON.test_create_port_with_no_securitygroups
 test_ports.PortsTestJSON.test_update_port_with_two_security_groups_and_extra_attributes
 test_allowed_address_pair.AllowedAddressPairTestJSON
+test_update_port_with_security_group_and_extra_attributes
 
 # cinder after upgrade
 test_volume_crud_with_volume_type_and_extra_specs
