@@ -115,6 +115,8 @@ test_user_modify_quota
 # Swift - need to be investigated
 test_account_bulk.BulkTest.test_bulk_delete_by_POST
 test_object_services.ObjectTest.test_object_upload_in_segments
+test_container_services.ContainerTest.test_delete_container
+test_object_services.ObjectTest.test_copy_object_2d_way
 
 # Swift: Empty attachments
 test_web_listing_css
