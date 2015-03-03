@@ -197,3 +197,6 @@ test_update_port_with_security_group_and_extra_attributes
 
 # cinder after upgrade
 test_volume_crud_with_volume_type_and_extra_specs
+
+# glance v1 does not run
+v1.test_image
