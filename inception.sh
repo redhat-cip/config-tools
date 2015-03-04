@@ -84,6 +84,8 @@ for name in install-server-$dist-$release openstack-full-$dist-$release; do
     wget -q $imageurl/$name.img.md5
     md5img=$(cut -f1 -d' ' < $name.img.md5|sed 's/ *//g')
     if [ "$md5glance" != "$md5img" ]; then
+	# if there's a previous image with the same name, delete it
+	[ -n "$md5glance" ] && glance --insecure image-delete $name
         wget -q -O $name.img $imageurl/$name.img
         md5sum -c $name.img.md5
         glance --insecure image-create --name $name --container-format bare --disk-format raw < $name.img
