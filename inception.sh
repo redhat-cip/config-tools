@@ -69,11 +69,11 @@ set -x
 # Get remote access settings
 
 if [ -r "$remote" ]; then
-    . "$remote"
+    source "$remote"
 else
     scp $SSHOPTS $remote:/etc/config-tools/openrc.sh .
 
-    . openrc.sh
+    source openrc.sh
 fi
 
 # Get VM images
