@@ -159,6 +159,29 @@ run_parallel() {
     esac
 }
 
+run_puppet() {
+    step=$1
+    h=$2
+
+    logfile=${logfile}
+    puppet_cmdline="puppet apply ${PUPPETOPTS} /etc/puppet/manifest.pp"
+    ssh_puppet_cmdline="ssh $SSHOPTS $USER@$h sudo -i ${puppet_cmdline}"
+
+    if run_parallel $step; then
+        if [ $h = $(hostname -s) ]; then
+            ${puppet_cmdline} > ${logfile} 2>&1 &
+        else
+            ${ssh_puppet_cmdline} > ${logfile} 2>&1 &
+        fi
+    else
+        if [ $h = $(hostname -s) ]; then
+            ${puppet_cmdline} 2>&1 | tee ${logfile}
+        else
+            ${ssh_puppet_cmdline} 2>&1 | tee ${logfile}
+        fi
+    fi
+}
+
 configure_hostname() {
     if hostname -f; then
         FQDN=$(hostname -f)
@@ -307,19 +330,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
         for h in $HOSTS; do
             n=$(($n + 1))
             echo "Run Puppet on $h node (step ${step}, try $loop):"
-            if run_parallel $step; then
-                if [ $h = $(hostname -s) ]; then
-                    puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
-                else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
-                fi
-            else
-                if [ $h = $(hostname -s) ]; then
-                    puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
-                else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
-                fi
-            fi
+            run_puppet $step $h
         done
 
         if run_parallel $step; then
