@@ -71,6 +71,43 @@ generate() {
     chmod 0644 $file
 }
 
+generate_step() {
+    step=$1
+
+    generate $step /etc/puppet/data/common.yaml
+    for template in $(cat /etc/config-tools/templates); do
+        generate $step $template
+    done
+    for p in $PROFILES; do
+        generate $step /etc/puppet/data/type.yaml profile=$p
+        mkdir -p /etc/puppet/data/$p
+        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+    done
+    for h in $HOSTS; do
+        generate $step /etc/puppet/data/fqdn.yaml host=$h
+        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
+        # hack to fix %{hiera} without ""
+        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        rm /etc/puppet/data/fqdn.yaml
+
+        if [ $h != $(hostname -s) ]; then
+            ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
+            scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
+            scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+            scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+            # NOTE(fc): could use `rsync --chown=root:root --chmod=D755,F644` with a more recent rsync version
+            ssh $SSHOPTS $USER@$h.$DOMAIN "sudo rsync --archive --delete-after /tmp/data /etc/puppet/; sudo chown root:root /etc/puppet/data; sudo chmod -R u=rwX,go=rX /etc/puppet/data; "
+        fi
+    done
+    if ! test -f /etc/puppet/ssl/puppetdb.pem ; then
+        echo "/etc/puppet/ssl/puppetdb.pem file is missing so PuppetDB cannot be configured."
+        echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
+        exit 1
+    fi
+}
+
 erlang_cookie=$(${ORIG}/extract.py config.erlang_cookie $CFG)
 if [ -z "$erlang_cookie" ]; then
   echo "erlang_cookie is a new required parameter in your environment."
@@ -209,24 +246,7 @@ echo "step init took $(($elapsed / 60)) mn"
 if [ $STEP -eq 0 ]; then
     start=$(date '+%s')
     configure_hostname
-    generate 0 /etc/puppet/data/common.yaml
-    for template in $(cat /etc/config-tools/templates); do
-        generate 0 $template
-    done
-    for p in $PROFILES; do
-        generate 0 /etc/puppet/data/type.yaml profile=$p
-        mkdir -p /etc/puppet/data/$p
-        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
-    done
-    for h in $HOSTS; do
-        generate 0 /etc/puppet/data/fqdn.yaml host=$h
-        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
-        # hack to fix %{hiera} without ""
-        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        rm /etc/puppet/data/fqdn.yaml
-    done
+    generate_step 0
     if ! test -f /etc/puppet/ssl/puppetdb.pem ; then
         echo "/etc/puppet/ssl/puppetdb.pem file is missing so PuppetDB cannot be configured."
         echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
@@ -253,15 +273,9 @@ if [ $STEP -eq 0 ]; then
             n=$(($n + 1))
             echo "Provisioning Puppet agent on ${h} node"
             (
-             ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
-             scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
-             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
              scp $SSHOPTS /etc/puppet/hiera.yaml /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN "
 set -e
-sudo rm -rf /etc/puppet/data
-sudo cp -r /tmp/data /etc/puppet/data
 sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
 sudo cp /tmp/resolv.conf /tmp/hosts /etc
 sudo -i puppet apply /etc/puppet/manifest.pp"
@@ -286,31 +300,7 @@ fi
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > $CDIR/step
-    for template in $(cat /etc/config-tools/templates); do
-        generate $step $template
-    done
-    for p in $PROFILES; do
-        generate $step /etc/puppet/data/type.yaml profile=$p
-        mkdir -p /etc/puppet/data/$p
-        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
-    done
-    for h in $HOSTS; do
-        generate $step /etc/puppet/data/fqdn.yaml host=$h
-        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
-        # hack to fix %{hiera} without ""
-        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        rm /etc/puppet/data/fqdn.yaml
-        if [ $h != $(hostname -s) ]; then
-          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
-          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
-        fi
-    done
+    generate_step $step
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
         n=0
