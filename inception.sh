@@ -152,10 +152,6 @@ else
       echo "The floating IP $ip is unreachable"
       exit 1
     fi
-    if ! timeout 200 sh -c "while ! ping -w 1 -c 1 $vip_ip; do sleep 1; done"; then
-      echo "The floating IP $vip_ip is unreachable"
-      exit 1
-    fi
     echo "Install-server will be reachable at $ip"
     echo "OpenStack VIP will be reachable at $vip_ip"
 
