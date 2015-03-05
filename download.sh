@@ -60,10 +60,10 @@ eval "$@"
 checkout_tag() {
     cd $1
     if [ -n "$tag" ] && (git tag; git branch -r) | egrep "$tag|$branch"; then
-	git checkout $tag || git checkout $branch
-	tagged=1
+        git checkout $tag || git checkout $branch
+        tagged=1
     else
-	tagged=0
+        tagged=0
     fi
     git log -1
     cd ..
@@ -81,18 +81,18 @@ update_or_clone() {
 
     if [ -d $dir ]; then
         if [ "$LOCAL" != 1 ]; then
-	    cd $dir
-	    git reset --hard
-	    git clean -xfdq
-	    git checkout $branch || git checkout master
-	    git checkout .
-	    git pull
-	    cd ..
+            cd $dir
+            git reset --hard
+            git clean -xfdq
+            git checkout $branch || git checkout master
+            git checkout .
+            git pull
+            cd ..
         fi
     else
-	git clone $giturl $dir
-	cd $dir
-	git checkout $branch || git checkout master
+        git clone $giturl $dir
+        cd $dir
+        git checkout $branch || git checkout master
         cd ..
     fi
 
@@ -111,18 +111,18 @@ clone() {
 
     if [ -d $dir ]; then
         if [ "$LOCAL" != 1 ]; then
-	    cd $dir
-	    git reset --hard
-	    git clean -xfdq
-	    git checkout $branch || git checkout master
-	    git checkout .
-	    git pull
-	    cd ..
+            cd $dir
+            git reset --hard
+            git clean -xfdq
+            git checkout $branch || git checkout master
+            git checkout .
+            git pull
+            cd ..
         fi
     else
-	git clone $giturl $dir
-	cd $dir
-	git checkout $branch || git checkout master
+        git clone $giturl $dir
+        cd $dir
+        git checkout $branch || git checkout master
         cd ..
     fi
 }
