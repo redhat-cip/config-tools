@@ -54,8 +54,7 @@ if [ -r $JENKINS_HOME/.ssh/id_rsa ]; then
     SSHOPTS="$SSHOPTS -i $JENKINS_HOME/.ssh/id_rsa"
 fi
 
-PUPPETOPTS="--onetime --verbose --no-daemonize --no-usecacheonfailure \
-    --no-splay --show_diff"
+PUPPETOPTS="--verbose --no-usecacheonfailure --no-splay --show_diff"
 
 PUPPETOPTS2="--ignorecache --waitforcert 240"
 
