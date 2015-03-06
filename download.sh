@@ -163,7 +163,6 @@ if [ -z "$version" ]; then
     version=$($ORIG/extract.py version "$yamlfile")
 fi
 
-ansiblegit=$($ORIG/extract.py ansible "$yamlfile")
 kernel=$($ORIG/extract.py kernel "$yamlfile"|sed -e "s/@VERSION@/$version/")
 pxe=$($ORIG/extract.py pxeramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
 health=$($ORIG/extract.py healthramdisk "$yamlfile"|sed -e "s/@VERSION@/$version/")
@@ -298,16 +297,20 @@ hiera_include('classes')
 EOF
 
 # Ansible
-
-if [ -n "$ansiblegit" ]; then
-    clone "$ansiblegit" ansible
-    mkdir -p $TOP/etc/ansible
-    if [ -z "$stable" ]; then
-        echo "Please indicate to download.sh stable=<latest stable release>."
-    else
-        cp -a ansible/upgrade/$stable/$tag/* $TOP/etc/ansible/
-    fi
-fi
+mkdir -p $TOP/etc/ansible
+for p in $PROFILES; do
+  mkdir -p $TOP/etc/ansible/roles/$p/tasks $TOP/etc/ansible/roles/$p/files
+  cp infra/upgrade/files/* $TOP/etc/ansible/roles/$p/files
+  cat infra/upgrade/snippets/edeploy.yaml > $TOP/etc/ansible/roles/${p}/tasks/main.yaml
+  for role in $($ORIG/extract.py -a "profiles.${p}.steps.*" $TOP/etc/config-tools/global.yml); do
+    for class in $(echo "$role" | fgrep cloud | tr -d "'{}[],"); do
+      for snippet in $($ORIG/extract.py -a "${class}.snippet" infra/upgrade/upgrade.yaml); do
+        cat infra/upgrade/snippets/${snippet}.yaml >> $TOP/etc/ansible/roles/${p}/tasks/main.yaml
+        sed -i "s/fakehostgroup/$p/g" $TOP/etc/ansible/roles/${p}/tasks/main.yaml
+      done
+    done
+  done
+done
 
 # hosts
 
@@ -358,7 +361,7 @@ cp -a serverspec $TOP/etc/
 
 # scripts
 
-cp $ORIG/configure.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/merge.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/bin/
+cp $ORIG/configure.sh $ORIG/upgrade.sh $ORIG/verify-servers.sh $ORIG/generate.py $ORIG/merge.py $ORIG/extract.py $ORIG/edeploy-nodes.sh $ORIG/health-check.sh $TOP/usr/bin/
 
 # config-tools
 
