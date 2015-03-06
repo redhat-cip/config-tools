@@ -58,15 +58,15 @@ role=openstack-full
 eval "$@"
 
 checkout_tag() {
-    cd $1
+    pushd $1
     if [ -n "$tag" ] && (git tag; git branch -r) | egrep "$tag|$branch"; then
-	git checkout $tag || git checkout $branch
-	tagged=1
+        git checkout $tag || git checkout $branch
+        tagged=1
     else
-	tagged=0
+        tagged=0
     fi
     git log -1
-    cd ..
+    popd
 }
 
 update_or_clone() {
@@ -81,19 +81,19 @@ update_or_clone() {
 
     if [ -d $dir ]; then
         if [ "$LOCAL" != 1 ]; then
-	    cd $dir
-	    git reset --hard
-	    git clean -xfdq
-	    git checkout $branch || git checkout master
-	    git checkout .
-	    git pull
-	    cd ..
+            pushd $dir
+            git reset --hard
+            git clean -xfdq
+            git checkout $branch || git checkout master
+            git checkout .
+            git pull
+            popd
         fi
     else
-	git clone $giturl $dir
-	cd $dir
-	git checkout $branch || git checkout master
-        cd ..
+        git clone $giturl $dir
+        pushd $dir
+        git checkout $branch || git checkout master
+        popd
     fi
 
     checkout_tag $dir
@@ -111,19 +111,19 @@ clone() {
 
     if [ -d $dir ]; then
         if [ "$LOCAL" != 1 ]; then
-	    cd $dir
-	    git reset --hard
-	    git clean -xfdq
-	    git checkout $branch || git checkout master
-	    git checkout .
-	    git pull
-	    cd ..
+            pushd $dir
+            git reset --hard
+            git clean -xfdq
+            git checkout $branch || git checkout master
+            git checkout .
+            git pull
+            popd
         fi
     else
-	git clone $giturl $dir
-	cd $dir
-	git checkout $branch || git checkout master
-        cd ..
+        git clone $giturl $dir
+        pushd $dir
+        git checkout $branch || git checkout master
+        popd
     fi
 }
 
@@ -325,13 +325,13 @@ if [ -n "$puppetmodules" ];then
 else
     update_or_clone "$puppetgit" puppet-module
     git --git-dir=puppet-module/.git rev-parse HEAD > $TOP/etc/config-tools/puppet-module-rev
-    cd puppet-module
+    pushd puppet-module
     # Build Puppetfile & modules with Rake which is the same way as the
     # module CI in OpenStack Infra
     $SUDO bundle install
     $SUDO bundle exec rake spec_prep
     sudo rm -rf ./spec/fixtures/modules/cloud
-    cd ..
+    popd
     if [ -n "$tag" -a "$tagged" = 1 ]; then
         sed -i -e "s/master/$(cat ${TOP}/etc/config-tools/puppet-module-rev)/" ./puppet-module/Puppetfile
     fi

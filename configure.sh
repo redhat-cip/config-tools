@@ -54,8 +54,7 @@ if [ -r $JENKINS_HOME/.ssh/id_rsa ]; then
     SSHOPTS="$SSHOPTS -i $JENKINS_HOME/.ssh/id_rsa"
 fi
 
-PUPPETOPTS="--onetime --verbose --no-daemonize --no-usecacheonfailure \
-    --no-splay --show_diff"
+PUPPETOPTS="--verbose --no-usecacheonfailure --no-splay --show_diff"
 
 PUPPETOPTS2="--ignorecache --waitforcert 240"
 
@@ -70,6 +69,43 @@ generate() {
 
     generate.py $step $CFG ${file}.tmpl $args|grep -v '^$' > $file
     chmod 0644 $file
+}
+
+generate_step() {
+    step=$1
+
+    generate $step /etc/puppet/data/common.yaml
+    for template in $(cat /etc/config-tools/templates); do
+        generate $step $template
+    done
+    for p in $PROFILES; do
+        generate $step /etc/puppet/data/type.yaml profile=$p
+        mkdir -p /etc/puppet/data/$p
+        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
+    done
+    for h in $HOSTS; do
+        generate $step /etc/puppet/data/fqdn.yaml host=$h
+        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
+        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
+        # hack to fix %{hiera} without ""
+        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
+        rm /etc/puppet/data/fqdn.yaml
+
+        if [ $h != $(hostname -s) ]; then
+            ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
+            scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
+            scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+            scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
+            # NOTE(fc): could use `rsync --chown=root:root --chmod=D755,F644` with a more recent rsync version
+            ssh $SSHOPTS $USER@$h.$DOMAIN "sudo rsync --archive --delete-after /tmp/data /etc/puppet/; sudo chown root:root /etc/puppet/data; sudo chmod -R u=rwX,go=rX /etc/puppet/data; "
+        fi
+    done
+    if ! test -f /etc/puppet/ssl/puppetdb.pem ; then
+        echo "/etc/puppet/ssl/puppetdb.pem file is missing so PuppetDB cannot be configured."
+        echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
+        exit 1
+    fi
 }
 
 erlang_cookie=$(${ORIG}/extract.py config.erlang_cookie $CFG)
@@ -121,6 +157,29 @@ run_parallel() {
             return 1
             ;;
     esac
+}
+
+run_puppet() {
+    step=$1
+    h=$2
+
+    logfile=${logfile}
+    puppet_cmdline="puppet apply ${PUPPETOPTS} /etc/puppet/manifest.pp"
+    ssh_puppet_cmdline="ssh $SSHOPTS $USER@$h sudo -i ${puppet_cmdline}"
+
+    if run_parallel $step; then
+        if [ $h = $(hostname -s) ]; then
+            ${puppet_cmdline} > ${logfile} 2>&1 &
+        else
+            ${ssh_puppet_cmdline} > ${logfile} 2>&1 &
+        fi
+    else
+        if [ $h = $(hostname -s) ]; then
+            ${puppet_cmdline} 2>&1 | tee ${logfile}
+        else
+            ${ssh_puppet_cmdline} 2>&1 | tee ${logfile}
+        fi
+    fi
 }
 
 configure_hostname() {
@@ -210,24 +269,7 @@ echo "step init took $(($elapsed / 60)) mn"
 if [ $STEP -eq 0 ]; then
     start=$(date '+%s')
     configure_hostname
-    generate 0 /etc/puppet/data/common.yaml
-    for template in $(cat /etc/config-tools/templates); do
-        generate 0 $template
-    done
-    for p in $PROFILES; do
-        generate 0 /etc/puppet/data/type.yaml profile=$p
-        mkdir -p /etc/puppet/data/$p
-        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
-    done
-    for h in $HOSTS; do
-        generate 0 /etc/puppet/data/fqdn.yaml host=$h
-        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
-        # hack to fix %{hiera} without ""
-        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        rm /etc/puppet/data/fqdn.yaml
-    done
+    generate_step 0
     if ! test -f /etc/puppet/ssl/puppetdb.pem ; then
         echo "/etc/puppet/ssl/puppetdb.pem file is missing so PuppetDB cannot be configured."
         echo "More documentation about it: http://spinalstack.enovance.com/en/latest/deploy/components/puppetdb.html"
@@ -254,15 +296,9 @@ if [ $STEP -eq 0 ]; then
             n=$(($n + 1))
             echo "Provisioning Puppet agent on ${h} node"
             (
-             ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
-             scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
-             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-             scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
              scp $SSHOPTS /etc/puppet/hiera.yaml /etc/hosts /etc/resolv.conf $USER@$h.$DOMAIN:/tmp/
              ssh $SSHOPTS $USER@$h.$DOMAIN "
 set -e
-sudo rm -rf /etc/puppet/data
-sudo cp -r /tmp/data /etc/puppet/data
 sudo cp /tmp/hiera.yaml /etc/puppet/hiera.yaml
 sudo cp /tmp/resolv.conf /tmp/hosts /etc
 sudo -i puppet apply /etc/puppet/manifest.pp"
@@ -287,50 +323,14 @@ fi
 for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
     start=$(date '+%s')
     echo $step > $CDIR/step
-    for template in $(cat /etc/config-tools/templates); do
-        generate $step $template
-    done
-    for p in $PROFILES; do
-        generate $step /etc/puppet/data/type.yaml profile=$p
-        mkdir -p /etc/puppet/data/$p
-        mv /etc/puppet/data/type.yaml /etc/puppet/data/$p/common.yaml
-    done
-    for h in $HOSTS; do
-        generate $step /etc/puppet/data/fqdn.yaml host=$h
-        mkdir -p /etc/puppet/data/${PROF_BY_HOST[$h]}
-        chmod 751 /etc/puppet/data/${PROF_BY_HOST[$h]}
-        # hack to fix %{hiera} without ""
-        sed -e 's/: \(%{hiera.*\)/: "\1"/' < /etc/puppet/data/fqdn.yaml > /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        chmod 644 /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml
-        rm /etc/puppet/data/fqdn.yaml
-        if [ $h != $(hostname -s) ]; then
-          ssh $SSHOPTS $USER@$h.$DOMAIN mkdir -p /tmp/data/${PROF_BY_HOST[$h]}
-          scp $SSHOPTS /etc/puppet/data/common.yaml $USER@$h.$DOMAIN:/tmp/data/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/common.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          scp $SSHOPTS /etc/puppet/data/${PROF_BY_HOST[$h]}/$h.$DOMAIN.yaml $USER@$h.$DOMAIN:/tmp/data/${PROF_BY_HOST[$h]}/
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /etc/puppet/data
-          ssh $SSHOPTS $USER@$h.$DOMAIN sudo cp -r /tmp/data /etc/puppet/data
-        fi
-    done
+    generate_step $step
 
     for (( loop=1; loop<=$TRY; loop++)); do # Yep, this is a bashism
         n=0
         for h in $HOSTS; do
             n=$(($n + 1))
             echo "Run Puppet on $h node (step ${step}, try $loop):"
-            if run_parallel $step; then
-                if [ $h = $(hostname -s) ]; then
-                    puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
-                else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp > $LOGDIR/$h.step${step}.try${loop}.log 2>&1 &
-                fi
-            else
-                if [ $h = $(hostname -s) ]; then
-                    puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
-                else
-                    ssh $SSHOPTS $USER@$h sudo -i puppet apply /etc/puppet/manifest.pp 2>&1 | tee $LOGDIR/$h.step${step}.try${loop}.log
-                fi
-            fi
+            run_puppet $step $h
         done
 
         if run_parallel $step; then
