@@ -12,22 +12,29 @@ source /etc/config-tools/openrc.sh
 
 tempest_dir="/usr/share/openstack-tempest-juno"
 resourcefile="javelin-resource.yml"
-lastjavelin="/opt/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+lastjavelin="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+
+if [ -x /usr/local/bin/javelin2 ]; then
+  JAVELIN_CMD="javelin2"
+else
+  export PYTHONPATH=/usr/share/openstack-tempest-juno
+  JAVELIN_CMD="python /usr/share/openstack-tempest-juno/tempest/cmd/javelin.py"
+fi
 
 javelin_get_or_create_resourcefile () {
     if [ ! -r "$resourcefile" ]; then
 	cat > "$resourcefile" <<EOF
 tenants:
-  - javelin
-  - discuss
+  - javelin1
+  - javein2
 
 users:
-  - name: javelin
+  - name: joe
     pass: gungnir
-    tenant: javelin
-  - name: javelin2
+    tenant: javelin1
+  - name: emilien
     pass: gungnir2
-    tenant: discuss
+    tenant: javelin2
 
 EOF
     fi
@@ -48,7 +55,7 @@ javelin_cmd() {
 	return 1
     fi
 
-    javelin2 -d . -r "$(javelin_get_or_create_resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
+    $JAVELIN_CMD -d . -r "$(javelin_get_or_create_resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
 }
 
 javelin_check_resources() {
