@@ -13,6 +13,8 @@ set -x
 
 here=$(dirname $(readlink -m $0))
 
+source $here/lib/javelin
+
 tests_to_run=""
 while getopts "v:p:" opt; do
     case $opt in
@@ -57,6 +59,25 @@ export NOSE_WITH_XUNIT=1
 export NOSE_XUNIT_FILE=tempest_xunit.xml
 
 cd /usr/share/openstack-tempest-juno/
+
+if javelin_is_post_upgrade; then
+    
+    if javelin_check_resources; then
+	# Resources exist, we're running sanity after an upgrade
+	# We can safely delete them
+	javelin_destroy_resources
+	javelin_update_lastjavelin
+    else
+	echo "Javelin failure: artefacts aren't reachable after an upgrade"
+	return 1
+    fi
+else
+    if ! javelin_check_resources; then
+	javelin_create_resources
+    fi
+fi
+
+
 if [ ! "$custom_tests_to_run" ]; then
   TESTRARGS='(?!.*\[.*\bslow\b.*\])(^tempest\.(api|cli)'$testr_exclude')'
 else

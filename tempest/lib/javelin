@@ -1,0 +1,99 @@
+#!/bin/bash -x
+#---------------------------------------------------------------
+# Project         : Javelin
+# File            : javelin
+# Copyright       : (C) 2015 by
+# Author          : Joe H. Rahme
+# Created On      : Jan 23 2015
+# Purpose         : Use Javelin for testing
+#---------------------------------------------------------------
+
+source /etc/config-tools/openrc.sh
+
+tempest_dir="/usr/share/openstack-tempest-juno"
+resourcefile="javelin-resource.yml"
+lastjavelin="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+
+if [ -x /usr/local/bin/javelin2 ]; then
+  JAVELIN_CMD="javelin2"
+else
+  export PYTHONPATH=/usr/share/openstack-tempest-juno
+  JAVELIN_CMD="python /usr/share/openstack-tempest-juno/tempest/cmd/javelin.py"
+fi
+
+javelin_get_or_create_resourcefile () {
+    if [ ! -r "$resourcefile" ]; then
+	cat > "$resourcefile" <<EOF
+tenants:
+  - javelin1
+  - javein2
+
+users:
+  - name: joe
+    pass: gungnir
+    tenant: javelin1
+  - name: emilien
+    pass: gungnir2
+    tenant: javelin2
+
+EOF
+    fi
+
+    echo "$resourcefile"
+}
+
+javelin_cleanup() {
+    rm "$resourcefile"
+}
+
+javelin_cmd() {
+
+    local cmd=$1
+
+    if [ "$cmd" != "create" -a "$cmd" != "destroy" -a "$cmd" != "check"]; then
+	echo "Invalid $cmd"
+	return 1
+    fi
+
+    $JAVELIN_CMD -d . -r "$(javelin_get_or_create_resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
+}
+
+javelin_check_resources() {
+    return javelin_cmd check
+}
+
+javelin_create_resources() {
+    javelin_cmd create
+}
+
+javelin_destroy_resources() {
+    javelin_cmd destroy
+}
+
+javelin_is_post_upgrade() {
+    # Javelin needs to determine whether it's running pre or post an upgrade
+    # To do this it will compare the current version (given by edeploy) to the last
+    # one it wrote in its own special file ($lastjavelin).
+    # If the versions don't match, it means it's running post upgrade and it will update the
+    # content of $lastjavelin to the latest
+
+    # returns 0 if it's post upgrade (and versions don't match) or 1 if it's not the case
+
+    if [ ! -r "$lastjavelin" ]; then
+	edeploy version | cut -d "-" -f 2 > "$lastjavelin"
+	return 1
+    fi
+
+    local last_javelin_version=$(head -n 1 "$lastjavelin")
+    local current_version=$(edeploy version | cut -d "-" -f 2)
+
+    if [ "$last_javelin_version" != "$current_version" ]; then
+	return 0
+    else
+	return 1
+    fi
+}
+
+javelin_update_lastjavelin() {
+    edeploy version | cut -d "-" -f 2 > "$lastjavelin"
+}
