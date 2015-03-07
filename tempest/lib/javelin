@@ -59,7 +59,8 @@ javelin_cmd() {
 }
 
 javelin_check_resources() {
-    return javelin_cmd check
+    javelin_cmd check
+    return $?
 }
 
 javelin_create_resources() {
