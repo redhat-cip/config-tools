@@ -162,8 +162,9 @@ run_parallel() {
 run_puppet() {
     step=$1
     h=$2
+    loop=$3
 
-    logfile=${logfile}
+    logfile="${LOGDIR}/${h}.step${step}.try${loop}.log"
     puppet_cmdline="puppet apply ${PUPPETOPTS} /etc/puppet/manifest.pp"
     ssh_puppet_cmdline="ssh $SSHOPTS $USER@$h sudo -i ${puppet_cmdline}"
 
@@ -330,7 +331,7 @@ for (( step=$STEP; step<=$LAST; step++)); do # Yep, this is a bashism
         for h in $HOSTS; do
             n=$(($n + 1))
             echo "Run Puppet on $h node (step ${step}, try $loop):"
-            run_puppet $step $h
+            run_puppet $step $h $loop
         done
 
         if run_parallel $step; then
