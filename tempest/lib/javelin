@@ -26,7 +26,7 @@ javelin_get_or_create_resourcefile () {
 	cat > "$resourcefile" <<EOF
 tenants:
   - javelin1
-  - javein2
+  - javelin2
 
 users:
   - name: joe
@@ -50,7 +50,7 @@ javelin_cmd() {
 
     local cmd=$1
 
-    if [ "$cmd" != "create" -a "$cmd" != "destroy" -a "$cmd" != "check"]; then
+    if [ "$cmd" != "create" -a "$cmd" != "destroy" -a "$cmd" != "check" ]; then
 	echo "Invalid $cmd"
 	return 1
     fi
@@ -83,15 +83,15 @@ javelin_is_post_upgrade() {
     if [ ! -r "$lastjavelin" ]; then
 	edeploy version | cut -d "-" -f 2 > "$lastjavelin"
 	return 1
-    fi
-
-    local last_javelin_version=$(head -n 1 "$lastjavelin")
-    local current_version=$(edeploy version | cut -d "-" -f 2)
-
-    if [ "$last_javelin_version" != "$current_version" ]; then
-	return 0
     else
-	return 1
+      local last_javelin_version=$(head -n 1 "$lastjavelin")
+      local current_version=$(edeploy version | cut -d "-" -f 2)
+
+      if [ "$last_javelin_version" != "$current_version" ]; then
+          return 0
+      else
+          return 1
+      fi
     fi
 }
 

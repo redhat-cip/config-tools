@@ -61,7 +61,6 @@ export NOSE_XUNIT_FILE=tempest_xunit.xml
 cd /usr/share/openstack-tempest-juno/
 
 if javelin_is_post_upgrade; then
-    
     if javelin_check_resources; then
 	# Resources exist, we're running sanity after an upgrade
 	# We can safely delete them
@@ -72,9 +71,9 @@ if javelin_is_post_upgrade; then
 	return 1
     fi
 else
-    if ! javelin_check_resources; then
-	javelin_create_resources
-    fi
+    # Resources don't exist, let's create and check them
+    javelin_create_resources
+    javelin_check_resources
 fi
 
 
