@@ -272,7 +272,7 @@ def generate_dict(model):
             for newkey, val in izip(list(_generate_values(key)),
                                     generate_list(model[thekey])):
                 try:
-                    result[newkey] = merge(result[key], val)
+                    result[newkey] = merge(result[newkey], val)
                 except KeyError:
                     result[newkey] = val
         else:
