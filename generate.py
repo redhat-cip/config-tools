@@ -176,7 +176,7 @@ if __name__ == "__main__":
                               open(sys.argv[3]).read(),
                               overwrite)
     except Invalid, excpt:
-        print excpt
+        sys.stderr.write('%s\n' % excpt)
         sys.exit(1)
 
 # generate.py ends here
