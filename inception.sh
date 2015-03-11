@@ -148,7 +148,7 @@ else
 
     # wait a bit that the install-server is up and running
     sleep 50
-    if ! timeout 200 sh -c "while ! ping -w 1 -c 1 $ip; do sleep 1; done"; then
+    if ! timeout 300 sh -c "while ! ping -w 1 -c 1 $ip; do sleep 1; done"; then
       echo "The floating IP $ip is unreachable"
       exit 1
     fi
