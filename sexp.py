@@ -132,10 +132,12 @@ def let(env, vars_, *body):
 
 
 class EndOfGame(Exception):
+    'Exception thrown to exit the repl'
     pass
 
 
 def exit_():
+    '(exit)'
     raise EndOfGame
 
 
@@ -222,7 +224,7 @@ def repl(prompt='sexp> '):
 def sexpstr(exp):
     "Convert a Python object back into a Scheme-readable string."
     if isinstance(exp, list):
-        return '(' + ' '.join(map(sexpstr, exp)) + ')'
+        return '(' + ' '.join([sexpstr(e) for e in exp]) + ')'
     else:
         return str(exp)
 
