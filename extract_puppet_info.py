@@ -17,7 +17,7 @@
 # under the License.
 
 '''Utils to parse the output of 'puppet parser dump <module>' to find
-useful info like which services anb which files are manipulated by
+useful info like which services and which files are manipulated by
 puppet modules.
 
 '''
@@ -46,7 +46,12 @@ def invoke(action, *args):
         return ['invoke', action] + list(args)
 
 
-def resource(res_type, desc, *args):
+def inherits(*args):
+    "(inherits module')"
+    return require('inherits', args[0])
+
+
+def resource(res_type, desc, *_):
     "(resource service <service>)"
     sys.stderr.write('Resource %s %s\n' % (res_type, desc[0]))
     if res_type == 'service':
@@ -70,11 +75,29 @@ def slice_(_, *names):
 
 
 def cat(*args):
+    '(cat arg1 [arg2...])'
     return ''.join([str(arg) for arg in args])
 
 
 def str_(arg):
+    '(str arg)'
     return str(arg)
+
+
+def cls(*args):
+    '(class name opt body)'
+    sys.stderr.write('Class %s\n' % args[0])
+    return args
+
+
+@sexp.macro
+def case(env, val, *entries):
+    '(case val (when values (then exp)) [(when...)])'
+    val = sexp.eval_sexp(val, env)
+    for entry in entries:
+        if entry[0] == 'when':
+            if val in entry[1]:
+                return sexp.eval_sexp(entry[2][1], env)
 
 
 def puppet_env():
@@ -86,9 +109,14 @@ def puppet_env():
         'SERVICES': [],
         'invoke': invoke,
         'resource': resource,
+        'inherits': inherits,
         'slice': slice_,
         'cat': cat,
         'str': str_,
+        'class': cls,
+        '=': sexp.setq,
+        'block': sexp.progn,
+        'case': case,
     })
     return env
 
@@ -122,19 +150,30 @@ def dump_puppet_module(filename):
     return res[res.find('('):]
 
 
-def parse_and_eval(srt_):
+def facter(env):
+    'make puppet facts variables prefixing them with $::'
+    for fact in subprocess.check_output(['facter']).split('\n'):
+        try:
+            key, val = fact.split(' => ')
+            env['$::' + key] = val
+        except ValueError:
+            print 'invalid line', fact
+
+
+def parse_and_eval(srt_, env=_ENV):
     'Parse and evaluate the string in the puppet env.'
-    return sexp.eval_sexp(sexp.parse_sexp(srt_), _ENV)
+    return sexp.eval_sexp(sexp.parse_sexp(srt_), env)
 
 
 def main():
     'Script entry point'
+    facter(_ENV)
     for arg in sys.argv[1:]:
         parse_and_eval(dump_puppet_module(puppet_filename(arg)))
 
-    print _ENV['REQS']
-    print _ENV['FILES']
-    print _ENV['SERVICES']
+    print [sexp.eval_sexp(e, _ENV) for e in _ENV['REQS']]
+    print [sexp.eval_sexp(e, _ENV) for e in _ENV['FILES']]
+    print [sexp.eval_sexp(e, _ENV) for e in _ENV['SERVICES']]
 
 if __name__ == "__main__":
     main()

@@ -35,6 +35,15 @@ class TestExtractPuppetInfo(unittest.TestCase):
             '(cat ::apache::mod:: (str $mpm_module) \'\')'),
                          '::apache::mod::$mpm_module')
 
+    def test_eval_case(self):
+        self.assertEqual(epi.parse_and_eval('''
+ (case 2
+   (when (2 4) (then (block 2)))
+   (when (5) (then (block 4)))
+)
+'''),
+                         2)
+
 if __name__ == "__main__":
     unittest.main()
 
