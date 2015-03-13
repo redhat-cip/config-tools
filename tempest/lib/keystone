@@ -24,7 +24,8 @@ check_not_empty(){
 
 setup_keystone_user_role(){
     keystone endpoint-list # test venv
-    keystone role-create  --name ResellerAdmin || true
+    keystone role-create --name ResellerAdmin || true
+    keystone role-create --name Member || true  # used by Javelin
     # Get IDs
     role_reseller_id=$(keystone role-list | awk '/ResellerAdmin/{print $2}')
     # Allow to use _member_ or Member belong setups:
