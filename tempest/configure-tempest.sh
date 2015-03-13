@@ -156,3 +156,12 @@ fi
 if [ "$SWIFT" == "YES" -a "$GLANCE" == "YES" ]; then
 	 create_s3_materials
 fi
+
+# We get the cirros AMI images to use with Javelin.
+# TODO(rahmu): use the existing qcow2 image instead
+# as soon as https://review.openstack.org/#/c/162963/1
+# is merged
+wget -q http://download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-uec.tar.gz
+tar xvzf cirros-0.3.2-x86_64-uec.tar.gz
+mkdir images
+mv cirros-0.3.2-x86_64-uec images
