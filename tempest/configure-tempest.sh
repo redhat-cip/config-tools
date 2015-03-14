@@ -161,7 +161,6 @@ fi
 # TODO(rahmu): use the existing qcow2 image instead
 # as soon as https://review.openstack.org/#/c/162963/1
 # is merged
-wget -q http://download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-uec.tar.gz
-tar xvzf cirros-0.3.2-x86_64-uec.tar.gz
-mkdir images
-mv cirros-0.3.2-x86_64-uec images
+rm -rf images
+mkdir -p images
+wget -qO- http://download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-uec.tar.gz | tar xvz -C images
