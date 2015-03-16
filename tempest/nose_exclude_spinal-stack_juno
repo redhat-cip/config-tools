@@ -5,6 +5,9 @@ test_neutron_firewall
 test_neutron_ipsec
 test_neutron_vpn
 
+# Neutron DVR is not tested yet
+test_routers_dvr
+
 # Race condition to delete shared subnet:
 # https://bugs.launchpad.net/tempest/+bug/1357055
 test_create_server.ServersTestJSON.test_verify_multiple_nics_order
