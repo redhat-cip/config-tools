@@ -36,14 +36,26 @@ done
 
 # respect 'ordered_profiles' order to upgrade
 for p in $PROFILES; do
+  mkdir -p /etc/ansible/steps/$p
   # upgrade host by host (serial)
   for host in $($ORIG/extract.py -a "$p.*" /etc/ansible/profiles.yml); do
+    # this is the first run, we start at step 1
+    if [ ! -f /etc/ansible/steps/$p/$host ]; then
+      step=1
+    # if the file does not exist, we continue from the latest successful step
+    else
+      step=$(cat /etc/ansible/steps/$p/$host)
+    fi
     # respect snippets tags to have correct order
-    for tag in {1..9}; do
+    for tag in $(seq $step 9); do
       ansible-playbook -s -M /srv/edeploy/ansible/library /etc/ansible/site.yml -v --tags $tag -l $host
+      echo $tag > /etc/ansible/steps/$p/$host
     done
   done
 done
+
+# cleanup
+rm -rf /etc/ansible/steps
 
 for step in 0 5; do
   echo $step | sudo tee /etc/config-tools/step
