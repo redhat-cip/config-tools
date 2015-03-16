@@ -35,6 +35,8 @@ for template in profiles.yml site.yml hosts group_vars/all; do
 done
 
 # respect 'ordered_profiles' order to upgrade
+# this loop is idempotent. It will iterate each host of each profile
+# and try to start or resume the upgrade process.
 for p in $PROFILES; do
   mkdir -p /etc/ansible/steps/$p
   # upgrade host by host (serial)
@@ -45,6 +47,11 @@ for p in $PROFILES; do
     # if the file does not exist, we continue from the latest successful step
     else
       step=$(cat /etc/ansible/steps/$p/$host)
+    fi
+    # we don't want to repeat last step if already done
+    last=$(cat /etc/ansible/steps/$p/$host)
+    if [ "$last" = "9" ];then
+      continue
     fi
     # respect snippets tags to have correct order
     for tag in $(seq $step 9); do
