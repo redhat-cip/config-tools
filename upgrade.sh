@@ -49,8 +49,7 @@ for p in $PROFILES; do
       step=$(cat /etc/ansible/steps/$p/$host)
     fi
     # we don't want to repeat last step if already done
-    last=$(cat /etc/ansible/steps/$p/$host)
-    if [ "$last" = "9" ];then
+    if [ "$step" = "9" ];then
       continue
     fi
     # respect snippets tags to have correct order
