@@ -38,9 +38,13 @@ done
 # this loop is idempotent. It will iterate each host of each profile
 # and try to start or resume the upgrade process.
 for p in $PROFILES; do
+  $SUDO mkdir -p /etc/ansible/steps/$p
+  $SUDO chown -R jenkins:jenkins /etc/ansible/steps
   mkdir -p /etc/ansible/steps/$p
   # upgrade host by host (serial)
   for host in $($ORIG/extract.py -a "$p.*" /etc/ansible/profiles.yml); do
+    # host is an array returned by extract.py, we need to sanitize it
+    host=$(echo $host | sed 's/..//' | sed -r 's/.{2}$//')
     # this is the first run, we start at step 1
     if [ ! -f /etc/ansible/steps/$p/$host ]; then
       step=1
