@@ -44,7 +44,7 @@ for p in $PROFILES; do
   # upgrade host by host (serial)
   for host in $($ORIG/extract.py -a "$p.*" /etc/ansible/profiles.yml); do
     # host is an array returned by extract.py, we need to sanitize it
-    host=$(echo $host | sed 's/\[//g' | sed 's/\]//g' | sed -e "s/\'//g" sed -e "s/\,//g")
+    host=$(echo $host | sed 's/\[//g' | sed 's/\]//g' | sed -e "s/\'//g" |sed -e "s/\,//g" | sed -e "s/'//g")
     # this is the first run, we start at step 1
     if [ ! -f /etc/ansible/steps/$p/$host ]; then
       step=1
