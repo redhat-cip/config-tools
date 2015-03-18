@@ -58,8 +58,8 @@ for p in $PROFILES; do
     fi
     # respect snippets tags to have correct order
     for tag in $(seq $step 9); do
-      ansible-playbook -s -M /srv/edeploy/ansible/library /etc/ansible/site.yml -v --tags $tag -l $host
       echo $tag > /etc/ansible/steps/$p/$host
+      ansible-playbook -s -M /srv/edeploy/ansible/library /etc/ansible/site.yml -v --tags $tag -l $host
     done
   done
 done
