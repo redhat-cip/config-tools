@@ -65,7 +65,7 @@ for p in $PROFILES; do
 done
 
 # cleanup
-rm -rf /etc/ansible/steps
+$SUDO rm -rf /etc/ansible/steps
 
 for step in 0 5; do
   echo $step | sudo tee /etc/config-tools/step
