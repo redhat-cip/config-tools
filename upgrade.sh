@@ -64,12 +64,12 @@ for p in $PROFILES; do
   done
 done
 
-# cleanup
-$SUDO rm -rf /etc/ansible/steps
-
 for step in 0 5; do
   echo $step | sudo tee /etc/config-tools/step
   configure.sh $step
 done
+
+# cleanup
+$SUDO rm -rf /etc/ansible/steps
 
 # upgrade.sh ends here
