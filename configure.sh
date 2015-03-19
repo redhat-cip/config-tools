@@ -240,6 +240,7 @@ EOF
         tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
 EOF
+        ssh $SSHOPTS $USER@$h.$DOMAIN sudo rm -rf /tmp/modules
         scp -r $SSHOPTS /tmp/environment.txt.$h /tmp/manifest.pp /etc/puppet/modules $USER@$h.$DOMAIN:/tmp
         ssh $SSHOPTS $USER@$h.$DOMAIN "
 set -e
