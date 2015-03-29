@@ -60,22 +60,21 @@ export NOSE_XUNIT_FILE=tempest_xunit.xml
 
 cd /usr/share/openstack-tempest-juno/
 
-# TODO(fix & enable javlin2)
-# if javelin_is_post_upgrade; then
-#     if javelin_check_resources; then
-# 	# Resources exist, we're running sanity after an upgrade
-# 	# We can safely delete them
-# 	javelin_destroy_resources
-# 	javelin_update_lastjavelin
-#     else
-# 	echo "Javelin failure: artefacts aren't reachable after an upgrade"
-# 	return 1
-#     fi
-# else
-#     # Resources don't exist, let's create and check them
-#     javelin_create_resources
-#     javelin_check_resources
-# fi
+if javelin_is_post_upgrade; then
+    if javelin_check_resources; then
+	# Resources exist, we're running sanity after an upgrade
+	# We can safely delete them
+	javelin_destroy_resources
+ 	javelin_update_lastjavelin
+    else
+	echo "Javelin failure: artefacts aren't reachable after an upgrade"
+	return 1
+    fi
+else
+    # Resources don't exist, let's create and check them
+    javelin_create_resources
+    javelin_check_resources
+fi
 
 
 if [ ! "$custom_tests_to_run" ]; then
