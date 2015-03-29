@@ -21,6 +21,8 @@ else
   JAVELIN_CMD="python /usr/share/openstack-tempest-juno/tempest/cmd/javelin.py"
 fi
 
+public_net_name=$(/usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml)
+
 javelin_get_or_create_resourcefile () {
     if [ ! -r "$resourcefile" ]; then
 	cat > "$resourcefile" <<EOF
@@ -106,7 +108,7 @@ servers:
     secgroups:
       - angon
       - baobab
-    floating_ip_pool: fake-public
+    floating_ip_pool: $public_net_name
   - name: hoplite
     owner: javelin
     flavor: m1.medium
@@ -115,7 +117,7 @@ servers:
       - world2
     secgroups:
       - angon
-    floating_ip_pool: fake-public
+    floating_ip_pool: $public_net_name
 objects:
   - container: jc1
     name: javelin1
