@@ -106,6 +106,7 @@ servers:
     secgroups:
       - angon
       - baobab
+    floating_ip_pool: fake-public
   - name: hoplite
     owner: javelin
     flavor: m1.medium
@@ -114,6 +115,7 @@ servers:
       - world2
     secgroups:
       - angon
+    floating_ip_pool: fake-public
 objects:
   - container: jc1
     name: javelin1
