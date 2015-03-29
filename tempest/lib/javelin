@@ -21,20 +21,25 @@ else
   JAVELIN_CMD="python /usr/share/openstack-tempest-juno/tempest/cmd/javelin.py"
 fi
 
-# public_net_name is optional, so we don't want to fail extract.py command.
-public_net_name=$(/usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml || true)
+if /usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml; then
+    floating_network_name=$(/usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml)
+    floating_network_start=$(/usr/bin/extract.py config.floating_network_start /etc/config-tools/global.yml)
+    floating_network_end=$(/usr/bin/extract.py config.floating_network_end /etc/config-tools/global.yml)
+    floating_network_gateway=$(/usr/bin/extract.py config.floating_network_gateway /etc/config-tools/global.yml)
+    floating_network_subnet=$(/usr/bin/extract.py config.floating_network_subnet /etc/config-tools/global.yml)
+fi
 
 javelin_get_or_create_resourcefile () {
     # Javelin resource file does not exist, we create it
     if [ ! -r "$resourcefile" ]; then
         # if we manage external network
-        if [ ! -z "$public_net_name" ]; then
+        if [ ! -z "$floating_network_name" ]; then
             cp ../javelin-with-external-network.yaml $resourcefile
-            sed -i "s/fakepublicnetwork/$public_net_name/g" $resourcefile
+            sed -i "s/fakepublicnetwork/$floating_network_name/g" $resourcefile
             # we ensure external network exist
-            if ! neutron net-list | grep $public_net_name; then
-                neutron net-create  --shared $public_net_name -- --router:external=True
-                neutron subnet-create $public_net_name --allocation-pool start=$floating_network_start,end=$floating_network_end --gateway=$floating_network_gateway --enable_dhcp=False $floating_network_subnet
+            if ! neutron net-list | grep $floating_network_name; then
+                neutron net-create  --shared $floating_network_name -- --router:external=True
+                neutron subnet-create $floating_network_name --allocation-pool start=$floating_network_start,end=$floating_network_end --gateway=$floating_network_gateway --enable_dhcp=False $floating_network_subnet
             fi
         # otherwise we don't manage external network
         else
