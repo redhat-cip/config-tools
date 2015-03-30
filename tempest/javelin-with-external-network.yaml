@@ -3,7 +3,7 @@
 # servers with floating-ip.
 
 tenants:
-  - javelin-tenant1
+  - javelin-tenant2
   - javelin-tenant2
 
 users:
@@ -16,21 +16,27 @@ users:
 
 secgroups:
   - name: javelin-secgroup1
-    owner: javelin-tenant1
+    owner: javelin-user1
     description: SecurityGroup1
     rules:
       - 'icmp -1 -1 0.0.0.0/0'
       - 'tcp 22 22 0.0.0.0/0'
   - name: javelin-secgroup1
-    owner: tenant-javelin2
+    owner: javelin-user2
     description: SecurityGroup2
     rules:
       - 'tcp 80 80 0.0.0.0/0'
 
 images:
-  - name: javelin-cirros
-    owner: javelin-tenant1
+  - name: javelin-cirros1
+    owner: javelin-user1
     imgdir: images
+    file: cirros-0.3.2-x86_64-blank.img
+    format: ami
+    aki: cirros-0.3.2-x86_64-vmlinuz
+    ari: cirros-0.3.2-x86_64-initrd
+  - name: javelin-cirros2
+    owner: javelin-user2 imgdir: images
     file: cirros-0.3.2-x86_64-blank.img
     format: ami
     aki: cirros-0.3.2-x86_64-vmlinuz
@@ -39,57 +45,57 @@ images:
 volumes:
   - name: javelin-vol1
     server: javelin-server1
-    owner: javelin-tenant1
+    owner: javelin-user1
     gb: 1
     device: /dev/vdb
   - name: javelin-vol2
     server: javelin-server2
-    owner: javelin-tenant2
+    owner: javelin-user2
     gb: 2
     device: /dev/vdb
 
 networks:
   - name: javelin-network1
-    owner: javelin-tenant1
+    owner: javelin-user1
   - name: javelin-network2
-    owner: javelin-tenant2
+    owner: javelin-user2
 
 subnets:
   - name: javelin-net1-subnet1
     range: 10.1.0.0/24
     network: javelin-network1
-    owner: javelin-tenant1
+    owner: javelin-user1
   - name: javelin-net2-subnet2
     range: 192.168.1.0/24
     network: javelin-network2
-    owner: javelin-tenant2
+    owner: javelin-user2
 
 routers:
   - name: javelin-router1
-    owner: javelin-tenant1
+    owner: javelin-user1
     gateway: true
     subnet:
       - javelin-net1-subnet1
   - name: javelin-router2
-    owner: javelin-tenant2
+    owner: javelin-user2
     gateway: true
     subnet:
       - javelin-net2-subnet2
 
 servers:
   - name: javelin-server1
-    owner: javelin-tenant1
+    owner: javelin-user1
     flavor: m1.small
-    image: javelin-cirros
+    image: javelin-cirros1
     networks:
       - javelin-network1
     secgroups:
       - javelin-secgroup1
     floating_ip_pool: fakepublicnetwork
   - name: javelin-server2
-    owner: javelin-tenant2
+    owner: javelin-user2
     flavor: m1.small
-    image: javelin-cirros
+    image: javelin-cirros2
     networks:
       - javelin-network2
     secgroups:
@@ -99,7 +105,7 @@ servers:
 objects:
   - container: javelin-container1
     name: javelin-object1
-    owner: javelin-tenant1
+    owner: javelin-user1
     file: /etc/hosts
 
 telemetry: true
