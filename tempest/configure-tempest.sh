@@ -17,6 +17,19 @@ tempest_dir="/usr/share/openstack-tempest-juno"
 cd $tempest_dir
 source /etc/config-tools/openrc.sh
 
+# Manage Neutron external network
+if /usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml; then
+    floating_network_name=$(/usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml)
+    floating_network_start=$(/usr/bin/extract.py config.floating_network_start /etc/config-tools/global.yml)
+    floating_network_end=$(/usr/bin/extract.py config.floating_network_end /etc/config-tools/global.yml)
+    floating_network_gateway=$(/usr/bin/extract.py config.floating_network_gateway /etc/config-tools/global.yml)
+    floating_network_subnet=$(/usr/bin/extract.py config.floating_network_subnet /etc/config-tools/global.yml)
+    if ! neutron net-list | grep $floating_network_name; then
+        neutron net-create  --shared $floating_network_name -- --router:external=True
+        neutron subnet-create $floating_network_name --allocation-pool start=$floating_network_start,end=$floating_network_end --gateway=$floating_network_gateway --enable_dhcp=False $floating_network_subnet
+    fi
+fi
+
 source $here/lib/functions
 source $here/lib/keystone
 source $here/lib/glance
