@@ -22,6 +22,10 @@ else
   JAVELIN_CMD="python /usr/share/openstack-tempest-juno/tempest/cmd/javelin.py"
 fi
 
+if /usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml; then
+    floating_network_name=$(/usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml)
+fi
+
 javelin_manage_resourcefile () {
     # Javelin resource file does not exist, we create it
     if [ ! -r "$resourcefile" ]; then

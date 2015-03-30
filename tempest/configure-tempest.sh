@@ -59,7 +59,6 @@ mkdir -p /var/lib/tempest/state
 chmod 755 /var/lib/tempest/state
 
 iniset DEFAULT lock_path "/var/lib/tempest/state"
-iniset DEFAULT debug true
 iniset compute use_floatingip_for_ssh true
 iniset auth allow_tenant_isolation true
 iniset identity uri "$OS_AUTH_URL"
