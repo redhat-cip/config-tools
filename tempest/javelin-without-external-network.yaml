@@ -54,7 +54,7 @@ subnets:
 
 objects:
   - container: javelin-container1
-  name: javelin-object1
+    name: javelin-object1
     owner: javelin-tenant1
     file: /etc/hosts
 
