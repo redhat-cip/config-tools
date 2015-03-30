@@ -49,19 +49,19 @@ volumes:
     device: /dev/vdb
 
 networks:
-  - name: world1
+  - name: austin
     owner: javelin
-  - name: world2
+  - name: bexar
     owner: javelin
 
 subnets:
   - name: subnet1
     range: 10.1.0.0/24
-    network: world1
+    network: austin
     owner: javelin
   - name: subnet2
     range: 192.168.1.0/24
-    network: world2
+    network: bexar
     owner: javelin
 
 routers:
@@ -78,7 +78,7 @@ servers:
     flavor: m1.small
     image: javelin_cirros
     networks:
-      - world1
+      - austin
     secgroups:
       - angon
       - baobab
@@ -88,7 +88,7 @@ servers:
     flavor: m1.medium
     image: javelin_cirros
     networks:
-      - world2
+      - bexar
     secgroups:
       - angon
     floating_ip_pool: fakepublicnetwork

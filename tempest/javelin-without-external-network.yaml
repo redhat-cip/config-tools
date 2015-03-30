@@ -48,30 +48,6 @@ volumes:
     gb: 2
     device: /dev/vdb
 
-networks:
-  - name: world1
-    owner: javelin
-  - name: world2
-    owner: javelin
-
-subnets:
-  - name: subnet1
-    range: 10.1.0.0/24
-    network: world1
-    owner: javelin
-  - name: subnet2
-    range: 192.168.1.0/24
-    network: world2
-    owner: javelin
-
-routers:
-  - name: connector
-    owner: javelin
-    gateway: true
-    subnet:
-      - subnet1
-      - subnet2
-
 objects:
   - container: jc1
     name: javelin1
