@@ -9,6 +9,7 @@
 #---------------------------------------------------------------
 
 source /etc/config-tools/openrc.sh
+here=$(dirname $(readlink -m $0))
 
 tempest_dir="/usr/share/openstack-tempest-juno"
 resourcefile="javelin-resource.yml"
@@ -29,12 +30,12 @@ if /usr/bin/extract.py config.floating_network_name /etc/config-tools/global.yml
     floating_network_subnet=$(/usr/bin/extract.py config.floating_network_subnet /etc/config-tools/global.yml)
 fi
 
-javelin_get_or_create_resourcefile () {
+javelin_manage_resourcefile () {
     # Javelin resource file does not exist, we create it
     if [ ! -r "$resourcefile" ]; then
         # if we manage external network
         if [ ! -z "$floating_network_name" ]; then
-            cp ../javelin-with-external-network.yaml $resourcefile
+            cp $here/javelin-with-external-network.yaml $resourcefile
             sed -i "s/fakepublicnetwork/$floating_network_name/g" $resourcefile
             # we ensure external network exist
             if ! neutron net-list | grep $floating_network_name; then
@@ -43,10 +44,9 @@ javelin_get_or_create_resourcefile () {
             fi
         # otherwise we don't manage external network
         else
-            cp ../javelin-without-external-network.yaml $resourcefile
+            cp $here/javelin-without-external-network.yaml $resourcefile
         fi
     fi
-    echo "$resourcefile"
 }
 
 javelin_cleanup() {
@@ -61,8 +61,9 @@ javelin_cmd() {
 	echo "Invalid $cmd"
 	return 1
     fi
+    javelin_manage_resourcefile
 
-    $JAVELIN_CMD -d . -r "$(javelin_get_or_create_resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
+    $JAVELIN_CMD -d . -r "$(echo $resourcefile)" -c "$tempest_dir"/etc/tempest.conf -m "$1"
 }
 
 javelin_check_resources() {
