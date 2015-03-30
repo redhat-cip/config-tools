@@ -1,45 +1,61 @@
 # This is a yaml description for the most basic definitions
 # of what should exist across the resource boundary, excluding
-# servers.
+# servers and volumes.
 
 tenants:
-  - javelin
-  - discuss
+  - javelin-tenant1
+  - javelin-tenant2
 
 users:
-  - name: javelin
-    pass: gungnir
-    tenant: javelin
-  - name: javelin2
-    pass: gungnir2
-    tenant: discuss
+  - name: javelin-user1
+    pass: password
+    tenant: javelin-tenant1
+  - name: javelin-user2
+    pass: password
+    tenant: javelin-tenant2
 
 secgroups:
-  - name: angon
-    owner: javelin
-    description: angon
+  - name: javelin-secgroup1
+    owner: javelin-tenant1
+    description: SecurityGroup1
     rules:
       - 'icmp -1 -1 0.0.0.0/0'
       - 'tcp 22 22 0.0.0.0/0'
-  - name: baobab
-    owner: javelin
-    description: baobab
+  - name: javelin-secgroup1
+    owner: tenant-javelin2
+    description: SecurityGroup2
     rules:
       - 'tcp 80 80 0.0.0.0/0'
 
 images:
-  - name: javelin_cirros
-    owner: javelin
+  - name: javelin-cirros
+    owner: javelin-tenant1
     imgdir: images
     file: cirros-0.3.2-x86_64-blank.img
     format: ami
     aki: cirros-0.3.2-x86_64-vmlinuz
     ari: cirros-0.3.2-x86_64-initrd
 
+networks:
+  - name: javelin-network1
+    owner: javelin-tenant1
+  - name: javelin-network2
+    owner: javelin-tenant2
+
+subnets:
+  - name: javelin-net1-subnet1
+    range: 10.1.0.0/24
+    network: javelin-network1
+    owner: javelin-tenant1
+  - name: javelin-net2-subnet2
+    range: 192.168.1.0/24
+    network: javelin-network2
+    owner: javelin-tenant2
+
 objects:
-  - container: jc1
-    name: javelin1
-    owner: javelin
+  - container: javelin-container1
+  name: javelin-object1
+    owner: javelin-tenant1
     file: /etc/hosts
 
 telemetry: true

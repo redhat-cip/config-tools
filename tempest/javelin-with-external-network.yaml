@@ -3,33 +3,33 @@
 # servers with floating-ip.
 
 tenants:
-  - javelin
-  - discuss
+  - javelin-tenant1
+  - javelin-tenant2
 
 users:
-  - name: javelin
-    pass: gungnir
-    tenant: javelin
-  - name: javelin2
-    pass: gungnir2
-    tenant: discuss
+  - name: javelin-user1
+    pass: password
+    tenant: javelin-tenant1
+  - name: javelin-user2
+    pass: password
+    tenant: javelin-tenant2
 
 secgroups:
-  - name: angon
-    owner: javelin
-    description: angon
+  - name: javelin-secgroup1
+    owner: javelin-tenant1
+    description: SecurityGroup1
     rules:
       - 'icmp -1 -1 0.0.0.0/0'
       - 'tcp 22 22 0.0.0.0/0'
-  - name: baobab
-    owner: javelin
-    description: baobab
+  - name: javelin-secgroup1
+    owner: tenant-javelin2
+    description: SecurityGroup2
     rules:
       - 'tcp 80 80 0.0.0.0/0'
 
 images:
-  - name: javelin_cirros
-    owner: javelin
+  - name: javelin-cirros
+    owner: javelin-tenant1
     imgdir: images
     file: cirros-0.3.2-x86_64-blank.img
     format: ami
@@ -37,66 +37,69 @@ images:
     ari: cirros-0.3.2-x86_64-initrd
 
 volumes:
-  - name: assegai
-    server: peltast
-    owner: javelin
+  - name: javelin-vol1
+    server: javelin-server1
+    owner: javelin-tenant1
     gb: 1
     device: /dev/vdb
-  - name: pifpouf
-    server: hoplite
-    owner: javelin
+  - name: javelin-vol2
+    server: javelin-server2
+    owner: javelin-tenant2
     gb: 2
     device: /dev/vdb
 
 networks:
-  - name: austin
-    owner: javelin
-  - name: bexar
-    owner: javelin
+  - name: javelin-network1
+    owner: javelin-tenant1
+  - name: javelin-network2
+    owner: javelin-tenant2
 
 subnets:
-  - name: subnet1
+  - name: javelin-net1-subnet1
     range: 10.1.0.0/24
-    network: austin
-    owner: javelin
-  - name: subnet2
+    network: javelin-network1
+    owner: javelin-tenant1
+  - name: javelin-net2-subnet2
     range: 192.168.1.0/24
-    network: bexar
-    owner: javelin
+    network: javelin-network2
+    owner: javelin-tenant2
 
 routers:
-  - name: connector
-    owner: javelin
+  - name: javelin-router1
+    owner: javelin-tenant1
     gateway: true
     subnet:
-      - subnet1
-      - subnet2
+      - javelin-net1-subnet1
+  - name: javelin-router2
+    owner: javelin-tenant2
+    gateway: true
+    subnet:
+      - javelin-net2-subnet2
 
 servers:
-  - name: peltast
-    owner: javelin
+  - name: javelin-server1
+    owner: javelin-tenant1
     flavor: m1.small
-    image: javelin_cirros
+    image: javelin-cirros
     networks:
-      - austin
+      - javelin-network1
     secgroups:
-      - angon
-      - baobab
+      - javelin-secgroup1
     floating_ip_pool: fakepublicnetwork
-  - name: hoplite
-    owner: javelin
-    flavor: m1.medium
-    image: javelin_cirros
+  - name: javelin-server2
+    owner: javelin-tenant2
+    flavor: m1.small
+    image: javelin-cirros
     networks:
-      - bexar
+      - javelin-network2
     secgroups:
-      - angon
+      - javelin-secgroup2
     floating_ip_pool: fakepublicnetwork
 
 objects:
-  - container: jc1
-    name: javelin1
-    owner: javelin
+  - container: javelin-container1
+  name: javelin-object1
+    owner: javelin-tenant1
     file: /etc/hosts
 
 telemetry: true
