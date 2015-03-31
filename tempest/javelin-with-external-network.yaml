@@ -3,7 +3,7 @@
 # servers with floating-ip.
 
 tenants:
-  - javelin-tenant2
+  - javelin-tenant1
   - javelin-tenant2
 
 users:
@@ -36,7 +36,8 @@ images:
     aki: cirros-0.3.2-x86_64-vmlinuz
     ari: cirros-0.3.2-x86_64-initrd
   - name: javelin-cirros2
-    owner: javelin-user2 imgdir: images
+    owner: javelin-user2
+    imgdir: images
     file: cirros-0.3.2-x86_64-blank.img
     format: ami
     aki: cirros-0.3.2-x86_64-vmlinuz
