@@ -21,7 +21,7 @@ secgroups:
     rules:
       - 'icmp -1 -1 0.0.0.0/0'
       - 'tcp 22 22 0.0.0.0/0'
-  - name: javelin-secgroup1
+  - name: javelin-secgroup2
     owner: javelin-user2
     description: SecurityGroup2
     rules:
