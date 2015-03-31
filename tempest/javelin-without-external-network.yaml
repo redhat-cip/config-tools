@@ -64,5 +64,6 @@ objects:
     name: javelin-object1
     owner: javelin-user1
     file: /etc/hosts
+    swift_role: SwiftOperator
 
 telemetry: true
