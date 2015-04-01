@@ -117,6 +117,7 @@ fi
 if [[ $NOVA == YES ]]; then
     iniset service_available nova True
     iniset compute change_password_available false
+    initset compute fixed_network_name tempest-network
     iniset whitebox whitebox_enabled false
     iniset compute-admin username "$OS_USERNAME"
     iniset compute-admin tenant_name "$OS_TENANT_NAME"

@@ -17,4 +17,6 @@ function setup_neutron(){
     iniset network public_router_id "$ROUTER_ID"
     iniset network public_network_id "$NETWORK_ID"
     iniset network api_version v${API_VERSION}
+
+    neutron net-create tempest-network || true
 }
