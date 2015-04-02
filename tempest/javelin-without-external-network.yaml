@@ -31,13 +31,13 @@ images:
   - name: javelin-cirros1
     owner: javelin-user1
     imgdir: images
-    file: cirros-0.3.3-x86_64-disk.img
+    file: cirros.img
     container_format: bare
     disk_format: qcow2
   - name: javelin-cirros2
     owner: javelin-user2
     imgdir: images
-    file: cirros-0.3.3-x86_64-disk.img
+    file: cirros.img
     container_format: bare
     disk_format: qcow2
 
