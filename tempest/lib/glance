@@ -11,6 +11,7 @@
 function setup_glance(){
     # Variables
     IMAGE_NAME=cirros
+    IMAGE_DIR=/usr/share/openstack-tempest-juno/images
     CIRROS_VERSION=$(curl http://download.cirros-cloud.net/version/released)
     IMAGE_URL="http://download.cirros-cloud.net/$CIRROS_VERSION/cirros-$CIRROS_VERSION-x86_64-disk.img"
     IMAGE_CONT_FORMAT=bare
@@ -20,9 +21,9 @@ function setup_glance(){
     # Download and import an image
     IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     if [ ! "$IMAGE_ID" ] ; then
-            mkdir -p images; wget -O images/cirros.img $IMAGE_URL
+            mkdir -p $IMAGE_DIR; wget -O $IMAGE_DIR/cirros.img $IMAGE_URL
             glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
-                --disk-format=$IMAGE_DISK_FORMAT --file images/cirros.img
+                --disk-format=$IMAGE_DISK_FORMAT --file $IMAGE_DIR/cirros.img
             IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     fi
 
