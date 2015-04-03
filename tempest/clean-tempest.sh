@@ -25,11 +25,13 @@ set -x
 
 source /etc/config-tools/openrc.sh
 
-# Cleanup all resources except keystone users/tenants/roles
-for tenant_name in $(keystone tenant-list | egrep -o -i "[_a-z0-9\-]*((tenant[_a-z0-9\-]*)|(-[0-9]{8,}))"); do ospurge --verbose --cleanup-project $tenant_name; done
+# Cleanup all resources created by tempest (owned by demo and alt_temo)
+for tenant_name in demo alt_demo; do ospurge --verbose --cleanup-project $tenant_name; done
 
 case "$?" in
   "0")
+    # after resources have been deleted, we delete the tenants
+    for tenant_name in demo alt_demo; do keystone tenant-delete $tenant_name; done
     echo "Cleanup-process exited sucessfully";;
   "1")
     echo "Unknown error";;
