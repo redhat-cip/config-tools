@@ -14,8 +14,10 @@ here=$(dirname $(readlink -m $0))
 tempest_dir="/usr/share/openstack-tempest-juno"
 resourcefile="javelin-resource.yml"
 last_javelin_file="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
-last_javelin_version=$(head -n 1 "$last_javelin_file")
 current_version=$(edeploy version | cut -d "-" -f 2)
+if [ -r "$last_javelin_file" ]; then
+    last_javelin_version=$(head -n 1 "$last_javelin_file")
+fi
 
 if [ -x /usr/local/bin/javelin2 ]; then
   JAVELIN_CMD="javelin2"
@@ -66,7 +68,7 @@ javelin_check_resources() {
 
 javelin_create_resources() {
     # don't try to create resources that already exist
-    if [[ $last_javelin_version == $current_version ]]; then
+    if [[ $last_javelin_version != $current_version ]]; then
         javelin_cmd create
     fi
 }
