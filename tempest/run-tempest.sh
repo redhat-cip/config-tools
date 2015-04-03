@@ -74,6 +74,8 @@ else
     # Resources don't exist, let's create and check them
     javelin_create_resources
     javelin_check_resources
+    # if resources are created & checked, then we update lastjavelin tag
+    javelin_update_lastjavelin
 fi
 
 

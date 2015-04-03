@@ -13,7 +13,9 @@ here=$(dirname $(readlink -m $0))
 
 tempest_dir="/usr/share/openstack-tempest-juno"
 resourcefile="javelin-resource.yml"
-lastjavelin="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+last_javelin_file="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+last_javelin_version=$(head -n 1 "$last_javelin_file")
+current_version=$(edeploy version | cut -d "-" -f 2)
 
 if [ -x /usr/local/bin/javelin2 ]; then
   JAVELIN_CMD="javelin2"
@@ -63,7 +65,10 @@ javelin_check_resources() {
 }
 
 javelin_create_resources() {
-    javelin_cmd create
+    # don't try to create resources that already exist
+    if [[ $last_javelin_version == $current_version ]]; then
+        javelin_cmd create
+    fi
 }
 
 javelin_destroy_resources() {
@@ -73,19 +78,17 @@ javelin_destroy_resources() {
 javelin_is_post_upgrade() {
     # Javelin needs to determine whether it's running pre or post an upgrade
     # To do this it will compare the current version (given by edeploy) to the last
-    # one it wrote in its own special file ($lastjavelin).
+    # one it wrote in its own special file ($last_javelin_file).
     # If the versions don't match, it means it's running post upgrade and it will update the
-    # content of $lastjavelin to the latest
+    # content of $last_javelin_file to the latest
 
     # returns 0 if it's post upgrade (and versions don't match) or 1 if it's not the case
 
-    if [ ! -r "$lastjavelin" ]; then
-	edeploy version | cut -d "-" -f 2 > "$lastjavelin"
+    # case where we run javelin the first time
+    if [ ! -r "$last_javelin_file" ]; then
 	return 1
     else
-      local last_javelin_version=$(head -n 1 "$lastjavelin")
-      local current_version=$(edeploy version | cut -d "-" -f 2)
-
+      # javelin already ran before, we want to check if we are post_upgrade
       if [ "$last_javelin_version" != "$current_version" ]; then
           return 0
       else
@@ -95,5 +98,5 @@ javelin_is_post_upgrade() {
 }
 
 javelin_update_lastjavelin() {
-    edeploy version | cut -d "-" -f 2 > "$lastjavelin"
+    echo $current_version > "$last_javelin_file"
 }
