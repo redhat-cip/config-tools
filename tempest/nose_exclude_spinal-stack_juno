@@ -209,3 +209,7 @@ test_volume_crud_with_volume_type_and_extra_specs
 
 # glance v1 does not run
 v1.test_image
+
+# keystone v3 is not enabled
+# this feature will be activated in SpS Kilo
+tempest.api.identity.admin.v3
