@@ -212,4 +212,5 @@ v1.test_image
 
 # keystone v3 is not enabled
 # this feature will be activated in SpS Kilo
-tempest.api.identity.admin.v3
+api.identity.admin.v3
+api.identity.v3
