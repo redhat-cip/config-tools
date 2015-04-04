@@ -30,8 +30,6 @@ for tenant_name in demo alt_demo; do ospurge --verbose --cleanup-project $tenant
 
 case "$?" in
   "0")
-    # after resources have been deleted, we delete the tenants
-    for tenant_name in demo alt_demo; do keystone tenant-delete $tenant_name || true; done
     echo "Cleanup-process exited sucessfully";;
   "1")
     echo "Unknown error";;
