@@ -215,3 +215,4 @@ v1.test_image
 # this feature will be activated in SpS Kilo
 identity.admin.v3
 identity.v3
+network.test_ports.PortsTestJSON
