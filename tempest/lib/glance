@@ -17,11 +17,11 @@ function setup_glance(){
     IMAGE_CONT_FORMAT=bare
     IMAGE_DISK_FORMAT=qcow2
     API_VERSION="2.1"
+    mkdir -p $IMAGE_DIR; wget -O $IMAGE_DIR/cirros.img $IMAGE_URL
 
     # Download and import an image
     IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
     if [ ! "$IMAGE_ID" ] ; then
-            mkdir -p $IMAGE_DIR; wget -O $IMAGE_DIR/cirros.img $IMAGE_URL
             glance image-create --name=$IMAGE_NAME --is-public=true --container-format=$IMAGE_CONT_FORMAT \
                 --disk-format=$IMAGE_DISK_FORMAT --file $IMAGE_DIR/cirros.img
             IMAGE_ID=$(glance image-show $IMAGE_NAME | grep "id " | awk '{print $4}' )
