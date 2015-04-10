@@ -331,8 +331,8 @@ else
     pushd puppet-module
     # Build Puppetfile & modules with Rake which is the same way as the
     # module CI in OpenStack Infra
-    bundle install
-    bundle exec rake spec_prep
+    $SUDO bundle install
+    $SUDO bundle exec rake spec_prep
     sudo rm -rf ./spec/fixtures/modules/cloud
     popd
     if [ -n "$tag" -a "$tagged" = 1 ]; then
