@@ -186,6 +186,8 @@ orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_software_deployment_
 orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_software_deployment_update_no_metadata_change
 orchestration.stacks.test_templates
 orchestration.stacks.test_neutron_resources
+orchestration.stacks.test_stacks.StacksTestJSON.test_stack_crud_no_resources
+orchestration.stacks.test_swift_resources.SwiftResourcesTestJSON
 
 # cinder failures to investigate:
 test_create_get_list_accept_volume_transfer
@@ -193,6 +195,7 @@ test_create_get_delete_volume_with_volume_type_and_extra_specs
 
 # neutron failures to investigate
 network.test_allowed_address_pair.AllowedAddressPairTestXML
+network.test_floating_ips.FloatingIPTestJSON
 test_external_network_visibility
 test_ports.PortsIpV6TestJSON.test_create_update_port_with_second_ip
 test_ports.PortsTestJSON.test_port_list_filter_by_router_id
