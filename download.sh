@@ -148,7 +148,7 @@ yamlfile=env/$(basename $yaml)
 update_or_clone "$envgit" env
 
 puppetgit=$($ORIG/extract.py module "$yamlfile")
-puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$version/")
+puppetmodules=$($ORIG/extract.py puppetmodules "$yamlfile"|sed -e "s/@VERSION@/$tag/g")
 serverspecgit=$($ORIG/extract.py serverspec "$yamlfile")
 edeploygit=$($ORIG/extract.py edeploy_repo "$yamlfile")
 env=$($ORIG/extract.py environment "$yamlfile")
