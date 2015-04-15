@@ -11,9 +11,10 @@
 source /etc/config-tools/openrc.sh
 here=$(dirname $(readlink -m $0))
 
+mkdir -p /etc/tempest
 tempest_dir="/usr/share/openstack-tempest-juno"
 resourcefile="javelin-resource.yml"
-last_javelin_file="/opt/tempest-scripts/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
+last_javelin_file="/etc/tempest/javelin-latest-run"   # Make sure that this file survives upgrades by mentioning it in edeploy metadata
 current_version=$(edeploy version | cut -d "-" -f 2)
 if [ -r "$last_javelin_file" ]; then
     last_javelin_version=$(head -n 1 "$last_javelin_file")
