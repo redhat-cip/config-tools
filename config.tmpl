@@ -1,11 +1,11 @@
 DOMAIN={{ config.domain }}
-HOSTS="{% for profile in ordered_profiles %}{% for hname in hosts|sort %}{% if hosts[hname].profile == profile %}{{ hname }} {% endif %}{% endfor %}{% endfor %}"
+HOSTS="{% for profile in ordered_profiles %}{% for hname in hosts%}{% if hosts[hname].profile == profile %}{{ hname }} {% endif %}{% endfor %}{% endfor %}"
 USER={{ config.user }}
 MASTER=${MASTER:={{ config.puppet_master }}}
 PARALLELSTEPS="{{ config.parallel_steps }}"
 PROFILES="{% for profile in ordered_profiles %}{{ profile }} {% endfor %}"
 declare -A PROF_BY_HOST
-{% for profile in ordered_profiles %}{% for hname in hosts|sort %}{% if hosts[hname].profile == profile %}PROF_BY_HOST["{{ hname }}"]="{{ profile }}"
+{% for profile in ordered_profiles %}{% for hname in hosts%}{% if hosts[hname].profile == profile %}PROF_BY_HOST["{{ hname }}"]="{{ profile }}"
 {% endif %}{% endfor %}{% endfor %}
 EDEPLOY_VERSION={{ version }}
 EDEPLOY_ROLE={{ role }}
