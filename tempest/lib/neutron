@@ -18,5 +18,7 @@ function setup_neutron(){
     iniset network public_network_id "$NETWORK_ID"
     iniset network api_version v${API_VERSION}
 
-    neutron net-create tempest-network || true
+    if ! neutron net-list | grep 'tempest-network'; then
+        neutron net-create tempest-network
+    fi
 }
