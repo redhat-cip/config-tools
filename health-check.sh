@@ -94,6 +94,7 @@ reboot_node() {
     else
         cmd="reset"
     fi
+    ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password chassis bootdev pxe options=persistent
     ipmitool -I lanplus -H $ipmi_ip -U $ipmi_user -P $ipmi_password power $cmd
 }
 
