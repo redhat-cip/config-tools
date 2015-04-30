@@ -222,3 +222,4 @@ identity.v3
 # neutron tests
 network.test_ports.PortsTestJSON
 network.test_ports.PortsIpV6TestJSON.test_update_port_with_two_security_groups_and_extra_attributes
+network.test_ports.PortsIpV6TestJSON.test_create_port_in_allowed_allocation_pools
