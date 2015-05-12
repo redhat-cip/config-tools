@@ -188,6 +188,7 @@ orchestration.stacks.test_templates
 orchestration.stacks.test_neutron_resources
 orchestration.stacks.test_stacks.StacksTestJSON.test_stack_crud_no_resources
 orchestration.stacks.test_swift_resources.SwiftResourcesTestJSON
+orchestration.stacks.test_soft_conf.TestSoftwareConfig.test_software_deployment_update_with_metadata_change
 
 # cinder failures to investigate:
 test_create_get_list_accept_volume_transfer
