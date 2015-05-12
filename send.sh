@@ -34,12 +34,16 @@ if tty -s; then
     ROPTS=-vP
 fi
 
-rsync -e "ssh $SSHOPTS" -az $ROPTS archive.tar functions extract-archive.sh $USER@$MASTER:/tmp/
-
 if [ $USER != root ]; then
     SUDO=sudo
 fi
 
-ssh $SSHOPTS $USER@$MASTER $SUDO /tmp/extract-archive.sh
+if [ "${PROF_BY_HOST[$HOSTNAME]}" == "install-server" ]; then
+    cp -a archive.tar functions extract-archive.sh /tmp/
+    $SUDO /tmp/extract-archive.sh
+else
+    rsync -e "ssh $SSHOPTS" -az $ROPTS archive.tar functions extract-archive.sh $USER@$MASTER:/tmp/
+    ssh $SSHOPTS $USER@$MASTER $SUDO /tmp/extract-archive.sh
+fi
 
 # send.sh ends here
