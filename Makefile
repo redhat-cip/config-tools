@@ -9,6 +9,7 @@ install:
 	mkdir -p $(SBINDIR) $(PDIR) $(LIBDIR) $(CDIR)
 	install -m 0755 verify-servers.sh $(SBINDIR)/
 	install -m 0755 configure.sh $(SBINDIR)/
+	install -m 0755 add_computes.sh $(SBINDIR)/
 	install -m 0755 upgrade.sh $(SBINDIR)/
 	install -m 0755 generate.py $(LIBDIR)/
 	install -m 0644 config.tmpl $(CDIR)/
