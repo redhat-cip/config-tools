@@ -294,6 +294,7 @@ Exec {
 }
 
 hiera_include('classes')
+hiera_resources('resources')
 EOF
 
 # Ansible

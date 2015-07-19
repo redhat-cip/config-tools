@@ -224,6 +224,7 @@ Exec {
   path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
 }
 hiera_include('classes')
+hiera_resources('resources')
 EOF
          cat > /etc/facter/facts.d/environment.txt <<EOF
 type=${PROF_BY_HOST[$h]}
@@ -236,6 +237,7 @@ Exec {
   path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
 }
 hiera_include('classes')
+hiera_resources('resources')
 EOF
         tee /tmp/environment.txt.$h <<EOF
 type=${PROF_BY_HOST[$h]}
