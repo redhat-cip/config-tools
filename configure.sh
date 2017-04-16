@@ -165,7 +165,7 @@ run_puppet() {
     loop=$3
 
     logfile="${LOGDIR}/${h}.step${step}.try${loop}.log"
-    puppet_cmdline="puppet apply ${PUPPETOPTS} /etc/puppet/manifest.pp"
+    puppet_cmdline="timeout 600 puppet apply ${PUPPETOPTS} /etc/puppet/manifest.pp"
     ssh_puppet_cmdline="ssh $SSHOPTS $USER@$h sudo -i ${puppet_cmdline}"
 
     if run_parallel $step; then
@@ -180,6 +180,9 @@ run_puppet() {
         else
             ${ssh_puppet_cmdline} 2>&1 | tee ${logfile}
         fi
+    fi
+    if [ $? -eq 124 ]; then
+       echo "Timeout (10 minutes) on $h step $step try $loop"
     fi
 }
 
